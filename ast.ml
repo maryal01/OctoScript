@@ -12,13 +12,15 @@ type prim =
     | String of string
     | Float of float
 
+
 type expr = 
 	|Binop of expr * binaryOp * expr
 	|Boolop of expr * boolOp * expr
 	|Unop of unaryOp * expr 
 	|Comop of expr * copmOp * expr
-	|Lit of prim
+	|PrimLit of prim
 	|DataStruct of data
+	|ListLit of prim list
 	|Var of string
 	|Lambda of func (*|| parameters * body ||*)
 	|Apply of expr * func  (*|| (DataStruct of data) * func   ||*)
