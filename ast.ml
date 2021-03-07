@@ -2,7 +2,7 @@ type boolOp = AND | OR
 type binaryOp = Add | Sub | Mul | Div | Pow | Log
 type unaryOp = NOT | NEG
 type compOp  = GT | GTE | LT | LTE | EQ | NEQ
-type dtype = INT | FLOAT | STRING | LAMBDA
+type dtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA
 type data = TABLE | TUPLE | LIST
 type func =  string list * statement list 
 (* the binary values of true and false are 1 and 0 respectively *)
@@ -11,6 +11,7 @@ type prim =
     | Int of int
     | String of string
     | Float of float
+    | Boolean of bool
 
 
 type expr = 
