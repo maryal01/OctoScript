@@ -43,14 +43,14 @@ rule token = parse
 | "|"      { OR }
 | "!"      { NOT }
 
+| "->"     { FARROW }
+| "=>"     { LARROW }
+
 | "if"     { IF }
 | "else"   { ELSE }
 | "while"  { WHILE }
 | "return" { RETURN }
 | "break"  { BREAK }
-
-| "->"     { FARROW }
-| "=>"     { LARROW }
 
 | "int"    { INT }
 | "bool"   { BOOL }
