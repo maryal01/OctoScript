@@ -56,7 +56,9 @@ rule token = parse
 | "bool"   { BOOL }
 | "float"  { FLOAT }
 | "string" { STRING }
+
 | "void"   { VOID }
+| "None"   { NONE }
 
 | "Table"  { TABLE }
 | "List"   { LIST }
