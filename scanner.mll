@@ -30,6 +30,8 @@ rule token = parse
 | '-'      { MINUS }
 | '*'      { TIMES }
 | '/'      { DIVIDE }
+| '^'      { POW    }
+| '_'      { LOG    }
 | '='      { ASSIGN }
 
 | "=="     { EQ }
@@ -51,6 +53,7 @@ rule token = parse
 | "while"  { WHILE }
 | "return" { RETURN }
 | "break"  { BREAK }
+| "print" { PRINT }
 
 | "int"    { INT }
 | "bool"   { BOOL }
