@@ -14,7 +14,7 @@ type prim =
     | Float of float
     | Boolean of bool
 
-type return_type = INT | FLOAT | STRING | BOOLEAN | VOID | LIST | TABLE
+type return_type = INT | FLOAT | STRING | BOOLEAN | NONE | LAMBDA | LIST | TABLE
 
 
 type expr = 
