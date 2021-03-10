@@ -41,7 +41,7 @@ type statement =
 	|Expr of expr
 
 type func_decl = {
-    typ : return_type:
+    typ : return_type;
     fname : string;
     formals : bind list;
     body : stmt list;
