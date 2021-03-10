@@ -4,7 +4,8 @@ type unaryOp = NOT | NEG
 type compOp  = GT | GTE | LT | LTE | EQ | NEQ
 type dtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE
 type data = TABLE | TUPLE | LIST
-type func =  string list * statement list 
+type func =  bind list * statement list * return_type
+type bind = prim * string
 (* the binary values of true and false are 1 and 0 respectively *)
 
 type prim = 
@@ -12,6 +13,8 @@ type prim =
     | String of string
     | Float of float
     | Boolean of bool
+
+type return_type = INT | FLOAT | STRING | BOOLEAN | VOID | LIST | TABLE
 
 
 type expr = 
@@ -24,8 +27,9 @@ type expr =
 	|ListLit of prim list
 	|Var of string
 	|Lambda of func (*|| parameters * body ||*)
-	|Apply of expr * func  (*|| (DataStruct of data) * func   ||*)
-	|FuncCall of func * expr list (*|| func_name * parameters ||*)
+	|Apply of expr * string * expr list  (*|| (DataStruct of data) * func   ||*)
+	|FuncCall of string * expr list (*|| func_name * parameters ||*)
+	|None
  
 type statement =
 	|While  of expr * statement
@@ -35,4 +39,11 @@ type statement =
 	|Assign of string * expr
 	|Print  of string
 	|Expr of expr
-	|Function of string * func * dtype
+
+type func_decl = {
+    typ : return_type:
+    fname : string;
+    formals : bind list;
+    body : stmt list;
+    types: prim list option;
+  }
