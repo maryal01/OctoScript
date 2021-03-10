@@ -3,14 +3,16 @@ type unaryOp = NOT | NEG
 
 type prim = Int of int | String of string| Float of float | Boolean of bool
 type dtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE | TABLE | TUPLE | LIST
-
+type datastruct = TABLE | TUPLE | LIST 
 type bind = prim * string
-type func =  bind list * statement list * dtype (* why have func when there is func_decl? *) (* why is there bind list there? *)
 
-type datastruct = {
-	typ: TABLE | TUPLE | LIST;
-	name: string;
-}
+type func_decl = {
+	typ : dtype;
+    	fname : string;
+    	formals : bind list;
+    	body : stmt list;
+    	types: prim list option; (* what is this? *)
+  }
 
 type expr = 
 	|Binop of expr * binaryOp * expr
@@ -18,8 +20,9 @@ type expr =
 	|PrimLit of prim
 	|ListLit of prim list
 	|Var of string
-	|Lambda of func
-	|Apply of datastruct * func
+	|Datastruct of datastruct (* this is what im talking. should it be this or Datastruct of string ?? *)
+	|Lambda of func_decl
+	|Apply of expr * string * expr list
 	|FuncCall of string * expr list
 	|Noexpr
  
@@ -32,12 +35,6 @@ type statement =
 	|Print  of string
 	|Expr of expr
 
-type func_decl = {
-	typ : dtype;
-    	fname : string;
-    	formals : bind list;
-    	body : stmt list;
-    	types: prim list option; (* what is this? *)
-  }
+
   
  type program = bind list * func_decl list
