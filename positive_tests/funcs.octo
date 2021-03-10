@@ -1,0 +1,19 @@
+// Lambda (I don't think we actually talked about how this should look)
+(x -> x + 1)
+
+// Apply & Funcall
+table1.filter(1, 2);
+fun1(1, 2, 3);
+newTable(1).filter(1, 2); 
+
+// Function declaration (what exactly is the syntax of this?)
+int randomInt(int i, float j, boolean b, string s){
+  a = i;
+  return;
+}
+
+int emptyFunc(){}
+
+// Print
+// TODO: not sure if we'd need print as it's special thing. We can probably do it as a primitive function.
+print("hello world"); // or python2 style > print "hello world?";

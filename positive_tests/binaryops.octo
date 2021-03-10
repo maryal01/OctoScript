@@ -1,0 +1,14 @@
+1 + 1;
+1 - 1;
+1 * 1;
+1 / 1;
+1 ^ 1;
+1 log 1; // is this how the log operator look like?
+true & true;
+true | false;
+1 > 1;
+1 < 1;
+1 >= 1;
+1 <= 1;
+1 == 1;
+1 != 1;
