@@ -21,7 +21,7 @@ type expr =
 	|Binop of expr * binaryOp * expr
 	|Boolop of expr * boolOp * expr
 	|Unop of unaryOp * expr 
-	|Comop of expr * copmOp * expr
+	|Comop of expr * compOp * expr
 	|PrimLit of prim
 	|DataStruct of data
 	|ListLit of prim list
