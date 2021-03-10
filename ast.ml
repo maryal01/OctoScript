@@ -32,7 +32,7 @@ type expr =
 	|None
  
 type statement =
-	|While  of expr * statement
+	|While  of expr * statement list
 	|If of expr * statement * statement
 	|Return of expr
 	|Break
