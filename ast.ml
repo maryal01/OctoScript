@@ -27,13 +27,13 @@ type expr =
 	|ListLit of prim list
 	|Var of string
 	|Lambda of func (*|| parameters * body ||*)
-	|Apply of expr * string * expr list  (*|| (DataStruct of data) * func   ||*)
+	|Apply of expr * string * expr list  (*|| (DataStruct of data) * funcCall   ||*)
 	|FuncCall of string * expr list (*|| func_name * parameters ||*)
 	|None
  
 type statement =
 	|While  of expr * statement list
-	|If of expr * statement * statement
+	|If of expr * statement list * statement list
 	|Return of expr
 	|Break
 	|Assign of string * expr
