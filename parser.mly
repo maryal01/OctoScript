@@ -112,7 +112,7 @@ expr:
   | expr TIMES  expr     { Binop($1, Mul,   $3)      }
   | expr DIVIDE expr     { Binop($1, Div,   $3)      }
   | expr POW expr        { Binop($1, Pow,   $3)      }
-  | expr LOG expr        { Binop($1, Log,   $3)      }
+  | LOG expr expr        { Binop($2, Log,   $3)      }
   | expr EQ     expr     { Comop($1, EQ,    $3)      }
   | expr NEQ    expr     { Comop($1, NEQ,   $3)      }
   | expr LT     expr     { Comop($1, LT,    $3)      }
