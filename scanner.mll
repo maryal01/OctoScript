@@ -60,7 +60,6 @@ rule token = parse
 | "float"  { FLOAT }
 | "string" { STRING }
 
-| "void"   { VOID }
 | "None"   { NONE }
 
 | "Table"  { TABLE }
