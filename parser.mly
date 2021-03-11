@@ -9,8 +9,8 @@ open Ast
 %token PLUS MINUS TIMES DIVIDE POW LOG ASSIGN 
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
 %token FARROW LARROW
-%token RETURN IF ELSE WHILE PRINT
-%token INT BOOL FLOAT VOID NONE
+%token RETURN IF ELSE WHILE PRINT BREAK
+%token INT BOOL FLOAT VOID NONE STRING
 %token TABLE LIST TUPLE
 %token <int> LITERAL
 %token <bool> BLIT
@@ -39,7 +39,7 @@ program:
 
 decls:
    /* nothing */ { ([], [])               }
- | decls stmt  { (($2 :: fst $1), snd $1) }
+ | decls statement  { (($2 :: fst $1), snd $1) }
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
 fdecl:
@@ -76,7 +76,7 @@ statement:
   | IF LPAREN expr RPAREN statement_list ELSE statement_list { If($3, $5, $7)        }
   | WHILE LPAREN expr RPAREN statement_list                  { While($3, $5)         }
   | BREAK SEMI                                               { Break()               }
-  | ID ASSIGN expr SEMI                                      { Assign($1, $4)        }
+  | ID ASSIGN expr SEMI                                      { Assign($1, $3)        }
   | PRINT expr                                               { Print(#2)             }
 
 return_type:
@@ -106,16 +106,13 @@ expr:
     LITERAL              { PrimLit(Int($1))          }
   | FLIT	               { PrimLit(Float($1))        }
   | BLIT                 { PrimLit(Boolean($1))      }
-  | TABLE                { DataStruct(TABLE)         } (*unsure, FIX*)
-  | TUPLE                { DataStruct(TUPLE)         } (*unsure, FIX*)
-  | LIST                 { DataStruct(LIST)          } (*unsure, FIX*)
   | ID                   { Var($1))                  } 
   | expr PLUS   expr     { Binop($1, Add,   $3)      }
   | expr MINUS  expr     { Binop($1, Sub,   $3)      }
   | expr TIMES  expr     { Binop($1, Mul,   $3)      }
   | expr DIVIDE expr     { Binop($1, Div,   $3)      }
   | expr POW expr        { Binop($1, Pow,   $3)      }
-  | LOG expr expr        { Binop($1, Log,   $3)      }
+  | expr LOG expr        { Binop($1, Log,   $3)      }
   | expr EQ     expr     { Comop($1, EQ,    $3)      }
   | expr NEQ    expr     { Comop($1, NEQ,   $3)      }
   | expr LT     expr     { Comop($1, LT,    $3)      }
@@ -129,8 +126,7 @@ expr:
   | LPAREN formals_opt RPAREN LARROW return_type LBRACE statement_list RBRACE 
                          { Lambda(func($2, $7, $5))}
   | ID LPAREN args_opt RPAREN { FuncCall($1, $3) }
-  | expr DOT ID LPAREN args_opt RPAREN { Apply($1, $3, $5)} (*unsure*)
-
+  | expr DOT ID LPAREN args_opt RPAREN { Apply($1, $3, $5)}
 
 
 
