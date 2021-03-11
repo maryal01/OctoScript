@@ -1,0 +1,6 @@
+a;
+_test;
+$thisshouldwork;
+
+int i = 0;
+float f = getFloat();

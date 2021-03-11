@@ -17,6 +17,6 @@ for t in tests:
         print('test {} failed with exit code {}...\nstdout:{}\nstderr:{}'.format(t, result.returncode, result.stdout, result.stderr))
     else:
         statPass += 1
-        print('test {} passed')
+        print('test {} passed with stdout: {}'.format(result.stdout))
 
 print('{} tests run, {} passes, {} fails'.format(len(tests), statPass, statFail))

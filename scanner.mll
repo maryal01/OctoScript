@@ -31,7 +31,7 @@ rule token = parse
 | '*'      { TIMES }
 | '/'      { DIVIDE }
 | '^'      { POW    }
-| '_'      { LOG    }
+| "log"    { LOG    }
 | '='      { ASSIGN }
 
 | "=="     { EQ }

@@ -1,0 +1,12 @@
+// While & break
+while(true){
+  1;
+  break;
+}
+
+// If & return (Assuming that we force else cases)
+if(true){
+  return 1;
+}else{
+  return 0;
+}

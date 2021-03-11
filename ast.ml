@@ -5,12 +5,13 @@ type rtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE | TABLE | TUPLE | LI
 type bind = prim * string
 
 type func_decl = {
-	typ : rtype;
+	    typ : rtype;
     	fname : string;
     	formals : bind list;
-	locals: bind list;
+	    locals: bind list;
     	body : stmnt list;
-    	types: prim list option; (* what is this? *) }
+    	types: prim list option; (* what is this? *) 
+      }
 
 type expr = 
 	|Binop of expr * binaryOp * expr
