@@ -1,39 +1,24 @@
-type boolOp = AND | OR
-type binaryOp = Add | Sub | Mul | Div | Pow | Log
+type binaryOp = AND | OR | Add | Sub | Mul | Div | Pow | Log | GT | GTE | LT | LTE | EQ | NEQ
 type unaryOp = NOT | NEG
-type compOp  = GT | GTE | LT | LTE | EQ | NEQ
-type dtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE
-type data = TABLE | TUPLE | LIST
-type func =  bind list * statement list * return_type
+type prim = Int of int | String of string| Float of float | Boolean of bool
+type rtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE | TABLE | TUPLE | LIST
 type bind = prim * string
-(* the binary values of true and false are 1 and 0 respectively *)
-
-type prim = 
-    | Int of int
-    | String of string
-    | Float of float
-    | Boolean of bool
-
-type return_type = INT | FLOAT | STRING | BOOLEAN | NONE | LAMBDA | LIST | TABLE
-
 
 type expr = 
 	|Binop of expr * binaryOp * expr
-	|Boolop of expr * boolOp * expr
 	|Unop of unaryOp * expr 
-	|Comop of expr * compOp * expr
 	|PrimLit of prim
-	|DataStruct of data
 	|ListLit of prim list
+	|TupleLit of prim list
+	(* |Lambda of func_decl *)
 	|Var of string
-	|Lambda of func (*|| parameters * body ||*)
-	|Apply of expr * string * expr list  (*|| (DataStruct of data) * funcCall   ||*)
-	|FuncCall of string * expr list (*|| func_name * parameters ||*)
-	|None
+	|Apply of expr * string * expr list
+	|Call of string * expr list
+	|Noexpr
  
-type statement =
-	|While  of expr * statement list
-	|If of expr * statement list * statement list
+type stmnt =
+	|While  of expr * stmnt list
+	|If of expr * stmnt * stmnt
 	|Return of expr
 	|Break
 	|Assign of string * expr
@@ -41,9 +26,13 @@ type statement =
 	|Expr of expr
 
 type func_decl = {
-    typ : return_type;
-    fname : string;
-    formals : bind list;
-    body : stmt list;
-    types: prim list option;
-  }
+	    typ : rtype;
+    	fname : string;
+    	formals : bind list;
+	    (* locals: bind list; *)
+    	body : stmnt list;
+    	types: prim list option; (* what is this? *) 
+      }
+
+
+type program = bind list * func_decl list

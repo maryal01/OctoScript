@@ -71,7 +71,7 @@ rule token = parse
 | "false"  { BLIT(false) }
 
 | digits as lxm { LITERAL(int_of_string lxm) }
-| digits '.'  digit* as lxm { FLIT(lxm) }
+| digits '.'  digit* as lxm { FLIT(float_of_string lxm) }
 | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }

@@ -51,7 +51,6 @@ fdecl:
         body = List.rev $8 } }
 
 formals_opt:
-    /* nothing */ { [] }
   | formal_list   { $1 }
 
 formal_list:
@@ -77,7 +76,7 @@ statement:
   | WHILE LPAREN expr RPAREN statement_list                  { While($3, $5)         }
   | BREAK SEMI                                               { Break()               }
   | ID ASSIGN expr SEMI                                      { Assign($1, $3)        }
-  | PRINT expr                                               { Print(#2)             }
+  | PRINT expr                                               { Print($2)             }
 
 return_type:
     INT    { Int    }
@@ -106,13 +105,13 @@ expr:
     LITERAL              { PrimLit(Int($1))          }
   | FLIT	               { PrimLit(Float($1))        }
   | BLIT                 { PrimLit(Boolean($1))      }
-  | ID                   { Var($1))                  } 
+  | ID                   { PrimLit(String($1))       } 
   | expr PLUS   expr     { Binop($1, Add,   $3)      }
   | expr MINUS  expr     { Binop($1, Sub,   $3)      }
   | expr TIMES  expr     { Binop($1, Mul,   $3)      }
   | expr DIVIDE expr     { Binop($1, Div,   $3)      }
   | expr POW expr        { Binop($1, Pow,   $3)      }
-  | expr LOG expr        { Binop($1, Log,   $3)      }
+  | LOG expr expr        { Binop($2, Log,   $3)      }
   | expr EQ     expr     { Comop($1, EQ,    $3)      }
   | expr NEQ    expr     { Comop($1, NEQ,   $3)      }
   | expr LT     expr     { Comop($1, LT,    $3)      }
@@ -127,8 +126,4 @@ expr:
                          { Lambda(func($2, $7, $5))}
   | ID LPAREN args_opt RPAREN { FuncCall($1, $3) }
   | expr DOT ID LPAREN args_opt RPAREN { Apply($1, $3, $5)}
-
-
-
-
 
