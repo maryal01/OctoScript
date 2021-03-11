@@ -34,5 +34,4 @@ type func_decl = {
     	types: prim list option; (* what is this? *) 
       }
 
-
 type program = bind list * func_decl list
