@@ -1,0 +1,1 @@
+new_function(int x, int y) -> int { return z = x+y; }
