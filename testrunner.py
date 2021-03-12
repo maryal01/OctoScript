@@ -1,22 +1,17 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
-# usage: ./testrunner <file> (star operator works)
+# usage: ./testrunner <files>
 
-import sys
-import glob
-import subprocess
+import sys, os
 
-statPass = 0
 statFail = 0
 
-tests = glob.glob(sys.argv[1])
+tests = sys.argv[1:]
 for t in tests:
-    result = subprocess.run(['./toplevel.native', '<', 'cat', t], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if(result.returncode != 0):
+    print('running test {}'.format(t))
+    code  = os.system('cat {} | ./codeRebuild.native'.format(t))
+    if(code != 0):
         statFail += 1
-        print('test {} failed with exit code {}...\nstdout:{}\nstderr:{}'.format(t, result.returncode, result.stdout, result.stderr))
-    else:
-        statPass += 1
-        print('test {} passed with stdout: {}'.format(result.stdout))
+        print()
 
-print('{} tests run, {} passes, {} fails'.format(len(tests), statPass, statFail))
+print('{} tests run, {} passes, {} fails'.format(len(tests), len(tests) - statFail, statFail))
