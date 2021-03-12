@@ -1,15 +1,14 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
-# usage: ./testrunner <file> (star operator works)
+# usage: ./testrunner <files>
 
 import sys
-import glob
 import subprocess
 
 statPass = 0
 statFail = 0
 
-tests = glob.glob(sys.argv[1])
+tests = sys.argv[1:]
 for t in tests:
     result = subprocess.run(['./toplevel.native', '<', 'cat', t], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if(result.returncode != 0):
