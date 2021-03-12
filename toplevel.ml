@@ -58,8 +58,7 @@ let token_to_string t =
    | Parser.FLIT f -> "FLIT " ^ (string_of_float f)
    | Parser.EOF -> "EOF"
    
-let () =
+let _ =
   let lex_buf = Lexing.from_channel stdin in
-  let expr = Scanner.token lex_buf in
-  (* let expr = Parser.program Scanner.token lex_buf in *)
-  print_endline (token_to_string expr)
+  let expr = Parser.program Scanner.token lex_buf in
+  expr
