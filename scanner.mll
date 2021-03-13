@@ -2,7 +2,6 @@
 
 let digit = ['0' - '9']
 let digits = digit+
-let string = "\".*\""
 
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
@@ -62,7 +61,7 @@ rule token = parse
 | "true"   { BLIT(true)  }
 | "false"  { BLIT(false) }
 
-| string as lxm { STRINGLIT(lxm) }
+| '\"' (([^ '\"'] | "\\\"")* as str) '\"' { STRINGLIT(str) }
 | digits as lxm { LITERAL(int_of_string lxm) }
 | digits '.'  digit* as lxm { FLIT(float_of_string lxm) }
 | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
