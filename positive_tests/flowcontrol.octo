@@ -1,10 +1,10 @@
-// While & break
+/* While & break */
 while(true){
   1;
   break;
 }
 
-// If & return (Assuming that we force else cases)
+/* If & return (Assuming that we force else cases) */
 if(true){
   return 1;
 }else{

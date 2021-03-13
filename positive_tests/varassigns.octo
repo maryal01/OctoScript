@@ -1,6 +1,10 @@
 a;
-_test;
-$thisshouldwork;
+/* int i = 0; */
+i = 0;
+test_;
 
-int i = 0;
-float f = getFloat();
+
+f = getFloat();
+/* float f = getFloat(); */
+
+
