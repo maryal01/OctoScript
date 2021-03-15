@@ -34,8 +34,9 @@ type stmnt =
 (*  need to keep func_decl separate from the statement list because don't want functions to be defined inside functions *)
 type program =  stmnt list 
 
-(* Pretty-printing functions *)
 
+(***********************************************************************************************************************)
+(* Pretty-printing functions *)
 let biop_to_string o = 
 	match o with
 		AND -> "&"  
