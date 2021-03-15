@@ -1,4 +1,4 @@
-type binaryOp = AND | OR | Add | Sub | Mul | Div | Pow | Log | GT | GTE | LT | LTE | EQ | NEQ
+type binaryOp = AND | OR | Add | Sub | Mul | Div | Pow | Log | GT | GTE | LT | LTE | EQ | NEQ | Mod
 type unaryOp = NOT | NEG
 type prim = Int of int | String of string| Float of float | Boolean of bool
 type typ = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE | TABLE | TUPLE | LIST
@@ -54,6 +54,7 @@ let biop_to_string o =
 	| LTE -> "<="  
 	| EQ  -> "=="  
 	| NEQ -> "!=" 
+	| Mod -> "%"
 
 let unop_to_string o =
 	match o with NOT -> "!" | NEG -> "-"
