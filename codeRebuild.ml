@@ -113,11 +113,13 @@ let token_to_string t =
    | Parser.LBRACK -> "LBRACK" 
    | Parser.RBRACK -> "RBRACK" 
    | Parser.COMMA -> "COMMA" 
+   | Parser.COLON -> "COLON"
    | Parser.SEMI -> "SEMI" 
    | Parser.DOT -> "DOT" 
    | Parser.PLUS -> "PLUS" 
    | Parser.MINUS -> "MINUS" 
    | Parser.TIMES -> "TIMES" 
+   | Parser.MOD -> "MOD"
    | Parser.DIVIDE -> "DIVIDE" 
    | Parser.POW -> "POW" 
    | Parser.LOG -> "LOG" 
@@ -148,12 +150,17 @@ let token_to_string t =
    | Parser.LIST -> "LIST"
    | Parser.LAMBDA -> "LAMBDA"
    | Parser.TUPLE -> "TUPLE"
-   | Parser.LITERAL i -> "LITERAL " ^ (string_of_int i)
+   | Parser.ILIT i -> "LITERAL " ^ (string_of_int i)
    | Parser.BLIT b -> "BLIT " ^ (string_of_bool b)
    | Parser.ID s -> "ID " ^ s
    | Parser.FLIT f -> "FLIT " ^ (string_of_float f)
-   | Parser.STRINGLIT s -> "STRINGLIT" ^ s
+   | Parser.SLIT s -> "STRINGLIT" ^ s
    | Parser.EOF -> "EOF"
+   | Parser.INPUT -> "INPUT"
+   | Parser.OUTPUT -> "OUTPUT"
+   | Parser.ACCESS -> "ACCESS"
+   | Parser.APPEND -> "APPEND"
+   | Parser.LENGTH -> "LENGTH"
    
 let () =
   let lex_buf = Lexing.from_channel stdin in

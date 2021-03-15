@@ -1,20 +1,21 @@
 /* Ocamlyacc parser for OctoScript */
 
-%{
-open Ast
-%}
+%{ open Ast %}
 
 %token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
-%token COMMA SEMI DOT
-%token PLUS MINUS TIMES DIVIDE POW LOG ASSIGN 
+%token COMMA SEMI DOT COLON
+%token PLUS MINUS TIMES DIVIDE POW LOG MOD ASSIGN 
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
 %token FARROW LARROW
 %token RETURN IF ELSE WHILE PRINT BREAK
 %token INT BOOL FLOAT NONE STRING LAMBDA 
 %token TABLE LIST TUPLE
-%token <int> LITERAL
+
+%token INPUT OUTPUT ACCESS APPEND LENGTH
+
+%token <int> ILIT
 %token <bool> BLIT
-%token <string> STRINGLIT
+%token <string> SLIT
 %token <string> ID
 %token <float> FLIT
 %token EOF
@@ -46,17 +47,16 @@ decls:
  | decls statement  { $2 :: $1 }
  
 fdecl: 
-  rtype ID LPAREN formals_opt RPAREN LBRACE statement_list RBRACE 
-  {FunDecl($2, $4, $1, List.rev $7)} 
+  typ ID LPAREN formals_opt RPAREN LBRACE statement_list RBRACE  { FunDecl($2, $4, $1, List.rev $7) } 
 
 
 formals_opt:
    /* nothing */  { [] }
-  | formal_list   { $1 }
+  | formal_list   { List.rev $1 }
 
 formal_list:
-   rtype ID                   { [($1, $2)]     }
- | formal_list COMMA rtype ID { ($3, $4) :: $1 }
+   typ ID                   { [($1, $2)]     }
+ | formal_list COMMA typ ID { ($3, $4) :: $1 }
 
 statement_list:
     /* nothing */  { [] }
@@ -73,7 +73,7 @@ statement:
   | PRINT expr                                               { Print($2)             }
   | fdecl                                                    { $1            }
   
-rtype:
+typ:
     INT    { INT     }
   | BOOL   { BOOLEAN }
   | FLOAT  { FLOAT   }
@@ -99,10 +99,10 @@ args_list:
 
 
 expr:
-    LITERAL              { PrimLit(Int($1))          }
+    ILIT                 { PrimLit(Int($1))          }
   | FLIT	               { PrimLit(Float($1))        }
   | BLIT                 { PrimLit(Boolean($1))      }
-  | STRINGLIT            { PrimLit(String($1))      }
+  | SLIT                 { PrimLit(String($1))      }
   | ID                   { Var($1)       }
   | expr PLUS   expr     { Binop($1, Add,   $3)      }
   | expr MINUS  expr     { Binop($1, Sub,   $3)      }
