@@ -1,8 +1,8 @@
 type binaryOp = AND | OR | Add | Sub | Mul | Div | Pow | Log | GT | GTE | LT | LTE | EQ | NEQ
 type unaryOp = NOT | NEG
 type prim = Int of int | String of string| Float of float | Boolean of bool
-type rtype = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE | TABLE | TUPLE | LIST
-type bind = rtype * string
+type typ = INT | FLOAT | STRING | BOOLEAN | LAMBDA | NONE | TABLE | TUPLE | LIST
+type bind = typ * string
 
 type expr = 
 	|Binop of expr * binaryOp * expr
@@ -20,13 +20,14 @@ type stmnt =
 	|If of expr * stmnt list * stmnt list
 	|Return of expr
 	|Break
+	|Declare of typ * string * expr
 	|Assign of string * expr
 	|Print  of expr
 	|Expr of expr
-	|FunDecl of string * bind list * rtype * stmnt list
+	|FunDecl of string * bind list * typ * stmnt list
 
 (* type func_decl = {
-	typ: rtype;
+	typ: typ;
 	fname: string;
 	formals: bind list;
 	body: stmnt list;
@@ -64,7 +65,7 @@ let prim_to_string p =
 	| Float f -> string_of_float f
 	| Boolean b -> string_of_bool b
 
-let rtype_to_string t =
+let typ_to_string t =
 	match t with
 		INT       -> "int"
 	| FLOAT     -> "float"
@@ -76,7 +77,7 @@ let rtype_to_string t =
 	| TUPLE     -> "tuple"
 	| LIST      -> "list"
 
-let bind_to_string (r, s) = (rtype_to_string r) ^ " " ^ s
+let bind_to_string (r, s) = (typ_to_string r) ^ " " ^ s
 
 let rec expr_to_string e =
 	let rec plist_to_string pl =
@@ -118,6 +119,7 @@ let rec stmt_to_string s =
 | Break -> "break"
 | Assign (s, e) -> s ^ " = " ^ expr_to_string e 
 | Print e -> "print(" ^ expr_to_string e ^ ")"
+| Declare (t, s, e) -> typ_to_string t ^  " " ^ s ^ " = " ^ expr_to_string e
 | Expr e -> expr_to_string e
 | FunDecl (s, bs, rt, sl) -> 
 			let rec bs_to_string bs = 
@@ -125,7 +127,7 @@ let rec stmt_to_string s =
 						[] -> ""
 					| (b :: []) -> bind_to_string b
 					| (b :: bs) ->  bind_to_string b ^ ", " ^ bs_to_string bs
-			in s ^ "(" ^ bs_to_string bs ^ ") -> " ^ rtype_to_string rt ^ "{\n" ^
+			in s ^ "(" ^ bs_to_string bs ^ ") -> " ^ typ_to_string rt ^ "{\n" ^
 					 slist_to_string sl ^ "\n}"
 
 let rec prog_to_string p = 

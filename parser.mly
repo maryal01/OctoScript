@@ -101,13 +101,15 @@ array:
  
 
 statement:
-  |  expr SEMI                                                { Expr $1               }
+    expr SEMI                                                { Expr $1               }
   | RETURN expr_opt SEMI                                     { Return $2             }
   | IF LPAREN expr RPAREN LBRACE stmnt_list RBRACE %prec NOELSE        { If($3, $6, [])        }
   | IF LPAREN expr RPAREN LBRACE stmnt_list RBRACE ELSE LBRACE stmnt_list RBRACE { If($3, $6, $10)        }
   | WHILE LPAREN expr RPAREN LBRACE stmnt_list RBRACE                  { While($3, $6)         }
   | BREAK SEMI                                               { Break                 }
   | ID ASSIGN expr SEMI                                      { Assign($1, $3)        }
+  | typ ID ASSIGN expr SEMI                                  { Declare($1, $2, $4) }
+  | typ ID SEMI                                              { Declare($1, $2, Noexpr)}
   | PRINT expr                                               { Print($2)             }
   | fdecl                                                    { $1            }
 
