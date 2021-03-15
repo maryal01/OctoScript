@@ -26,6 +26,9 @@
 %nonassoc NOELSE
 %nonassoc ELSE
 %nonassoc PRINT
+%nonassoc TUPLE
+%nonassoc ARGS
+
 %right ASSIGN
 %left OR AND 
 %left EQ NEQ LT GT LEQ GEQ
@@ -132,8 +135,8 @@ expr:
   | expr OR     expr                    { Binop($1, OR,    $3)      }
   | MINUS expr %prec NOT                { Unop(NEG, $2)             }
   | NOT expr                            { Unop(NOT, $2)             }
-  | ID LPAREN args_opt RPAREN           { Call($1, $3)              }
-  | expr DOT ID LPAREN args_opt RPAREN  { Apply($1, $3, $5)         }
-  | LBRACK array  RBRACK                { ListLit(List.rev $2)      } 
-  | LPAREN array  RPAREN                { TupleLit(List.rev $2)     }
+  | ID LPAREN  args_opt RPAREN           { Call($1, $3)              }
+  | expr DOT ID LPAREN  args_opt RPAREN  { Apply($1, $3, $5)         }
+  | LBRACK  array  RBRACK                { ListLit(List.rev $2)      } 
+  | LPAREN  array  RPAREN                { TupleLit(List.rev $2)     }
   
