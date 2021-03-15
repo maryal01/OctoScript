@@ -58,8 +58,8 @@ rule token = parse
 | "list"   { LIST }
 | "tuple"  { TUPLE }
 
-| "input" { INPUT  }
-| "out"   { OUTPUT }
+| "read"  { INPUT  }
+| "write" { OUTPUT }
 | "get"   { ACCESS }
 | "append"{ APPEND }
 | "length"{ LENGTH }
