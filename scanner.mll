@@ -61,8 +61,9 @@ rule token = parse
 | "read"  { INPUT  }
 | "write" { OUTPUT }
 | "get"   { ACCESS }
-| "append"{ APPEND }
-| "length"{ LENGTH }
+| "append" { APPEND }
+| "length" { LENGTH }
+| "fn"     { FUNC }
 
 | "true"   { BLIT(true)  }
 | "false"  { BLIT(false) }

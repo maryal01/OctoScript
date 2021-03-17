@@ -2,11 +2,11 @@
 
 %{ open Ast %}
 
-%token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
+%token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK 
 %token COMMA SEMI DOT COLON
 %token PLUS MINUS TIMES DIVIDE POW LOG MOD ASSIGN 
 %token NOT EQ NEQ LT LEQ GT GEQ AND OR
-%token FARROW LARROW
+%token FARROW LARROW FUNC
 %token RETURN IF ELSE WHILE PRINT BREAK
 %token INT BOOL FLOAT NONE STRING LAMBDA 
 %token TABLE LIST TUPLE
@@ -136,6 +136,9 @@ expr:
   | MINUS expr %prec NOT                { Unop(NEG, $2)             }
   | NOT expr                            { Unop(NOT, $2)             }
   | ID LPAREN  args_opt RPAREN           { Call($1, $3)              }
+  | IF LPAREN expr RPAREN  expr %prec NOELSE  { IfExpr($3, $5, Noexpr)  }
+  | IF LPAREN expr RPAREN  expr  ELSE  expr   { IfExpr($3, $5, $7)    }
   | expr DOT ID LPAREN  args_opt RPAREN  { Apply($1, $3, $5)         }
   | LBRACK  array  RBRACK                { ListLit(List.rev $2)      } 
-  | LPAREN  array  RPAREN                { TupleLit([])     }
+  | LPAREN  array  RPAREN                { TupleLit(List.rev $2)     }
+  | FUNC LPAREN formals_opt RPAREN LARROW LBRACE expr RBRACE { Lambda($3, $7)}

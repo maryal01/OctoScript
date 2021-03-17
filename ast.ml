@@ -10,6 +10,8 @@ type expr =
 	|PrimLit of prim
 	|ListLit of prim list
 	|TupleLit of prim list
+	|IfExpr of expr * expr * expr
+	|Lambda of bind list * expr
 	|Var of string
 	|Apply of expr * string * expr list
 	|Call of string * expr list
@@ -103,6 +105,14 @@ let rec expr_to_string e =
 | Apply (e, s, es) -> (expr_to_string e) ^ "." ^ s ^ "(" ^ (elist_to_string es) ^ ")"
 | Call (s, es) -> s ^ "(" ^ (elist_to_string es) ^ ")"
 | Noexpr -> "NO_EXP"
+| IfExpr (e1, e2, e3) -> "if " ^ (expr_to_string e1) ^ " " ^ (expr_to_string e2) ^ " else " ^ (expr_to_string e3)
+| Lambda (bs, e) -> 
+	let rec bs_to_string bs = 
+			match bs with
+				[] -> ""
+			| (b :: []) -> bind_to_string b
+			| (b :: bs) ->  bind_to_string b ^ ", " ^ bs_to_string bs
+	in "(" ^ bs_to_string bs ^ ") => " ^ "{ " ^ (expr_to_string e) ^ " }"
 
 let rec stmt_to_string s = 
 	let rec slist_to_string sl = 

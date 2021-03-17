@@ -58,6 +58,7 @@ let token_to_string t =
    | Parser.ACCESS -> "ACCESS"
    | Parser.APPEND -> "APPEND"
    | Parser.LENGTH -> "LENGTH"
+   | Parser.FUNC -> "fn"
    
 let () =
   let lex_buf = Lexing.from_channel stdin in
