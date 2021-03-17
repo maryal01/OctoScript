@@ -109,7 +109,7 @@ statement:
   | ID ASSIGN expr SEMI                                                           { Assign($1, $3)          }
   | typ ID ASSIGN expr SEMI                                                       { Declare($1, $2, $4)     }
   | typ ID SEMI                                                                   { Declare($1, $2, Noexpr) }
-  | PRINT expr                                                                    { Print($2)               }
+  | PRINT expr SEMI                                                               { Print($2)               }
   | fdecl                                                                         { $1                      }
 
 expr:
@@ -138,5 +138,4 @@ expr:
   | ID LPAREN  args_opt RPAREN           { Call($1, $3)              }
   | expr DOT ID LPAREN  args_opt RPAREN  { Apply($1, $3, $5)         }
   | LBRACK  array  RBRACK                { ListLit(List.rev $2)      } 
-  | LPAREN  array  RPAREN                { TupleLit(List.rev $2)     }
-  
+  | LPAREN  array  RPAREN                { TupleLit([])     }
