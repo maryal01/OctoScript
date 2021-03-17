@@ -2,7 +2,7 @@
 
 let digit = ['0' - '9']
 let digits = digit+
-
+let string = ([^ '\"'] | "\\\"")
 rule token = parse
   [' ' '\t' '\r' '\n'] { token lexbuf } (* Whitespace *)
 | "/*"      { comment lexbuf }           (* Comments *)
@@ -16,14 +16,16 @@ rule token = parse
 
 | ';'      { SEMI }
 | ','      { COMMA }
+| ':'      { COLON }
 | '.'      { DOT }
 
 | '+'      { PLUS }
 | '-'      { MINUS }
 | '*'      { TIMES }
 | '/'      { DIVIDE }
-| '^'      { POW    }
-| "log"    { LOG    }
+| '^'      { POW   }
+| '%'      { MOD   }
+| "log"    { LOG   }
 | '='      { ASSIGN }
 
 | "=="     { EQ }
@@ -51,19 +53,24 @@ rule token = parse
 | "bool"   { BOOL }
 | "float"  { FLOAT }
 | "string" { STRING }
+| "none"   { NONE }
+| "table"  { TABLE }
+| "list"   { LIST }
+| "tuple"  { TUPLE }
 
-| "None"   { NONE }
-
-| "Table"  { TABLE }
-| "List"   { LIST }
-| "Tuple"  { TUPLE }
+| "read"  { INPUT  }
+| "write" { OUTPUT }
+| "get"   { ACCESS }
+| "append" { APPEND }
+| "length" { LENGTH }
+| "fn"     { FUNC }
 
 | "true"   { BLIT(true)  }
 | "false"  { BLIT(false) }
-
-| '\"' (([^ '\"'] | "\\\"")* as str) '\"' { STRINGLIT(str) }
-| digits as lxm { LITERAL(int_of_string lxm) }
+| '\"' (string* as str) '\"' { SLIT(str) }
+| digits as lxm { ILIT(int_of_string lxm) }
 | digits '.'  digit* as lxm { FLIT(float_of_string lxm) }
+
 | ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']* as lxm { ID(lxm) }
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
