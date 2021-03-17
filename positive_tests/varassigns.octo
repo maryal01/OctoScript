@@ -1,10 +1,10 @@
 a;
-/* int i = 0; */
+int i = 0;
 i = 0;
 test_;
 
 
 f = getFloat();
-/* float f = getFloat(); */
+float f = getFloat();
 
 

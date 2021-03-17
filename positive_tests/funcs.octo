@@ -8,4 +8,4 @@ int randomInt(int i, float j, bool b, string s){
   return;
 }
 
-None emptyFunc(){}
+none emptyFunc(){}

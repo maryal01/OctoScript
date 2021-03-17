@@ -28,14 +28,14 @@ type stmnt =
 	|Expr of expr
 	|FunDecl of string * bind list * typ * stmnt list
 
-(* type func_decl = {
+type func_decl = {
 	typ: typ;
 	fname: string;
 	formals: bind list;
 	body: stmnt list;
-} *)
+} 
 (*  need to keep func_decl separate from the statement list because don't want functions to be defined inside functions *)
-type program =  stmnt list 
+type program =  func_decl list * stmnt list 
 
 
 (***********************************************************************************************************************)
@@ -141,7 +141,24 @@ let rec stmt_to_string s =
 			in s ^ "(" ^ bs_to_string bs ^ ") -> " ^ typ_to_string rt ^ "{\n" ^
 					 slist_to_string sl ^ "\n}"
 
+let fdecl_to_string fdecl =
+	let rec slist_to_string sl = 
+		match sl with
+			[] -> ""
+		| (s :: []) -> stmt_to_string s ^ ";"
+		| (s :: sl) -> (stmt_to_string s ^ ";\n") ^ (slist_to_string sl)
+	in
+	let rec bs_to_string bs = 
+			match bs with
+				[] -> ""
+			| (b :: []) -> bind_to_string b
+			| (b :: bs) ->  bind_to_string b ^ ", " ^ bs_to_string bs
+	in 
+	fdecl.fname ^ "(" ^ (bs_to_string fdecl.formals) ^ ") -> " ^ typ_to_string fdecl.typ ^ " { \n " ^ (slist_to_string fdecl.body) ^ " } \n "
+
 let rec prog_to_string p = 
 match p with
-	[] -> ""
-| (s :: sl) -> stmt_to_string s ^ ";\n" ^ prog_to_string sl
+	([], []) -> ""
+| (f :: fl, s :: sl) -> stmt_to_string s ^ ";\n" ^ fdecl_to_string f  ^ ";\n" ^ prog_to_string (fl, sl)
+|	([], s :: sl) -> stmt_to_string s ^ ";\n" ^  prog_to_string ([], sl)
+| (f :: fl, []) -> fdecl_to_string f  ^ ";\n" ^ prog_to_string (fl, [])

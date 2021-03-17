@@ -44,9 +44,11 @@ program:
   decls EOF { $1 }
 
 decls:
-   /* nothing */ { []  }
- | decls statement  { $2 :: $1 }
+   /* nothing */  { ([], [])  }
+ | decls fdecl     { (($2 :: fst $1), snd $1) }
+ | decls statement  { (fst $1, ($2 :: snd $1)) }
  
+
 formals_opt:
    /* nothing */  { [] }
   | formal_list   { List.rev $1 }
@@ -69,7 +71,8 @@ args_list:
 
 
 fdecl: 
-  typ ID LPAREN formals_opt RPAREN LBRACE stmnt_list RBRACE  { FunDecl($2, $4, $1, List.rev $7) } 
+  typ ID LPAREN formals_opt RPAREN LBRACE stmnt_list RBRACE  
+    { { typ = $1; fname = $2; formals = $4; body = List.rev $7 } } 
 
 stmnt_list:
     /* nothing */  { [] }
@@ -110,7 +113,6 @@ statement:
   | typ ID ASSIGN expr SEMI                                                       { Declare($1, $2, $4)     }
   | typ ID SEMI                                                                   { Declare($1, $2, Noexpr) }
   | PRINT expr SEMI                                                               { Print($2)               }
-  | fdecl                                                                         { $1                      }
 
 expr:
     ILIT                                { PrimLit(Int($1))          }
