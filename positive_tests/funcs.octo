@@ -3,9 +3,9 @@ table1.filter(1, 2);
 fun1(1, 2, 3);
 newTable(1).filter(1, 2); 
 
-int randomInt(int i, float j, bool b, string s){
+fn randomInt(int i, float j, bool b, string s) -> int {
   a = i;
   return;
 }
 
-None emptyFunc(){}
+fn emptyFunc() -> none {}
