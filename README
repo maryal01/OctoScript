@@ -8,14 +8,6 @@ Running Test Scripts:
     The positive test files are present in the positive_tests directory.
     The negative test files are present in the negative_tests directory.
 
-Syntax needed to be added:
-    The lambda functions needs to be added to the ast.ml after we get our basic functionality and the Table type running.
-
-Current known issues:
-    String literals fail parsing
-    List/Tuple literals fail parsing
-    Variable declarations fail parsing, add additional declaration form in ast
-
 Members:
 Manish Aryal, manish.aryal@tufts.edu
 Conor Gourley, ​conor.gourley@tufts.edu​ 
