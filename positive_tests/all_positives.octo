@@ -1,0 +1,79 @@
+/* primitive types*/
+/* PrintLit of prim*/
+1;
+-1;
+"test";
+"";
+10.5;
+0.0;
+false;
+true;
+
+/* Binary op
+1 + 1;
+1 - 1;
+1 * 1;
+1 / 1;
+1 ^ 1;
+1 log 1; /* is this how the log operator look like?*/
+
+/* Boolean logic (why is boolop seperate from binop?) */
+true & true;
+true | false;
+
+/* Uniary op*/
+!true;
+-1;
+
+/* Comparison ops (again why is this seperate from binop?)*/
+1 > 1;
+1 < 1;
+1 >= 1;
+1 <= 1;
+1 == 1;
+1 != 1;
+/* TODO: what exactly is the DataStruct form in expr? is it to represent literals?*/
+/* TODO: do we have a separate tuple literal form? are we allowing this?*/
+
+/* Data structure literals*/
+(true, false, "string", 1); /*tuple*/
+[1, 2, 3, 4, 5];            /* list*/
+
+
+/* Lambda (I don't think we actually talked about how this should look)*/
+fn(int x, bool b) => { x == b } ;
+
+/* Apply & Funcall*/
+table1.filter(1, 2);
+fun1(1, 2, 3);
+newTable(1).filter(1, 2); 
+
+/* While & break */
+while(true){
+  1;
+  break;
+}
+
+/* If & return (Assuming that we force else cases) */
+if(true){
+  return 1;
+}else{
+  return 0;
+}
+
+/* Assignment*/
+/* TODO: we might want to encode the type information in assign itself*/
+int i = 0;
+float f = getFloat();
+
+/* Print*/
+/* TODO: not sure if we'd need print as it's special thing. We can probably do it as a primitive function.
+print("hello world"); 
+
+/* Function declaration (what exactly is the form of this?)*/
+fn randomInt(int i, float j, bool b, string s) -> int{
+  a = i;
+  return;
+}
+
+fn emptyFunc() -> int { return; } 

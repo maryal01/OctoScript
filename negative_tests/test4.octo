@@ -1,1 +1,6 @@
-[1,2,3,4] * 7 - 5 ;
+higher_function(a,b,c) -> int {
+    lower_function(a,b,c) -> int { 
+        return a + b + c ;
+    }
+    return 3;
+}
