@@ -11,7 +11,7 @@ Running Test Scripts:
     The negative test files are present in the negative_tests directory.
 
 Members:
-Manish Aryal, manish.aryal@tufts.edu
-Conor Gourley, conor.gourley@tufts.edu
-Danielle Lan, hao-wei.lan@tufts.edu
-Sinan Unan, sinan.unan@tufts.edu
+* Manish Aryal, manish.aryal@tufts.edu
+* Conor Gourley, conor.gourley@tufts.edu
+* Danielle Lan, hao-wei.lan@tufts.edu
+* Sinan Unan, sinan.unan@tufts.edu
