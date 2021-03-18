@@ -1,4 +1,4 @@
-all : toplevel.native codeRebuild.native
+all : toplevel.native
 
 clean: 
 	ocamlbuild -clean
@@ -6,6 +6,3 @@ clean:
 
 toplevel.native : toplevel.ml ast.ml parser.mly scanner.mll
 	ocamlbuild toplevel.native
-
-codeRebuild.native: codeRebuild.ml ast.ml parser.mly scanner.mll
-	ocamlbuild codeRebuild.native
