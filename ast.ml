@@ -26,7 +26,6 @@ type stmnt =
 	|Assign of string * expr
 	|Print  of expr
 	|Expr of expr
-	|FunDecl of string * bind list * typ * stmnt list
 
 type func_decl = {
 	typ: typ;
@@ -132,14 +131,6 @@ let rec stmt_to_string s =
 | Print e -> "print(" ^ expr_to_string e ^ ")"
 | Declare (t, s, e) -> typ_to_string t ^  " " ^ s ^ " = " ^ expr_to_string e
 | Expr e -> expr_to_string e
-| FunDecl (s, bs, rt, sl) -> 
-			let rec bs_to_string bs = 
-					match bs with
-						[] -> ""
-					| (b :: []) -> bind_to_string b
-					| (b :: bs) ->  bind_to_string b ^ ", " ^ bs_to_string bs
-			in s ^ "(" ^ bs_to_string bs ^ ") -> " ^ typ_to_string rt ^ "{\n" ^
-					 slist_to_string sl ^ "\n}"
 
 let fdecl_to_string fdecl =
 	let rec slist_to_string sl = 
