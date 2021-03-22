@@ -1,5 +1,7 @@
 open Ast
 
+(* TODO: might not compile without including AST as module (referring namespace) *)
+
 type sexpr = typ * sx
 and sx = 
     SPrimLit of prim
