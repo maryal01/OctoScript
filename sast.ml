@@ -2,7 +2,10 @@ open Ast
 
 type sexpr = typ * sx
 and sx = 
-    SPrimLit of prim
+    SIntLit of int
+  | SFloatLit of float
+  | SStringLit of string
+  | SBoolLit of bool
   | SListLit of typ * prim list
   | STupleLit of typ list * prim list
   | SBinop of sexpr * binaryOp * sexpr

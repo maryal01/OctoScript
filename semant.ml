@@ -11,10 +11,10 @@ let check (functions, statements) =
 	let rec expr = function 
 		PrimLit  l -> 
 			match l with
-			Int i -> (INT , SPrimLit l)
-			|Float f -> (FLOAT, SPrimLit l)
-			|String s -> (STRING, SPrimLit l)
-			|Boolean b -> (BOOLEAN, SPrimLit l)
+			Int i -> (INT , SIntLit i)
+			|Float f -> (FLOAT, SFloatLit f)
+			|String s -> (STRING, SStringLit s)
+			|Boolean b -> (BOOLEAN, SBoolLit b)
 		|Noexpr     -> (NONE, SNoExp)
 		|Var s       -> (type_of_identifier s, SId s)
 		|Unop(op, e) as ex -> 

@@ -10,6 +10,7 @@ type expr =
 	|PrimLit of prim
 	|ListLit of prim list
 	|TupleLit of prim list
+	|TableLit of prim list * prim list
 	|IfExpr of expr * expr * expr
 	|Lambda of bind list * expr
 	|Var of string
