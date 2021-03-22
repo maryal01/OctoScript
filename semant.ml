@@ -18,27 +18,25 @@ let check (functions, statements) =
       	|Unop(op, e) as ex -> 
           let (t, e') = expr e in
           let ty = match op with
-            Neg when t = Int || t = Float -> t
-          | Not when t = Bool -> Bool
-          | _ -> raise (Failure ("illegal unary operator " ^ 
-                                 string_of_uop op ^ string_of_typ t ^
-                                 " in " ^ string_of_expr ex))
+            NEG when t = INT || t = FLOAT -> t
+          | NOT when t = BOOLEAN -> BOOLEAN
+          | _ -> raise (Failure ("illegal unary operator " ^  string_of_uop op ^ string_of_typ t ^ " in " ^ string_of_expr ex))
           in (ty, SUnop(op, (t, e')))
       	|Binop(e1, op, e2) as e -> 
           let (t1, e1') = expr e1 
           and (t2, e2') = expr e2 in
           let same = t1 = t2 in
           let ty = match op with
-            Add | Sub | Mult | Div when same && t1 = Int   -> Int
-          | Add | Sub | Mult | Div when same && t1 = Float -> Float
-          | Equal | Neq            when same               -> Bool
-          | Less | Leq | Greater | Geq
-                     when same && (t1 = Int || t1 = Float) -> Bool
-          | And | Or when same && t1 = Bool -> Bool
+            Add | Sub | Mult | Div when same && t1 = INT   -> INT
+          | Add | Sub | Mult | Div when same && t1 = FLOAT -> FLOAT (* TODO: remove if needed ? *)
+          | EQ | NEQ            when same               -> BOOLEAN
+          | LTE | LT | GT | GEQ when same && (t1 = INT || t1 = FLOAT) -> BOOLEAN
+          | AND | OR when same && t1 = BOOLEAN -> BOOLEAN
+		  | Pow when same && t1 = INT -> INT (* TODO can't handle large power operations *)
+		  | Log when same && t1 = INT -> FLOAT
+		  | Mod when same && t1 = INT -> INT
           | _ -> raise (
-	      Failure ("illegal binary operator " ^
-                       string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
-                       string_of_typ t2 ^ " in " ^ string_of_expr e))
+	      Failure ("illegal binary operator " ^ string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^ string_of_typ t2 ^ " in " ^ string_of_expr e))
           in (ty, SBinop((t1, e1'), op, (t2, e2')))
       	|Call(fname, args) as call -> 
           let fd = find_func fname in
