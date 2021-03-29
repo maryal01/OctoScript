@@ -100,34 +100,32 @@ let check (functions, statements) =
 				| _ -> raise (Failure ("illegal binary operator " ^ string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^ string_of_typ t2 ^ " in " ^ string_of_expr e))
 			in (ty, SBinop((t1, e1'), op, (t2, e2')))
 		| Lambda(args, e) as lambda -> let (t1, e1) = (expr e) in (t1, SLambda(args, (t1, e1)))
-		| ListLit(elements) as  list -> 
+		| ListLit(elements) as  list -> match list with
 			[] -> (NONE, elements)
 			| elem :: elements -> 
 				let (t1, e1) = (expr elem) 
 				in
-				let all_func elem' ->  let (t', e')  = (expr elem') in (t1 = t')
+				let all_func elem' =  let (t', e')  = (expr elem') in (t1 = t')
 				in 
 				match List.for_all all_func elements with
 					true -> (t1, elements)
 					|false -> raise (Failure ("illegal List literal " ^ string_of_typ t1 ^ " expected " ^ " in " ^ string_of_expr e))
 		| TupleLit ( elements ) as tuple -> 
-			let fold_func elem, acc = 
+			let fold_func acc elem = 
 				let (t1, e1) = (expr elem) 
 				in t1 :: acc
 			in
 			(TUPLE, (List.fold_right fold_func [] elements, elements))
-		|Apply (e, name, expr_list) -> (* TODO *)
-		|Call(fname, args) as call ->  (* TODO *)
+		|Apply (e, name, expr_list) -> SApply(expr e, name, List.map expr expr_list)(* TODO *)
+		|Call(fname, args) as call ->  SList(fname, List.map expr args)  (* TODO *)
 		|IfExpr ( e1, e2, e3 ) as e ->	
 			let (t1, e1') = expr e1
 			and (t2, e2') = expr e2
 			and (t3, e3') = expr e3 
 			in
 			match (t1, (t2 = t3)) with
-				(BOOLEAN, true) -> _
-				|_ -> raise (Failure ("illegal if expression " ^ string_of_typ t1 ^ " " ^ string_of_typ t2 ^ " " ^ " " ^ string_of_typ t3 ^ " in " ^ string_of_expr e))
-			in
-			(t2, SIfExpr((t1,e1'), (t2,e2'), (t3,e3')))
+				(BOOLEAN, true) -> (t2, SIfExpr((t1,e1'), (t2,e2'), (t3,e3')))
+				|_ -> raise (Failure ("illegal if expression " ^ string_of_typ t1 ^ " " ^ string_of_typ t2 ^ " " ^ " " ^ string_of_typ t3 ^ " in " ^ string_of_expr e))			
 	in     
 	let check_bool_expr e = 
 		let (t', e') = expr e
@@ -153,7 +151,7 @@ let check (functions, statements) =
 								string_of_expr e))
 		| Assign (s, e) -> 
 			let lt = type_of_identifier s (* TODO :: REPLACE *)
-			and (rt, e') = expr e in &
+			and (rt, e') = expr e in 
 			if rt = lt  then SAssign(s, (rt, e'))
 			else raise (
 					Failure ("Illegal assignment of " ^ string_of_typ lt ^ 
@@ -161,8 +159,8 @@ let check (functions, statements) =
 								string_of_expr (Assign(s, e))))
 		| Print (e) -> let e' = expr e in 
 			match e' with 
-			(_, SPrimLit) -> e'
-			(_, _)        -> raise 
+			  (_, SPrimLit) -> e'
+			| _             -> raise 
 								( Failure ("Can only print StringLiterals ." ^ 
 											" Problem in" ^ string_of_expr e))
 		| Break -> SBreak
