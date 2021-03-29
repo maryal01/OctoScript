@@ -8,6 +8,7 @@ and sx =
   | SBoolLit of bool
   | SListLit of typ * prim list
   | STupleLit of typ list * prim list
+  | STableLit of prim list * prim list
   | SBinop of sexpr * binaryOp * sexpr
   | SUnop of  unaryOp * sexpr
   | SIfExpr of sexpr * sexpr * sexpr
