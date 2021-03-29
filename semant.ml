@@ -19,12 +19,10 @@ let check (functions, statements) =
 		let add_bind map (name, ty) = 
 			StringMap.add name {
 				typ = NONE; fname = name; 
-				formals = [(ty, "x")];
-				locals = []; body = [] } map
+				formals = [(ty, "x")]; body = [] } map
 		in 
 		List.fold_left add_bind 
-			StringMap.empty 
-			[ ("print", Int); ("printb", Bool); ("printf", Float); ("printbig", Int) ] 
+			StringMap.empty [ ("print", INT); ("printb", BOOLEAN); ("printf", FLOAT); ("printbig", INT) ] 
 	in
 	let add_func map fd = 
 		let built_in_err = "function " ^ fd.fname ^ " may not be defined"
@@ -44,27 +42,6 @@ let check (functions, statements) =
 	let find_func s = 
 		try StringMap.find s function_decls
 		with Not_found -> raise (Failure ("unrecognized function " ^ s))
-	in 
-	let symbol_table = {
-		variables = StringMap.empty;
-		parent = None;
-	}
-	in
-	let rec find_symbol scope name = 
-		try StringMap.find name scope.variables
-		with Not_found ->
-			match scope.parent with
-				Some(parent) -> find_variable parent name
-				| None -> raise (Failure( "The variable has not been defined" ))
-	in
-	let add_symbol scope name value =
-		try let _ = StringMap.find name scope.variables in
-		raise (Failure("The variable has already been defined"))
-		with Not_found ->
-			scope = {
-				variables = StringMap.add name value scope.variables
-				parent = scope.parent
-			}
 	in
 	let rec expr = function 
 		PrimLit  l -> match l with

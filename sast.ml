@@ -37,3 +37,5 @@ type sfunc_decl = {
 }
 
 type sprogram = sfunc_decl list * sstmt list
+
+let string_of_sprogram = " "
