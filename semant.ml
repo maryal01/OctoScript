@@ -3,10 +3,8 @@ open Sast
 module StringMap = Map.Make(String)
 
 
-let string_of_uop uop = "TODO" (*TODO*)
-let string_of_typ typ = "TODO" (*TODO*)
-let string_of_expr expr = "TODO" (*TODO*)
-let string_of_op op = "TODO" (*TODO*)
+
+
 
 
 let check (functions, statements) = 
@@ -64,7 +62,7 @@ let check (functions, statements) =
 			let ty = match op with
 				NEG when t = INT || t = FLOAT -> t
 				| NOT when t = BOOLEAN -> BOOLEAN
-				| _ -> raise (Failure ("illegal unary operator " ^  string_of_uop op ^ string_of_typ t ^ " in " ^ string_of_expr ex))
+				| _ -> raise (Failure ("illegal unary operator " ^  unop_to_string op ^ typ_to_string t ^ " in " ^ expr_to_string ex))
 			in (ty, SUnop(op, (t, e')))
 		|Binop(e1, op, e2) as e -> 
 			let (t1, e1') = check_expr e1 
@@ -81,7 +79,7 @@ let check (functions, statements) =
 				| Pow when same && t1 = INT -> INT 
 				| Log when same && t1 = INT -> FLOAT
 				| Mod when same && t1 = INT -> INT
-				| _ -> raise (Failure ("illegal binary operator " ^ string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^ string_of_typ t2 ^ " in " ^ string_of_expr e))
+				| _ -> raise (Failure ("illegal binary operator " ^  typ_to_string t1 ^ " " ^ biop_to_string op ^ " " ^ typ_to_string t2 ^ " in " ^ expr_to_string e))
 			in (ty, SBinop((t1, e1'), op, (t2, e2')))
 		| Lambda(args, e) as lambda -> let (t1, e1) = (check_expr e) in (t1, SLambda(args, (t1, e1)))
 		| ListLit(elements) as list -> (match elements with
@@ -95,7 +93,7 @@ let check (functions, statements) =
 				in 
 				(match List.for_all all_func elems with
 					true -> (t1, SListLit(t1,elements))
-					|false -> raise (Failure ("illegal List literal " ^ string_of_typ t1 ^ " expected " ^ " in " ^ string_of_expr list))))
+					|false -> raise (Failure ("illegal List literal " ^ typ_to_string t1 ^ " expected " ^ " in " ^ expr_to_string list))))
 		| TupleLit ( elements ) as tuple -> 
 			let fold_func elem = 
 				let (t1, e1) = (check_expr (PrimLit elem)) 
@@ -113,11 +111,11 @@ let check (functions, statements) =
 			in
 			match (t1, (t2 = t3)) with
 				(BOOLEAN, true) -> (t2, SIfExpr((t1,e1'), (t2,e2'), (t3,e3')))
-				|_ -> raise (Failure ("illegal if expression " ^ string_of_typ t1 ^ " " ^ string_of_typ t2 ^ " " ^ " " ^ string_of_typ t3 ^ " in " ^ string_of_expr e))			
+				|_ -> raise (Failure ("illegal if expression " ^ typ_to_string t1 ^ " " ^ typ_to_string t2 ^ " " ^ " " ^ typ_to_string t3 ^ " in " ^ expr_to_string e))			
 	in     
 	let check_bool_expr e = 
 		let (t', e') = check_expr e
-		and err = "expected Boolean expression in " ^ string_of_expr e
+		and err = "expected Boolean expression in " ^ expr_to_string e
 	in if t' != BOOLEAN then raise (Failure err) else (t', e') 
 	in
 	let rec check_stmt = function
@@ -132,22 +130,22 @@ let check (functions, statements) =
 			let p' = check_bool_expr p and
 				s' = List.map check_stmt s 
             in
-            SWhile(p', s)
+            SWhile(p', s')
 			
 		| Return e ->  let (t, e') = check_expr e in
 			(*if t = func.typ then *)SReturn (t, e') (*TODO func has to be define *) 
 			(*else raise (
-					Failure ("Returning " ^ string_of_typ t ^ " while expected is " ^
-							string_of_typ func.typ ^ " in expression " ^ 
-							string_of_expr e)) *)
+					Failure ("Returning " ^ typ_to_string t ^ " while expected is " ^
+							typ_to_string func.typ ^ " in expression " ^ 
+							expr_to_string e)) *)
 		| Assign (s, e) -> 
 			let lt = BOOLEAN(*type_of_identifier s*) (* TODO :: REPLACE *)
 			and (rt, e') = check_expr e in 
 			if rt = lt  then SAssign(s, (rt, e'))
 			else raise (
-					Failure ("Illegal assignment of " ^ string_of_typ lt ^ 
-								" and " ^ string_of_typ rt ^ " in " ^
-								string_of_expr (Assign(s, e))))
+					Failure ("Illegal assignment of " ^ typ_to_string lt ^ 
+								" and " ^ typ_to_string rt ^ " in " ^
+								stmt_to_string (Assign(s, e))))
 		| Print (e) -> 
             let sx' = check_expr e 
             in 
@@ -158,7 +156,7 @@ let check (functions, statements) =
             | (_ ,SBoolLit a) -> SPrint sx'
 			| _             -> raise 
 								( Failure ("Can only print StringLiterals ." ^ 
-											" Problem in" ^ string_of_expr e)))
+											" Problem in" ^ expr_to_string e)))
 		| Break -> SBreak
         | Declare (_, _, _) -> SBreak (*TODO*)
 	in 
