@@ -15,3 +15,9 @@ Members:
 * Conor Gourley, conor.gourley@tufts.edu
 * Danielle Lan, hao-wei.lan@tufts.edu
 * Sinan Unan, sinan.unan@tufts.edu
+
+
+Compiling:
+./toplevel.native xyz.oc
+lcc xyz.ll
+gcc -o a.out test_without.s printbig.o
