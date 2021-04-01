@@ -143,8 +143,8 @@ let check (functions, statements) =
         let typ_list = List.map fold_func elements in
         (TUPLE, STupleLit (typ_list, elements))
     | TableLit elements_list -> (TUPLE, STupleLit ([], []))
-    | Apply (e, name, expr_list) -> (TUPLE, STupleLit ([], [])) (* TODO *)
-    | Call (fname, args) as call -> (TUPLE, STupleLit ([], [])) (* TODO *)
+    | Apply (e, name, expr_list) -> (TUPLE, STupleLit ([], [])) (* TODO: *)
+    | Call (fname, args) as call -> (TUPLE, STupleLit ([], [])) (* TODO: *)
     | IfExpr (e1, e2, e3) as e -> (
         let t1, e1' = check_expr e1 scope
         and t2, e2' = check_expr e2 scope
@@ -198,7 +198,7 @@ let check (functions, statements) =
         (* TODO: think about declaring lambda, table for READ, none *)
     | Return e ->
         let t, e' = check_expr e scope in
-        (*if t = func.typ then *) SReturn (t, e')
+        (*TODO: if t = func.typ then *) SReturn (t, e')
     | Assign (s, e) ->
         let lt = find_identifier s scope and rt, e' = check_expr e scope in
         if rt = lt then SAssign (s, (rt, e'))
@@ -254,5 +254,7 @@ Return
 Call
 Apply
 Declare
+
+TODO: do we check for the return statement in a function declaration
 
 *)
