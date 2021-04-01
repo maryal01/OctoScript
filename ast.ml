@@ -16,9 +16,7 @@ type binaryOp =
   | Mod
 
 type unaryOp = NOT | NEG
-
 type prim = Int of int | String of string | Float of float | Boolean of bool
-
 type typ =
   | INT
   | FLOAT
@@ -47,8 +45,9 @@ type expr =
   | Noexpr
 
 type stmnt =
-  | While of expr * stmnt list
-  | If of expr * stmnt list * stmnt list
+  | Block of stmnt list
+  | While of expr * stmnt 
+  | If of expr * stmnt  * stmnt 
   | Return of expr
   | Break
   | Declare of typ * string * expr
@@ -162,11 +161,12 @@ let rec stmt_to_string s =
     | s :: sl -> (stmt_to_string s ^ ";\n") ^ slist_to_string sl
   in
   match s with
+  | Block sl -> "Block { " ^  slist_to_string sl ^" }"
   | While (e, sl) ->
-      "while(" ^ expr_to_string e ^ "){\n" ^ slist_to_string sl ^ "\n}"
-  | If (e, sl1, sl2) ->
-      "if(" ^ expr_to_string e ^ "){\n" ^ slist_to_string sl1 ^ "\n}else{\n"
-      ^ slist_to_string sl2 ^ "\n}"
+      "while(" ^ expr_to_string e ^ "){\n" ^ stmt_to_string s ^ "\n}"
+  | If (e, s1, s2) ->
+      "if(" ^ expr_to_string e ^ "){\n" ^ stmt_to_string s1 ^ "\n}else{\n"
+      ^ stmt_to_string s2 ^ "\n}"
   | Return e -> "return"
   | Break -> "break"
   | Assign (s, e) -> s ^ " = " ^ expr_to_string e
