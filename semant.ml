@@ -51,7 +51,7 @@ let check (functions, statements) =
     try StringMap.find name scope.identifiers
     with Not_found -> (
       match scope.parent with
-      | Some(parent) -> find_identifier name parent
+      | Some parent -> find_identifier name parent
       | None -> raise (Failure " The identifier is not already defined. "))
   in
   let add_identifier name typ scope =
@@ -181,8 +181,7 @@ let check (functions, statements) =
         if same_type then
           let _ = add_identifier id t scope in
           SDeclare (t, id, (et', e'))
-        else
-          raise(Failure("Invalid Declaration of variable"))
+        else raise (Failure "Invalid Declaration of variable")
         (* TODO: think about declaring lambda, table for READ, none *)
     | Return e ->
         let t, e' = check_expr e scope in
@@ -208,8 +207,20 @@ let check (functions, statements) =
                  ("Can only print StringLiterals ." ^ " Problem in"
                 ^ expr_to_string e)))
     | Break -> SBreak
-    (*TODO*)
   in
-  5
-(*(List.map check_stmt statements, List.map check_function functions)*)
-(* TODO need to write check function*)
+  let check_function func =
+    let formals' = check_binds func.formals in
+    let formals'' =
+      List.fold_left
+        (fun l (typ, name) -> StringMap.add name typ)
+        StringMap.empty formals'
+    in
+    let func_scope = { identifiers = formals'; parent = Some id_table } in
+    {
+      styp = func.typ;
+      sfname = func.fname;
+      sformals = formals';
+      sbody = List.map check_stmt func_scope func.body;
+    }
+  in
+  (List.map check_function functions, List.map check_stmt id_table statements)
