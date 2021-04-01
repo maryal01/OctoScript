@@ -8,10 +8,10 @@ type symbol_table = {
 }
 
 let check (functions, statements) =
-  let check_binds (kind : string) (to_check : bind list) =
+  let check_binds (to_check : bind list) =
     let check_it checked binding =
-      let void_err = "illegal void " ^ kind ^ " " ^ snd binding
-      and dup_err = "duplicate " ^ kind ^ " " ^ snd binding in
+      let void_err = "illegal void "  ^ snd binding
+      and dup_err = "duplicate "   ^ snd binding in
       match binding with
       | NONE, _ -> raise (Failure void_err)
       | _, n1 -> (
@@ -166,6 +166,19 @@ let check (functions, statements) =
   let rec check_stmt statement scope =
     match statement with
     | Block sl -> SBlock []
+    | Block sl ->
+        let rec check_stmt_list statement_list block_scope =
+          match statement_list with
+          | [ (Return _ as s) ] -> [ check_stmt s block_scope ]
+          | Return _ :: _ -> raise (Failure "Nothing may follow a return")
+          | Block sl :: ss -> check_stmt_list (sl @ ss) block_scope
+          | s :: ss ->
+              check_stmt s block_scope :: check_stmt_list ss block_scope
+          | [] -> []
+        in
+        SBlock
+          (check_stmt_list sl
+             { identifiers = StringMap.empty; parent = Some scope })
     | Expr e -> SExpr (check_expr e scope)
     | If (p, b1, b2) ->
         let p' = check_bool_expr p scope
@@ -181,7 +194,7 @@ let check (functions, statements) =
         if same_type then
           let _ = add_identifier id t scope in
           SDeclare (t, id, (et', e'))
-        else raise (Failure "Invalid Declaration of variable")
+        else raise (Failure "Invalid Declaration of identifier")
         (* TODO: think about declaring lambda, table for READ, none *)
     | Return e ->
         let t, e' = check_expr e scope in
@@ -220,7 +233,26 @@ let check (functions, statements) =
       styp = func.typ;
       sfname = func.fname;
       sformals = formals';
-      sbody = List.map check_stmt func_scope func.body;
+      sbody =
+        (match check_stmt (Block func.body) func_scope with
+        | SBlock sl -> sl
+        | _ -> raise (Failure "Internal Error: Block did not become block"));
     }
   in
   (List.map check_function functions, List.map check_stmt id_table statements)
+(*
+Plaaces to check for identifier's scope
+1. function calls
+2. blocks
+3. declare
+4. assign
+
+5. add_identifier
+6. find_identifier
+------------
+Return
+Call
+Apply
+Declare
+
+*)
