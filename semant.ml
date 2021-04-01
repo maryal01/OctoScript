@@ -43,18 +43,18 @@ let check (functions, statements) =
     | _ when StringMap.mem n map -> make_err dup_err
     | _ -> StringMap.add n fd map
   in
-  let check_assign lvaluet rvaluet err =
-    if lvaluet = rvaluet then lvaluet else raise (Failure err)
+  let check_assign lvaluet rvaluet =
+    if lvaluet = rvaluet then lvaluet else raise (Failure "Invalid assignment")
   in
   let id_table = { identifiers = StringMap.empty; parent = None } in
-  let rec find_identifier scope name =
+  let rec find_identifier name scope =
     try StringMap.find name scope.identifiers
     with Not_found -> (
-      match Not_found with
-      | Some parent -> find_identifier parent name
-      | _ -> raise (Failure " The identifier is not already defined. "))
+      match scope.parent with
+      | Some(parent) -> find_identifier name parent
+      | None -> raise (Failure " The identifier is not already defined. "))
   in
-  let add_identifier scope typ name =
+  let add_identifier name typ scope =
     try
       let _ = StringMap.find name scope.identifiers in
       raise (Failure " The identifier has been already defined")
@@ -70,7 +70,8 @@ let check (functions, statements) =
     try StringMap.find s function_decls
     with Not_found -> raise (Failure ("unrecognized function " ^ s))
   in
-  let rec check_expr = function
+  let rec check_expr expression scope =
+    match expression with
     | PrimLit l -> (
         match l with
         | Int i -> (INT, SIntLit i)
@@ -78,12 +79,9 @@ let check (functions, statements) =
         | String s -> (STRING, SStringLit s)
         | Boolean b -> (BOOLEAN, SBoolLit b))
     | Noexpr -> (NONE, SNoExp)
-    | Var s ->
-        (INT, SVar s)
-        (*(type_of_identifier s, SId s)*)
-        (* TODO *)
+    | Var s -> (find_identifier s scope, SVar s)
     | Unop (op, e) as ex ->
-        let t, e' = check_expr e in
+        let t, e' = check_expr e scope in
         let ty =
           match op with
           | NEG when t = INT || t = FLOAT -> t
@@ -96,7 +94,7 @@ let check (functions, statements) =
         in
         (ty, SUnop (op, (t, e')))
     | Binop (e1, op, e2) as e ->
-        let t1, e1' = check_expr e1 and t2, e2' = check_expr e2 in
+        let t1, e1' = check_expr e1 scope and t2, e2' = check_expr e2 scope in
         let same = t1 = t2 in
         let ty =
           match op with
@@ -118,16 +116,16 @@ let check (functions, statements) =
         in
         (ty, SBinop ((t1, e1'), op, (t2, e2')))
     | Lambda (args, e) as lambda ->
-        let t1, e1 = check_expr e in
+        let t1, e1 = check_expr e scope in
         (t1, SLambda (args, (t1, e1)))
     | ListLit elements as list -> (
         match elements with
         | [] -> (NONE, SListLit (NONE, elements))
         | elem :: elems -> (
             let ex = PrimLit elem in
-            let t1, e1 = check_expr ex in
+            let t1, e1 = check_expr ex scope in
             let all_func elem' =
-              let t', e' = check_expr (PrimLit elem') in
+              let t', e' = check_expr (PrimLit elem') scope in
               t1 = t'
             in
             match List.for_all all_func elems with
@@ -139,7 +137,7 @@ let check (functions, statements) =
                     ^ " in " ^ expr_to_string list))))
     | TupleLit elements as tuple ->
         let fold_func elem =
-          let t1, e1 = check_expr (PrimLit elem) in
+          let t1, e1 = check_expr (PrimLit elem) scope in
           t1
         in
         let typ_list = List.map fold_func elements in
@@ -148,9 +146,9 @@ let check (functions, statements) =
     | Apply (e, name, expr_list) -> (TUPLE, STupleLit ([], [])) (* TODO *)
     | Call (fname, args) as call -> (TUPLE, STupleLit ([], [])) (* TODO *)
     | IfExpr (e1, e2, e3) as e -> (
-        let t1, e1' = check_expr e1
-        and t2, e2' = check_expr e2
-        and t3, e3' = check_expr e3 in
+        let t1, e1' = check_expr e1 scope
+        and t2, e2' = check_expr e2 scope
+        and t3, e3' = check_expr e3 scope in
         match (t1, t2 = t3) with
         | BOOLEAN, true -> (t2, SIfExpr ((t1, e1'), (t2, e2'), (t3, e3')))
         | _ ->
@@ -160,44 +158,45 @@ let check (functions, statements) =
                 ^ typ_to_string t2 ^ " " ^ " " ^ typ_to_string t3 ^ " in "
                 ^ expr_to_string e)))
   in
-  let check_bool_expr e =
-    let t', e' = check_expr e
+  let check_bool_expr e scope =
+    let t', e' = check_expr e scope
     and err = "expected Boolean expression in " ^ expr_to_string e in
     if t' != BOOLEAN then raise (Failure err) else (t', e')
   in
-  let rec check_stmt = function
-    | Block sl -> SBlock (List.map check_stmt sl)
-    | Expr e -> SExpr (check_expr e)
+  let rec check_stmt statement scope =
+    match statement with
+    | Block sl -> SBlock []
+    | Expr e -> SExpr (check_expr e scope)
     | If (p, b1, b2) ->
-        let p' = check_bool_expr p
-        and b1' = check_stmt b1
-        and b2' = check_stmt b2 in
+        let p' = check_bool_expr p scope
+        and b1' = check_stmt b1 scope
+        and b2' = check_stmt b2 scope in
         SIf (p', b1', b2')
     | While (p, s) ->
-        let p' = check_bool_expr p and s' = check_stmt s in
+        let p' = check_bool_expr p scope and s' = check_stmt s scope in
         SWhile (p', s')
+    | Declare (t, id, e) ->
+        let et', e' = check_expr e scope in
+        let same_type = t = et' in
+        if same_type then
+          let _ = add_identifier id t scope in
+          SDeclare (t, id, (et', e'))
+        else
+          raise(Failure("Invalid Declaration of variable"))
+        (* TODO: think about declaring lambda, table for READ, none *)
     | Return e ->
-        let t, e' = check_expr e in
+        let t, e' = check_expr e scope in
         (*if t = func.typ then *) SReturn (t, e')
-    (*TODO func has to be define *)
-    (*else raise (
-      Failure ("Returning " ^ typ_to_string t ^ " while expected is " ^
-      		typ_to_string func.typ ^ " in expression " ^
-      		expr_to_string e)) *)
     | Assign (s, e) ->
-        let lt = BOOLEAN
-        (*type_of_identifier s*)
-        (* TODO :: REPLACE *)
-        and rt, e' = check_expr e in
+        let lt = find_identifier s scope and rt, e' = check_expr e scope in
         if rt = lt then SAssign (s, (rt, e'))
         else
           raise
             (Failure
                ("Illegal assignment of " ^ typ_to_string lt ^ " and "
-              ^ typ_to_string rt ^ " in "
-               ^ stmt_to_string (Assign (s, e))))
+              ^ typ_to_string rt))
     | Print e -> (
-        let sx' = check_expr e in
+        let sx' = check_expr e scope in
         match sx' with
         | _, SIntLit a -> SPrint sx'
         | _, SFloatLit a -> SPrint sx'
@@ -209,7 +208,6 @@ let check (functions, statements) =
                  ("Can only print StringLiterals ." ^ " Problem in"
                 ^ expr_to_string e)))
     | Break -> SBreak
-    | Declare (_, _, _) -> SBreak
     (*TODO*)
   in
   5
