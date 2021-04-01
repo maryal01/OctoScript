@@ -1,7 +1,11 @@
 open Ast
 open Sast
 module StringMap = Map.Make (String)
-type symbol_table = { identifiers : typ StringMap.t; parent : symbol_table option }
+
+type symbol_table = {
+  identifiers : typ StringMap.t;
+  parent : symbol_table option;
+}
 
 let check (functions, statements) =
   let check_binds (kind : string) (to_check : bind list) =
@@ -42,7 +46,25 @@ let check (functions, statements) =
   let check_assign lvaluet rvaluet err =
     if lvaluet = rvaluet then lvaluet else raise (Failure err)
   in
-  let id_table = { identifiers = StringMap.empty; parent = None; } in
+  let id_table = { identifiers = StringMap.empty; parent = None } in
+  let rec find_identifier scope name =
+    try StringMap.find name scope.identifiers
+    with Not_found -> (
+      match Not_found with
+      | Some parent -> find_identifier parent name
+      | _ -> raise (Failure " The identifier is not already defined. "))
+  in
+  let add_identifier scope typ name =
+    try
+      let _ = StringMap.find name scope.identifiers in
+      raise (Failure " The identifier has been already defined")
+    with Not_found ->
+      scope
+      = {
+          identifiers = StringMap.add name typ scope.identifiers;
+          parent = scope.parent;
+        }
+  in
   let function_decls = List.fold_left add_func built_in_decls functions in
   let find_func s =
     try StringMap.find s function_decls
