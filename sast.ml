@@ -12,7 +12,7 @@ and sx =
   | SIfExpr of sexpr * sexpr * sexpr
   | SLambda of bind list * sexpr
   | SVar of string
-  | SApply of sexpr * string & sexpr list
+  | SApply of sexpr * string * sexpr list
   | SCall of string * sexpr list
   | SNoExp
 

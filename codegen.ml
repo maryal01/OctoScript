@@ -15,6 +15,8 @@ let translate (statements, functions) =
 
   and the_module = L.create_module context "OctoScript" in
 
+  let unimp = raise (Failure ("Not implemented")) in
+
   (* COMPLEX TYPES HMMMMMMMMM? *)
   (* IDEAS: seperate type representation in sast with prim vs complex, for easier
             pattern matching (also metadata like how long is string) *)
@@ -25,10 +27,10 @@ let translate (statements, functions) =
   | A.FLOAT   -> float_t
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t (* would this work?? for all? how about arrays? *)
-  | A.LAMBDA  -> 
-  | A.TABLE   -> 
-  | A.TUPLE   -> 
-  | A.LIST    -> 
+  | A.LAMBDA  -> unimp
+  | A.TABLE   -> unimp
+  | A.TUPLE   -> unimp
+  | A.LIST    -> unimp
 
   in
   (* skipping globals part because we support more than globals *)
@@ -93,11 +95,11 @@ let translate (statements, functions) =
         SPrimLit p ->  
           (match p with 
               Int i     -> L.const_int i32_t i
-            | String s  -> (* get string length directly in ocaml type *)
+            | String s  -> unimp (* get string length directly in ocaml type *)
             | Float f   -> L.const_float_of_string float_t f
             | Boolean b -> L.const_int i1_t (if b then 1 else 0))
-        | SListLit (t, ps) -> 
-        | STupleLit (ts, ps) -> 
+        | SListLit (t, ps) -> unimp
+        | STupleLit (ts, ps) -> unimp
         | SBinop (e1, bop, e2) -> 
             let (t, _) = e1
               and e1' = expr builder e1
@@ -113,8 +115,8 @@ let translate (statements, functions) =
                     | A.Sub -> L.build_sub
                     | A.Mul -> L.build_mul
                     | A.Div -> L.build_sdiv
-                    | A.Pow -> 
-                    | A.Log -> (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                    | A.Pow -> unimp
+                    | A.Log -> unimp (* TODO: no operator in LLVM so maybe make this an actual function call? *)
                     | A.GT -> L.build_icmp L.Icmp.Sgt
                     | A.GTE -> L.build_icmp L.Icmp.Sge
                     | A.LT -> L.build_icmp L.Icmp.Slt
@@ -130,8 +132,8 @@ let translate (statements, functions) =
                   | A.Sub -> L.build_fsub
                   | A.Mul -> L.build_fmul
                   | A.Div -> L.build_fdiv
-                  | A.Pow -> 
-                  | A.Log -> (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                  | A.Pow -> unimp
+                  | A.Log -> unimp (* TODO: no operator in LLVM so maybe make this an actual function call? *)
                   | A.GT -> L.build_fcmp L.Fcmp.Sgt
                   | A.GTE -> L.build_fcmp L.Fcmp.Sge
                   | A.LT -> L.build_fcmp L.Fcmp.Slt
@@ -146,7 +148,7 @@ let translate (statements, functions) =
                   | A.EQ -> L.build_icmp L.Icmp.Eq
                   | A.NEQ -> L.build_icmp L.Icmp.Ne
                   | _ -> raise_typerr "ARITHMETIC OP" "bool")
-              | _ => raise_typerr "BINOP" "non-int/float/bool"
+              | _ -> raise_typerr "BINOP" "non-int/float/bool"
           ) e1' e2' "tmp" builder
         | SUnop(op, e) -> 
             let (t, _) = e in
@@ -162,7 +164,7 @@ let translate (statements, functions) =
             let e1' = expr builder e1 in
             let e2' = expr builder e2 in
             L.build_select cond' e1' e2' "tmp" builder 
-        | SLambda -> 
+        | SLambda -> unimp
         | SApply (e, f, es) ->
             let (fdef, fdecl) = StringMap.find f function_decls in
             let args = e :: es in
@@ -188,24 +190,31 @@ let translate (statements, functions) =
          | None -> ignore (instr builder) )
       in
 
-      
-
       let rec stmt builder = function
-          SWhile -> 
-        | SIf -> 
+          SWhile -> unimp
+        | SIf -> unimp
         | SReturn e -> 
             let _ = 
               (match fdecl.styp with
                   A.Void -> L.build_ret_void builder 
                 | _ -> L.build_ret (expr builder e) builder)
             in builder
-        | SBreak ->
-        | SDeclare -> 
-        | SAssign (n, e) -> 
+        | SBreak -> unimp
+        | SDeclare -> unimp
+        | SAssign (n, e) ->
             let e' = expr builder e in
             let _ = L.build_store e' (lookup n) builder 
             in builder 
-        | SPrint -> (* TODO: Handle print as a call to a void function *)
+        | SPrint -> unimp (* TODO: Handle print as a call to a void function *)
         | SExpr e -> let _ = expr builder e in builder 
-
+      in
       
+      let builder = stmt builder fdecl.sbody in
+      add_terminal builder (match fdecl.styp with
+          A.Void -> L.build_ret_void
+        | A.Float -> L.build_ret (L.const_float float_t 0.0)
+        | t -> L.build_ret (L.const_int (ltype_of_typ t) 0))
+    in
+    (* List.iter build_function_body functions; *)
+    List.iter build_function_body { typ = A.NONE; fname = "main"; formals = []; body = statements };
+    the_module
