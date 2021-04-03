@@ -218,3 +218,4 @@ let translate (statements, functions) =
     (* List.iter build_function_body functions; *)
     List.iter build_function_body { typ = A.NONE; fname = "main"; formals = []; body = statements };
     the_module
+

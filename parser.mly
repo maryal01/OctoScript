@@ -105,9 +105,10 @@ array:
 statement:
     expr SEMI                                                                     { Expr $1                 }
   | RETURN expr_opt SEMI                                                          { Return $2               }
-  | IF LPAREN expr RPAREN LBRACE stmnt_list RBRACE %prec NOELSE                   { If($3, $6, [])          }
-  | IF LPAREN expr RPAREN LBRACE stmnt_list RBRACE ELSE LBRACE stmnt_list RBRACE  { If($3, $6, $10)         }
-  | WHILE LPAREN expr RPAREN LBRACE stmnt_list RBRACE                             { While($3, $6)           }
+  | LBRACE stmnt_list RBRACE                                                       { Block ( List.rev $2) } 
+  | IF LPAREN expr RPAREN LBRACE statement RBRACE %prec NOELSE                        { If($3, $6, Block([]))   }
+  | IF LPAREN expr RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE            { If($3, $6, $10)         }
+  | WHILE LPAREN expr RPAREN LBRACE statement RBRACE                                  { While($3, $6)           }
   | BREAK SEMI                                                                    { Break                   }
   | ID ASSIGN expr SEMI                                                           { Assign($1, $3)          }
   | typ ID ASSIGN expr SEMI                                                       { Declare($1, $2, $4)     }
