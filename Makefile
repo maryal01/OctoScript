@@ -1,4 +1,4 @@
-all : toplevel.native
+all : toplevel.native print.o
 
 clean: 
 	ocamlbuild -clean
@@ -6,4 +6,7 @@ clean:
 
 toplevel.native :
 	opam config exec -- \
-	ocamlbuild -use-ocamlfind toplevel.native
+	ocamlbuild -use-ocamlfind toplevel.native -package llvm
+
+print : print.c
+	cc -o print print.c

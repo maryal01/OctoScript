@@ -19,5 +19,14 @@ let () =
 
   let lexbuf = Lexing.from_channel !channel in
   let ast = Parser.program Scanner.token lexbuf in
-  let sast = Semant.check ast in
-  ()
+  match !action with
+      Ast -> raise (Failure "action not implemented")
+    | _   -> let sast = Semant.check ast in
+                match !action with
+                    Ast     -> ()
+                  | Sast    -> raise (Failure "action not implemented")
+                  | LLVM_IR -> raise (Failure "action not implemented")
+                  | Compile -> 
+                      let m = Codegen.translate sast in
+                        Llvm_analysis.assert_valid_module m;
+                        print_string (Llvm.string_of_llmodule m)

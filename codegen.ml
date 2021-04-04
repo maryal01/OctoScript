@@ -5,7 +5,7 @@ open Sast
 module StringMap = Map.Make(String)
 
 (* Change to MicroC, statement lists instead of globals *)
-let translate (statements, functions) = 
+let translate (functions, statements) = 
   let context    = L.global_context () in
   let i32_t      = L.i32_type    context
   and i8_t       = L.i8_type     context  (* char *)
@@ -33,6 +33,14 @@ let translate (statements, functions) =
   | A.LIST    -> unimp
 
   in
+
+  let ltype_from_prim prim = (match prim with
+      A.Int i -> i32_t
+    | A.String s -> L.array_type i8_t (String.length s)
+    | A.Float  f -> float_t
+    | A.Boolean  b -> i1_t)
+  in  
+
   (* skipping globals part because we support more than globals *)
 
   let print_t : L.lltype = 
@@ -86,21 +94,24 @@ let translate (statements, functions) =
 
       (* Return the value for a variable or formal argument. First check
         * locals, then globals *)
+
+
+      (* Original code: 
       let lookup n = try StringMap.find n local_vars
-                      with Not_found -> StringMap.find n global_vars
+                      with Not_found -> StringMap.find n global_vars *)
+      let lookup n = StringMap.find n local_vars
       in
 
       (* Construct code for an expression; return its value *)
       let rec expr builder ((_, e) : sexpr) = (match e with 
-        SPrimLit p ->  
-          (match p with 
-              Int i     -> L.const_int i32_t i
-            | String s  -> unimp (* get string length directly in ocaml type *)
-            | Float f   -> L.const_float_of_string float_t f
-            | Boolean b -> L.const_int i1_t (if b then 1 else 0))
+          SIntLit i -> L.const_int i32_t i
+        | SFloatLit f -> L.const_float float_t f
+        | SStringLit s -> L.const_stringz context s
+        | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
         | SListLit (t, ps) -> unimp
         | STupleLit (ts, ps) -> unimp
-        | SBinop (e1, bop, e2) -> 
+        | STableLit (ts, pss) -> unimp
+        | SBinop (e1, op, e2) -> 
             let (t, _) = e1
               and e1' = expr builder e1
               and e2' = expr builder e2
@@ -110,7 +121,7 @@ let translate (statements, functions) =
                 A.INT -> 
                   (match op with
                       A.AND -> raise_typerr "AND" "int"
-                    | A.OR ->  raisee_typerr "OR" "int"
+                    | A.OR ->  raise_typerr "OR" "int"
                     | A.Add -> L.build_add
                     | A.Sub -> L.build_sub
                     | A.Mul -> L.build_mul
@@ -127,19 +138,19 @@ let translate (statements, functions) =
               | A.FLOAT ->                  
                  (match op with
                     A.AND -> raise_typerr "AND" "float"
-                  | A.OR ->  raisee_typerr "OR" "float"
+                  | A.OR ->  raise_typerr "OR" "float"
                   | A.Add -> L.build_fadd
                   | A.Sub -> L.build_fsub
                   | A.Mul -> L.build_fmul
                   | A.Div -> L.build_fdiv
                   | A.Pow -> unimp
                   | A.Log -> unimp (* TODO: no operator in LLVM so maybe make this an actual function call? *)
-                  | A.GT -> L.build_fcmp L.Fcmp.Sgt
-                  | A.GTE -> L.build_fcmp L.Fcmp.Sge
-                  | A.LT -> L.build_fcmp L.Fcmp.Slt
-                  | A.LTE -> L.build_fcmp L.Fcmp.Sle
-                  | A.EQ -> L.build_fcmp L.Fcmp.Eq
-                  | A.NEQ -> L.build_fcmp L.Fcmp.Ne
+                  | A.GT -> L.build_fcmp L.Fcmp.Ogt
+                  | A.GTE -> L.build_fcmp L.Fcmp.Oge
+                  | A.LT -> L.build_fcmp L.Fcmp.Olt
+                  | A.LTE -> L.build_fcmp L.Fcmp.Ole
+                  | A.EQ -> L.build_fcmp L.Fcmp.Oeq
+                  | A.NEQ -> L.build_fcmp L.Fcmp.One
                   | A.Mod -> L.build_frem)
               | A.BOOLEAN -> 
                 (match op with
@@ -154,34 +165,35 @@ let translate (statements, functions) =
             let (t, _) = e in
             let e' = expr builder e in
             (match op with 
-                A.NOT when t = A.Bool -> L.build_not
-              | A.NEG when t = A.Float -> L.build_fneg
-              | A.NEG when t = A.Int -> L.build_neg
+                A.NOT when t = A.BOOLEAN -> L.build_not
+              | A.NEG when t = A.FLOAT -> L.build_fneg
+              | A.NEG when t = A.INT -> L.build_neg
+              | _ -> raise (Failure "Internal Error: Not a unary operator")
             ) e' "tmp" builder
-        | SVar -> L.build_load (lookup s) s builder
+        | SVar s -> L.build_load (lookup s) s builder
         | SIfExpr (cond, e1, e2) -> 
             let cond' = expr builder cond in
             let e1' = expr builder e1 in
             let e2' = expr builder e2 in
             L.build_select cond' e1' e2' "tmp" builder 
-        | SLambda -> unimp
+        | SLambda (bs, e) -> unimp
         | SApply (e, f, es) ->
             let (fdef, fdecl) = StringMap.find f function_decls in
             let args = e :: es in
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = (match fdecl.styp with
-                            A.Void -> ""
+                            A.NONE -> ""
                           | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-        | SCall ("Print", [e]) -> L.build_call print_func [| e |] "Print" builder
+        | SCall ("Print", [e]) -> L.build_call print_func [| (expr builder e) |] "Print" builder
         | SCall (f, args) -> 
             let (fdef, fdecl) = StringMap.find f function_decls in
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = (match fdecl.styp with
-                            A.Void -> ""
+                            A.NONE -> ""
                           | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-        | SNoExp -> ignore (instr builder))   (* Actually not quite sure? *)
+        | SNoExp -> L.const_null void_t)   (* Actually not quite sure? *)
       in
       
       let add_terminal builder instr = 
@@ -191,31 +203,32 @@ let translate (statements, functions) =
       in
 
       let rec stmt builder = function
-          SWhile -> unimp
-        | SIf -> unimp
+          SBlock sl -> List.fold_left stmt builder sl
+        | SWhile (cond, s) -> unimp
+        | SIf (cond, s1, s2) -> unimp
         | SReturn e -> 
             let _ = 
               (match fdecl.styp with
-                  A.Void -> L.build_ret_void builder 
+                  A.NONE -> L.build_ret_void builder 
                 | _ -> L.build_ret (expr builder e) builder)
             in builder
         | SBreak -> unimp
-        | SDeclare -> unimp
+        | SDeclare (t, n, e) -> unimp
         | SAssign (n, e) ->
             let e' = expr builder e in
             let _ = L.build_store e' (lookup n) builder 
             in builder 
-        | SPrint -> unimp (* TODO: Handle print as a call to a void function *)
+        | SPrint e -> unimp (* TODO: Handle print as a call to a void function *)
         | SExpr e -> let _ = expr builder e in builder 
       in
       
-      let builder = stmt builder fdecl.sbody in
+      let builder = stmt builder (SBlock fdecl.sbody) in
       add_terminal builder (match fdecl.styp with
-          A.Void -> L.build_ret_void
-        | A.Float -> L.build_ret (L.const_float float_t 0.0)
+          A.NONE -> L.build_ret_void
+        | A.FLOAT -> L.build_ret (L.const_float float_t 0.0)
         | t -> L.build_ret (L.const_int (ltype_of_typ t) 0))
     in
     (* List.iter build_function_body functions; *)
-    List.iter build_function_body { typ = A.NONE; fname = "main"; formals = []; body = statements };
+    List.iter build_function_body ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: []);
     the_module
 
