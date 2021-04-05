@@ -144,7 +144,19 @@ let check (functions, statements) =
         (TUPLE, STupleLit (typ_list, elements))
     | TableLit elements_list -> (TUPLE, STupleLit ([], []))
     | Apply (e, name, expr_list) -> (TUPLE, STupleLit ([], [])) (* TODO: *)
-    | Call (fname, args) as call -> (TUPLE, STupleLit ([], [])) (* TODO: *)
+    | Call (fname, args) as call ->
+      let fdecl = find_func fname in
+      let param_length = List.length fd.formals in
+          if List.length args != param_length then
+            raise (Failure ("expecting " ^ string_of_int param_length ^ 
+                            " arguments in " ^ string_of_expr call))
+          else let check_call (ft, _) e = 
+            let (et, e') = expr e
+            in (check_assign ft et, e')
+          in 
+          let args' = List.map2 check_call fd.formals args
+          in (fd.typ, SCall(fname, args'))
+    
     | IfExpr (e1, e2, e3) as e -> (
         let t1, e1' = check_expr e1 scope
         and t2, e2' = check_expr e2 scope
