@@ -239,4 +239,4 @@ let check (functions, statements) =
         | _ -> raise (Failure "Internal Error: Block did not become block"));
     }
   in
-  5
+  ( (List.map check_function functions), (List.map (fun st -> check_stmt st id_table) statements))
