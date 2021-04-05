@@ -225,10 +225,10 @@ let check (functions, statements) =
     let formals' = check_binds func.formals in
     let formals'' =
       List.fold_left
-        (fun l (typ, name) -> StringMap.add name typ)
+        (fun scope (typ, name) -> StringMap.add name typ scope)
         StringMap.empty formals'
     in
-    let func_scope = { identifiers = formals'; parent = Some id_table } in
+    let func_scope = { identifiers = formals''; parent = Some id_table } in
     {
       styp = func.typ;
       sfname = func.fname;
@@ -239,22 +239,4 @@ let check (functions, statements) =
         | _ -> raise (Failure "Internal Error: Block did not become block"));
     }
   in
-  (List.map check_function functions, List.map check_stmt id_table statements)
-(*
-Plaaces to check for identifier's scope
-1. function calls
-2. blocks
-3. declare
-4. assign
-
-5. add_identifier
-6. find_identifier
-------------
-Return
-Call
-Apply
-Declare
-
-TODO: do we check for the return statement in a function declaration
-
-*)
+  5

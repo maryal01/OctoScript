@@ -208,22 +208,22 @@ let translate (functions, statements) =
             let pred_bb = L.append_block context "while_cond" the_function in
               let _ = L.build_br pred_bb builder in
             let body_bb = L.append_block context "while_body" the_function in
-              let while_builder = stmt (L.builder_at_end context body_bb) body in
+              let while_builder = stmt (L.builder_at_end context body_bb) s in
               let () = add_terminal while_builder (L.build_br pred_bb) in
             let pred_builder = L.builder_at_end context pred_bb in
-	          let bool_val = expr pred_builder predicate in
+	          let bool_val = expr pred_builder cond in
             let merge_bb = L.append_block context "merge" the_function in
 	          let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
 	          L.builder_at_end context merge_bb
         | SIf (cond, s1, s2) ->
-            let bool_val = expr builder predicate in
+            let bool_val = expr builder cond in
             let merge_bb = L.append_block context "merge" the_function in
               let branch_instr = L.build_br merge_bb in
             let then_bb = L.append_block context "then" the_function in
-              let then_builder = stmt (L.builder_at_end context then_bb) then_stmt in
+              let then_builder = stmt (L.builder_at_end context then_bb) s1 in
               let () = add_terminal then_builder branch_instr in
             let else_bb = L.append_block context "else" the_function in
-              let else_builder = stmt (L.builder_at_end context else_bb) else_stmt in
+              let else_builder = stmt (L.builder_at_end context else_bb) s2 in
               let () = add_terminal else_builder branch_instr in
             let _ = L.build_cond_br bool_val then_bb else_bb builder in
             L.builder_at_end context merge_bb
