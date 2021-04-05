@@ -2,7 +2,7 @@ all : toplevel.native print.o
 
 clean: 
 	ocamlbuild -clean
-	rm -rf parser.mli parser.output parser.ml ocamlllvm *.diff
+	rm -rf parser.mli parser.output parser.ml ocamlllvm *.diff *.o
 
 toplevel.native :
 	opam config exec -- \

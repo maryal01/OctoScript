@@ -15,8 +15,6 @@ let translate (functions, statements) =
 
   and the_module = L.create_module context "OctoScript" in
 
-  let unimp = raise (Failure ("Not implemented")) in
-
   (* COMPLEX TYPES HMMMMMMMMM? *)
   (* IDEAS: seperate type representation in sast with prim vs complex, for easier
             pattern matching (also metadata like how long is string) *)
@@ -27,10 +25,10 @@ let translate (functions, statements) =
   | A.FLOAT   -> float_t
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t (* would this work?? for all? how about arrays? *)
-  | A.LAMBDA  -> unimp
-  | A.TABLE   -> unimp
-  | A.TUPLE   -> unimp
-  | A.LIST    -> unimp
+  | A.LAMBDA  -> raise(Failure("lambda lit type is not impleemented"))
+  | A.TABLE   -> raise(Failure("table lit type is not impleemented"))
+  | A.TUPLE   -> raise(Failure("tuple lit type is not impleemented"))
+  | A.LIST    -> raise(Failure("list lit type is not impleemented"))
 
   in
 
@@ -108,9 +106,9 @@ let translate (functions, statements) =
         | SFloatLit f -> L.const_float float_t f
         | SStringLit s -> L.const_stringz context s
         | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
-        | SListLit (t, ps) -> unimp
-        | STupleLit (ts, ps) -> unimp
-        | STableLit (ts, pss) -> unimp
+        | SListLit (t, ps) -> raise(Failure("list lit is not impleemented"))
+        | STupleLit (ts, ps) -> raise(Failure("tuple lit is not impleemented"))
+        | STableLit (ts, pss) -> raise(Failure("table lit is not impleemented"))
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
               and e1' = expr builder e1
@@ -126,8 +124,8 @@ let translate (functions, statements) =
                     | A.Sub -> L.build_sub
                     | A.Mul -> L.build_mul
                     | A.Div -> L.build_sdiv
-                    | A.Pow -> unimp
-                    | A.Log -> unimp (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                    | A.Pow -> raise(Failure("pow for int is not impleemented"))
+                    | A.Log -> raise(Failure("log for int is not impleemented")) (* TODO: no operator in LLVM so maybe make this an actual function call? *)
                     | A.GT -> L.build_icmp L.Icmp.Sgt
                     | A.GTE -> L.build_icmp L.Icmp.Sge
                     | A.LT -> L.build_icmp L.Icmp.Slt
@@ -143,8 +141,8 @@ let translate (functions, statements) =
                   | A.Sub -> L.build_fsub
                   | A.Mul -> L.build_fmul
                   | A.Div -> L.build_fdiv
-                  | A.Pow -> unimp
-                  | A.Log -> unimp (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                  | A.Pow -> raise(Failure("pow for float is not impleemented"))
+                  | A.Log -> raise(Failure("log for float is not impleemented")) (* TODO: no operator in LLVM so maybe make this an actual function call? *)
                   | A.GT -> L.build_fcmp L.Fcmp.Ogt
                   | A.GTE -> L.build_fcmp L.Fcmp.Oge
                   | A.LT -> L.build_fcmp L.Fcmp.Olt
@@ -176,7 +174,7 @@ let translate (functions, statements) =
             let e1' = expr builder e1 in
             let e2' = expr builder e2 in
             L.build_select cond' e1' e2' "tmp" builder 
-        | SLambda (bs, e) -> unimp
+        | SLambda (bs, e) -> raise(Failure("Lambda has not been implemented"))
         | SApply (e, f, es) ->
             let (fdef, fdecl) = StringMap.find f function_decls in
             let args = e :: es in
@@ -185,7 +183,7 @@ let translate (functions, statements) =
                             A.NONE -> ""
                           | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-        | SCall ("Print", [e]) -> L.build_call print_func [| (expr builder e) |] "Print" builder
+        | SCall ("print", [e]) -> L.build_call print_func [| (expr builder e) |] "print" builder
         | SCall (f, args) -> 
             let (fdef, fdecl) = StringMap.find f function_decls in
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
@@ -233,13 +231,13 @@ let translate (functions, statements) =
                   A.NONE -> L.build_ret_void builder 
                 | _ -> L.build_ret (expr builder e) builder)
             in builder
-        | SBreak -> unimp
-        | SDeclare (t, n, e) -> unimp
+        | SBreak -> raise(Failure("break is not impleemented"))
+        | SDeclare (t, n, e) -> raise(Failure("declare is not impleemented"))
         | SAssign (n, e) ->
             let e' = expr builder e in
             let _ = L.build_store e' (lookup n) builder 
             in builder 
-        | SPrint e -> unimp (* TODO: Handle print as a call to a void function *)
+        | SPrint e -> raise(Failure("Use call function instead of print")) (* TODO: Handle print as a call to a void function *)
         | SExpr e -> let _ = expr builder e in builder 
       in
       

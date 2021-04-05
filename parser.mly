@@ -113,7 +113,6 @@ statement:
   | ID ASSIGN expr SEMI                                                           { Assign($1, $3)          }
   | typ ID ASSIGN expr SEMI                                                       { Declare($1, $2, $4)     }
   | typ ID SEMI                                                                   { Declare($1, $2, Noexpr) }
-  | PRINT expr SEMI                                                               { Print($2)               }
 
 expr:
     ILIT                                { PrimLit(Int($1))          }

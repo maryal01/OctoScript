@@ -30,7 +30,7 @@ let check (functions, statements) =
     in
     List.fold_left add_bind StringMap.empty
       [
-        ("print", INT); ("printb", BOOLEAN); ("printf", FLOAT); ("printbig", INT);
+        ("print", STRING); ("printb", BOOLEAN); ("printf", FLOAT); ("printbig", INT);
       ]
   in
   let add_func map fd =
@@ -52,7 +52,7 @@ let check (functions, statements) =
     with Not_found -> (
       match scope.parent with
       | Some parent -> find_identifier name parent
-      | None -> raise (Failure " The identifier is not already defined. "))
+      | None -> raise (Failure "The identifier is not already defined. "))
   in
   let add_identifier name typ scope =
     try
@@ -144,19 +144,17 @@ let check (functions, statements) =
         (TUPLE, STupleLit (typ_list, elements))
     | TableLit elements_list -> (TUPLE, STupleLit ([], []))
     | Apply (e, name, expr_list) -> (TUPLE, STupleLit ([], [])) (* TODO: *)
-    | Call (fname, args) as call ->
+    | Call (fname, args) ->
       let fdecl = find_func fname in
-      let param_length = List.length fd.formals in
+      let param_length = List.length fdecl.formals in
           if List.length args != param_length then
-            raise (Failure ("expecting " ^ string_of_int param_length ^ 
-                            " arguments in " ^ string_of_expr call))
+            raise (Failure ("Arguments-Parameters MisMatch"))
           else let check_call (ft, _) e = 
-            let (et, e') = expr e
+            let (et, e') = check_expr e scope
             in (check_assign ft et, e')
           in 
-          let args' = List.map2 check_call fd.formals args
-          in (fd.typ, SCall(fname, args'))
-    
+          let args' = List.map2 check_call fdecl.formals args
+          in (fdecl.typ, SCall(fname, args'))
     | IfExpr (e1, e2, e3) as e -> (
         let t1, e1' = check_expr e1 scope
         and t2, e2' = check_expr e2 scope
@@ -219,19 +217,6 @@ let check (functions, statements) =
             (Failure
                ("Illegal assignment of " ^ typ_to_string lt ^ " and "
               ^ typ_to_string rt))
-    | Print e -> (
-        let sx' = check_expr e scope in
-        match sx' with
-        | _, SIntLit a -> SPrint sx'
-        | _, SFloatLit a -> SPrint sx'
-        | _, SStringLit a -> SPrint sx'
-        | _, SBoolLit a -> SPrint sx'
-        | _ ->
-            raise
-              (Failure
-                 ("Can only print StringLiterals ." ^ " Problem in"
-                ^ expr_to_string e)))
-    | Break -> SBreak
   in
   let check_function func =
     let formals' = check_binds func.formals in

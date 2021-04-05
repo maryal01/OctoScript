@@ -47,7 +47,6 @@ rule token = parse
 | "while"  { WHILE }
 | "return" { RETURN }
 | "break"  { BREAK }
-| "print"  { PRINT }
 
 | "int"    { INT }
 | "bool"   { BOOL }
