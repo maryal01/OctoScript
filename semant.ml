@@ -115,7 +115,7 @@ let check (functions, statements) =
                   ^ expr_to_string e))
         in
         (ty, SBinop ((t1, e1'), op, (t2, e2')))
-    | Lambda (args, e) as lambda ->
+    | Lambda (args, e) ->
         let t1, e1 = check_expr e scope in
         (t1, SLambda (args, (t1, e1)))
     | ListLit elements as list -> (
@@ -123,9 +123,9 @@ let check (functions, statements) =
         | [] -> (NONE, SListLit (NONE, elements))
         | elem :: elems -> (
             let ex = PrimLit elem in
-            let t1, e1 = check_expr ex scope in
+            let t1, _ = check_expr ex scope in (* check why e' not needed?*)
             let all_func elem' =
-              let t', e' = check_expr (PrimLit elem') scope in
+              let t', _ = check_expr (PrimLit elem') scope in (* check why e' not needed?*)
               t1 = t'
             in
             match List.for_all all_func elems with
@@ -135,15 +135,15 @@ let check (functions, statements) =
                   (Failure
                      ("illegal List literal " ^ typ_to_string t1 ^ " expected "
                     ^ " in " ^ expr_to_string list))))
-    | TupleLit elements as tuple ->
+    | TupleLit elements ->
         let fold_func elem =
-          let t1, e1 = check_expr (PrimLit elem) scope in
+          let t1, _ = check_expr (PrimLit elem) scope in (* check why e' not needed?*)
           t1
         in
         let typ_list = List.map fold_func elements in
         (TUPLE, STupleLit (typ_list, elements))
-    | TableLit elements_list -> (TUPLE, STupleLit ([], []))
-    | Apply (e, name, expr_list) -> (TUPLE, STupleLit ([], [])) (* TODO: *)
+    | TableLit _ -> (TUPLE, STupleLit ([], []))
+    | Apply (_, _, _) -> (TUPLE, STupleLit ([], [])) (* TODO: *)
     | Call (fname, args) ->
       let fdecl = find_func fname in
       let param_length = List.length fdecl.formals in
@@ -175,13 +175,13 @@ let check (functions, statements) =
   in
   let rec check_stmt statement scope =
     match statement with
-    | Block sl -> SBlock []
+    | Block [] -> SBlock []
     | Block sl ->
         let rec check_stmt_list statement_list block_scope =
           match statement_list with
           | [ (Return _ as s) ] -> [ check_stmt s block_scope ]
           | Return _ :: _ -> raise (Failure "Nothing may follow a return")
-          | Block sl :: ss -> check_stmt_list (sl @ ss) block_scope
+          | Block s :: ss -> check_stmt_list (s @ ss) block_scope
           | s :: ss ->
               check_stmt s block_scope :: check_stmt_list ss block_scope
           | [] -> []
@@ -217,6 +217,7 @@ let check (functions, statements) =
             (Failure
                ("Illegal assignment of " ^ typ_to_string lt ^ " and "
               ^ typ_to_string rt))
+    | Break -> SBreak
   in
   let check_function func =
     let formals' = check_binds func.formals in

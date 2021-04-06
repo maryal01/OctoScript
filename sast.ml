@@ -27,7 +27,6 @@ type sstmt =
   | SBreak
   | SDeclare of typ * string * sexpr
   | SAssign of string * sexpr
-  | SPrint of sexpr
   | SExpr of sexpr
 
 type sfunc_decl = {
@@ -60,12 +59,12 @@ let rec sexpr_to_string (ty, sx) =
     | [ first ] -> sexpr_to_string first
     | first :: rem -> sexpr_to_string first ^ ", " ^ sexprlist_to_string rem
   in
-  let rec sx_to_string sx =
-    let rec sxlist_to_string = function
+  let sx_to_string sx =
+    (* let rec sxlist_to_string = function
       | [] -> ""
       | [ first ] -> sx_to_string first
       | first :: rem -> sx_to_string first ^ ", " ^ sxlist_to_string rem
-    in
+    in *)
     match sx with
     | SIntLit i -> string_of_int i
     | SFloatLit f -> string_of_float f
@@ -114,21 +113,20 @@ let rec sslist_to_string sl =
     | SDeclare (ty, str, sx) ->
         "Sdeclare: " ^ typ_to_string ty ^ " " ^ str ^ " = " ^ sexpr_to_string sx
     | SAssign (str, sx) -> "SAssign: " ^ str ^ " = " ^ sexpr_to_string sx
-    | SPrint sx -> "SPrint " ^ sexpr_to_string sx
     | SExpr sx -> "SExpr " ^ sexpr_to_string sx
   in
   match sl with
   | [] -> ""
   | first :: rem -> sstmt_to_string first ^ "\n" ^ sslist_to_string rem
 
-let rec sfdecl_to_string func =
+let sfdecl_to_string func =
   typ_to_string func.styp ^ " " ^ func.sfname ^ "("
   ^ blist_to_string func.sformals
   ^ ")\n{"
   ^ sslist_to_string func.sbody
   ^ " }"
 
-let rec sprog_to_string (sfl, ssl) =
+let  sprog_to_string (sfl, ssl) =
   let rec sfdecllist_to_string = function
     | [] -> ""
     | first :: rem -> sfdecl_to_string first ^ "\n" ^ sfdecllist_to_string rem

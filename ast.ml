@@ -52,7 +52,6 @@ type stmnt =
   | Break
   | Declare of typ * string * expr
   | Assign of string * expr
-  | Print of expr
   | Expr of expr
 
 type func_decl = {
@@ -162,15 +161,14 @@ let rec stmt_to_string s =
   in
   match s with
   | Block sl -> "Block { " ^  slist_to_string sl ^" }"
-  | While (e, sl) ->
+  | While (e, s) ->
       "while(" ^ expr_to_string e ^ "){\n" ^ stmt_to_string s ^ "\n}"
   | If (e, s1, s2) ->
       "if(" ^ expr_to_string e ^ "){\n" ^ stmt_to_string s1 ^ "\n}else{\n"
       ^ stmt_to_string s2 ^ "\n}"
-  | Return e -> "return"
+  | Return e -> "return " ^ expr_to_string e 
   | Break -> "break"
   | Assign (s, e) -> s ^ " = " ^ expr_to_string e
-  | Print e -> "print(" ^ expr_to_string e ^ ")"
   | Declare (t, s, e) -> typ_to_string t ^ " " ^ s ^ " = " ^ expr_to_string e
   | Expr e -> expr_to_string e
 

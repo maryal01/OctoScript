@@ -1,17 +1,14 @@
 /* Ocamlyacc parser for OctoScript */
-
 %{ open Ast %}
 
 %token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK 
 %token COMMA SEMI DOT COLON
 %token PLUS MINUS TIMES DIVIDE POW LOG MOD ASSIGN 
-%token NOT EQ NEQ LT LEQ GT GEQ AND OR
+%token OP_NOT OP_EQ OP_NEQ OP_LT OP_LEQ OP_GT OP_GEQ OP_AND OP_OR
 %token FARROW LARROW FUNC
-%token RETURN IF ELSE WHILE PRINT BREAK
-%token INT BOOL FLOAT NONE STRING LAMBDA 
-%token TABLE LIST TUPLE
-
-%token INPUT OUTPUT ACCESS APPEND LENGTH
+%token RETURN IF ELSE WHILE BREAK
+%token TYP_INT TYP_BOOL TYP_FLOAT TYP_NONE TYP_STRING TYP_LAMBDA 
+%token TYP_TABLE TYP_LIST TYP_TUPLE
 
 %token <int> ILIT
 %token <bool> BLIT
@@ -25,17 +22,16 @@
 
 %nonassoc NOELSE
 %nonassoc ELSE
-%nonassoc PRINT
-%nonassoc TUPLE
+%nonassoc TYP_TUPLE
 %nonassoc ARGS
 
 %right ASSIGN
-%left OR AND 
-%left EQ NEQ LT GT LEQ GEQ
+%left OP_OR OP_AND 
+%left OP_EQ OP_NEQ OP_LT OP_GT OP_LEQ OP_GEQ
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
 %right POW LOG
-%right NOT
+%right OP_NOT
 %left DOT
 
 %%
@@ -80,19 +76,19 @@ stmnt_list:
 
 
 typ:
-    INT    { INT     }
-  | BOOL   { BOOLEAN }
-  | FLOAT  { FLOAT   }
-  | STRING { STRING  }
-  | LAMBDA { LAMBDA  }
-  | NONE   { NONE    }
-  | TABLE  { TABLE   }
-  | TUPLE  { TUPLE   }
-  | LIST   { LIST    }
+    TYP_INT    { INT     }
+  | TYP_BOOL   { BOOLEAN }
+  | TYP_FLOAT  { FLOAT   }
+  | TYP_STRING { STRING  }
+  | TYP_LAMBDA { LAMBDA  }
+  | TYP_NONE   { NONE    }
+  | TYP_TABLE  { TABLE   }
+  | TYP_TUPLE  { TUPLE   }
+  | TYP_LIST   { LIST    }
 
 primitives:
     ILIT                    { Int($1)      }
-  | FLIT	                  { Float($1)    }
+  | FLIT	                { Float($1)    }
   | BLIT                    { Boolean($1)  }
   | SLIT                    { String($1)   }
 
@@ -127,16 +123,16 @@ expr:
   | expr POW    expr                    { Binop($1, Pow,   $3)      }
   | expr MOD    expr                    { Binop($1, Mod,   $3)      }
   | expr LOG    expr                    { Binop($1, Log,   $3)      }
-  | expr EQ     expr                    { Binop($1, EQ,    $3)      }
-  | expr NEQ    expr                    { Binop($1, NEQ,   $3)      }
-  | expr LT     expr                    { Binop($1, LT,    $3)      }
-  | expr LEQ    expr                    { Binop($1, LTE,   $3)      }
-  | expr GT     expr                    { Binop($1, GT,    $3)      }
-  | expr GEQ    expr                    { Binop($1, GTE,   $3)      }
-  | expr AND    expr                    {  Binop($1, AND,   $3)     }
-  | expr OR     expr                    { Binop($1, OR,    $3)      }
-  | MINUS expr %prec NOT                { Unop(NEG, $2)             }
-  | NOT expr                            { Unop(NOT, $2)             }
+  | expr OP_EQ     expr                    { Binop($1, EQ,    $3)      }
+  | expr OP_NEQ    expr                    { Binop($1, NEQ,   $3)      }
+  | expr OP_LT     expr                    { Binop($1, LT,    $3)      }
+  | expr OP_LEQ    expr                    { Binop($1, LTE,   $3)      }
+  | expr OP_GT     expr                    { Binop($1, GT,    $3)      }
+  | expr OP_GEQ    expr                    { Binop($1, GTE,   $3)      }
+  | expr OP_AND    expr                    {  Binop($1, AND,   $3)     }
+  | expr OP_OR     expr                    { Binop($1, OR,    $3)      }
+  | MINUS expr %prec OP_NOT                { Unop(NEG, $2)             }
+  | OP_NOT expr                            { Unop(NOT, $2)             }
   | ID LPAREN  args_opt RPAREN           { Call($1, $3)              }
   | IF LPAREN expr RPAREN  expr %prec NOELSE  { IfExpr($3, $5, Noexpr)  }
   | IF LPAREN expr RPAREN  expr  ELSE  expr   { IfExpr($3, $5, $7)    }

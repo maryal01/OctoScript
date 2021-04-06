@@ -20,4 +20,4 @@ Members:
 Compiling:
 ./toplevel.native xyz.oc
 lcc xyz.ll
-gcc -o a.out test_without.s printbig.o
+gcc -o a.out newfile.llc.s printbig.o

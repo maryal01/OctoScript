@@ -28,16 +28,15 @@ rule token = parse
 | "log"    { LOG   }
 | '='      { ASSIGN }
 
-| "=="     { EQ }
-| "!="     { NEQ }
-| '<'      { LT }
-| "<="     { LEQ }
-| ">"      { GT }
-| ">="     { GEQ }
-
-| "&"      { AND }
-| "|"      { OR }
-| "!"      { NOT }
+| "=="     { OP_EQ }
+| "!="     { OP_NEQ }
+| '<'      { OP_LT }
+| "<="     { OP_LEQ }
+| ">"      { OP_GT }
+| ">="     { OP_GEQ }
+| "&"      { OP_AND }
+| "|"      { OP_OR }
+| "!"      { OP_NOT }
 
 | "->"     { FARROW }
 | "=>"     { LARROW }
@@ -48,20 +47,14 @@ rule token = parse
 | "return" { RETURN }
 | "break"  { BREAK }
 
-| "int"    { INT }
-| "bool"   { BOOL }
-| "float"  { FLOAT }
-| "string" { STRING }
-| "none"   { NONE }
-| "table"  { TABLE }
-| "list"   { LIST }
-| "tuple"  { TUPLE }
-
-| "read"  { INPUT  }
-| "write" { OUTPUT }
-| "get"   { ACCESS }
-| "append" { APPEND }
-| "length" { LENGTH }
+| "int"    { TYP_INT }
+| "bool"   { TYP_BOOL }
+| "float"  { TYP_FLOAT }
+| "string" { TYP_STRING }
+| "none"   { TYP_NONE }
+| "table"  { TYP_TABLE }
+| "list"   { TYP_LIST }
+| "tuple"  { TYP_TUPLE }
 | "fn"     { FUNC }
 
 | "true"   { BLIT(true)  }

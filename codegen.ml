@@ -33,10 +33,10 @@ let translate (functions, statements) =
   in
 
   let ltype_from_prim prim = (match prim with
-      A.Int i -> i32_t
+      A.Int _ -> i32_t
     | A.String s -> L.array_type i8_t (String.length s)
-    | A.Float  f -> float_t
-    | A.Boolean  b -> i1_t)
+    | A.Float  _ -> float_t
+    | A.Boolean  _ -> i1_t)
   in  
 
   (* skipping globals part because we support more than globals *)
@@ -68,7 +68,7 @@ let translate (functions, statements) =
     (* TODO: not sure why we need these things
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and float_format_str = L.build_global_stringptr "%g\n" "fmt" builder in *)
-    let string_format_str = L.build_global_stringptr "%.s\n" "fmt" builder in
+    let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
     let hello_world_str = L.build_global_stringptr "hello world\n" "fmt" builder in
 
     (* Construct the function's "locals": formal arguments and locally
@@ -111,9 +111,9 @@ let translate (functions, statements) =
         | SFloatLit f -> L.const_float float_t f
         | SStringLit s -> L.const_stringz context s
         | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
-        | SListLit (t, ps) -> raise(Failure("list lit is not impleemented"))
-        | STupleLit (ts, ps) -> raise(Failure("tuple lit is not impleemented"))
-        | STableLit (ts, pss) -> raise(Failure("table lit is not impleemented"))
+        | SListLit (_, _) -> raise(Failure("list lit is not impleemented"))
+        | STupleLit (_, _) -> raise(Failure("tuple lit is not impleemented"))
+        | STableLit (_, _) -> raise(Failure("table lit is not impleemented"))
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
               and e1' = expr builder e1
@@ -179,7 +179,7 @@ let translate (functions, statements) =
             let e1' = expr builder e1 in
             let e2' = expr builder e2 in
             L.build_select cond' e1' e2' "tmp" builder 
-        | SLambda (bs, e) -> raise(Failure("Lambda has not been implemented"))
+        | SLambda (_, _) -> raise(Failure("Lambda has not been implemented"))
         | SApply (e, f, es) ->
             let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure "not found in SApply")) in
             let args = e :: es in
@@ -188,10 +188,7 @@ let translate (functions, statements) =
                             A.NONE -> ""
                           | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-        | SCall ("print", [e]) -> 
-            let s = (expr builder e)
-            in 
-              L.build_call printf_func [| hello_world_str  |] "print" builder
+        | SCall ("print", [e]) -> L.build_call printf_func [| string_format_str ; expr builder e |] "print" builder
         | SCall ("debug", []) -> L.build_call debug_func [||] "debug" builder
         | SCall (f, args) -> 
             let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure "not found in SCall"))  in
@@ -241,12 +238,11 @@ let translate (functions, statements) =
                 | _ -> L.build_ret (expr builder e) builder)
             in builder
         | SBreak -> raise(Failure("break is not impleemented"))
-        | SDeclare (t, n, e) -> raise(Failure("declare is not impleemented"))
+        | SDeclare (_, _, _) -> raise(Failure("declare is not impleemented"))
         | SAssign (n, e) ->
             let e' = expr builder e in
             let _ = L.build_store e' (lookup n) builder 
             in builder 
-        | SPrint e -> raise(Failure("Use call function instead of print")) (* TODO: Handle print as a call to a void function *)
         | SExpr e -> let _ = expr builder e in builder 
       in
       
