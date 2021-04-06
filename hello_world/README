@@ -1,0 +1,22 @@
+# OctoScript
+Compiling:
+    `make all`
+
+Executing:
+    `./toplevel.native`
+
+Cleaning:
+    `make clean`
+
+Running Test Script:
+    `python3 hellotest.py`
+    
+Validation of the Test :
+   The program compiles and runs appropriately if "hello world" is printed. The hellotest.py test scripts compiles and runs helloworld.oc file and validates it's output comparing against the goldstandard mentioned in helloworld.goldstd
+    
+
+Members:
+* Manish Aryal, manish.aryal@tufts.edu
+* Conor Gourley, conor.gourley@tufts.edu
+* Danielle Lan, hao-wei.lan@tufts.edu
+* Sinan Unan, sinan.unan@tufts.edu
