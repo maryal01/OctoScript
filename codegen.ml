@@ -41,10 +41,13 @@ let translate (functions, statements) =
 
   (* skipping globals part because we support more than globals *)
 
-  let print_t : L.lltype = 
+  let printf_t : L.lltype = 
     L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
-  let print_func : L.llvalue = 
-    L.declare_function "print" print_t the_module in
+  let printf_func : L.llvalue = 
+    L.declare_function "printf" printf_t the_module in
+
+  let debug_func : L.llvalue = 
+    L.declare_function "debug" (L.function_type i32_t [| |]) the_module in
 
   let function_decls : (L.llvalue * sfunc_decl) StringMap.t =
     let function_decl m fdecl =
@@ -53,18 +56,20 @@ let translate (functions, statements) =
         Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals)
       in let ftype = L.function_type (ltype_of_typ fdecl.styp) formal_types in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m in
-    List.fold_left function_decl StringMap.empty functions in
+    List.fold_left function_decl StringMap.empty ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions) in
     (* TODO: code to gather the statement list into a "main" function *)
     (* maybe we still need globals????? think about scoping when done like this *)
   
   (* Fill in the body of the given function *)
   let build_function_body fdecl =
-    let (the_function, _) = StringMap.find fdecl.sfname function_decls in
+    let (the_function, _) = (try StringMap.find fdecl.sfname function_decls with Not_found -> raise (Failure "build body func")) in
     let builder = L.builder_at_end context (L.entry_block the_function) in
 
-    (* TODO: not sure why we need these things *)
+    (* TODO: not sure why we need these things
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
-    and float_format_str = L.build_global_stringptr "%g\n" "fmt" builder in
+    and float_format_str = L.build_global_stringptr "%g\n" "fmt" builder in *)
+    let string_format_str = L.build_global_stringptr "%.s\n" "fmt" builder in
+    let hello_world_str = L.build_global_stringptr "hello world\n" "fmt" builder in
 
     (* Construct the function's "locals": formal arguments and locally
     declared variables.  Allocate each on the stack, initialize their
@@ -97,7 +102,7 @@ let translate (functions, statements) =
       (* Original code: 
       let lookup n = try StringMap.find n local_vars
                       with Not_found -> StringMap.find n global_vars *)
-      let lookup n = StringMap.find n local_vars
+      let lookup n = try StringMap.find n local_vars with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
       in
 
       (* Construct code for an expression; return its value *)
@@ -176,16 +181,20 @@ let translate (functions, statements) =
             L.build_select cond' e1' e2' "tmp" builder 
         | SLambda (bs, e) -> raise(Failure("Lambda has not been implemented"))
         | SApply (e, f, es) ->
-            let (fdef, fdecl) = StringMap.find f function_decls in
+            let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure "not found in SApply")) in
             let args = e :: es in
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = (match fdecl.styp with
                             A.NONE -> ""
                           | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-        | SCall ("print", [e]) -> L.build_call print_func [| (expr builder e) |] "print" builder
+        | SCall ("print", [e]) -> 
+            let s = (expr builder e)
+            in 
+              L.build_call printf_func [| hello_world_str  |] "print" builder
+        | SCall ("debug", []) -> L.build_call debug_func [||] "debug" builder
         | SCall (f, args) -> 
-            let (fdef, fdecl) = StringMap.find f function_decls in
+            let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure "not found in SCall"))  in
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let result = (match fdecl.styp with
                             A.NONE -> ""
