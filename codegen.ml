@@ -31,16 +31,7 @@ let translate (functions, statements) =
   | A.LIST    -> raise(Failure("list lit type is not impleemented"))
 
   in
-
-  let ltype_from_prim prim = (match prim with
-      A.Int _ -> i32_t
-    | A.String s -> L.array_type i8_t (String.length s)
-    | A.Float  _ -> float_t
-    | A.Boolean  _ -> i1_t)
-  in  
-
   (* skipping globals part because we support more than globals *)
-
   let printf_t : L.lltype = 
     L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = 
@@ -69,7 +60,6 @@ let translate (functions, statements) =
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and float_format_str = L.build_global_stringptr "%g\n" "fmt" builder in *)
     let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
-    let hello_world_str = L.build_global_stringptr "hello world\n" "fmt" builder in
 
     (* Construct the function's "locals": formal arguments and locally
     declared variables.  Allocate each on the stack, initialize their
@@ -81,14 +71,6 @@ let translate (functions, statements) =
             let _  = L.build_store p local builder in
               StringMap.add n local m 
       in
-
-      (* Allocate space for any locally declared variables and add the
-        * resulting registers to our map *)
-      let add_local m (t, n) =
-        let local_var = L.build_alloca (ltype_of_typ t) n builder
-        in StringMap.add n local_var m 
-      in
-
       let formals = List.fold_left2 add_formal StringMap.empty fdecl.sformals
           (Array.to_list (L.params the_function)) in
           formals
@@ -109,7 +91,7 @@ let translate (functions, statements) =
       let rec expr builder ((_, e) : sexpr) = (match e with 
           SIntLit i -> L.const_int i32_t i
         | SFloatLit f -> L.const_float float_t f
-        | SStringLit s -> L.const_stringz context s
+        | SStringLit s -> L.build_global_stringptr s "string" builder
         | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
         | SListLit (_, _) -> raise(Failure("list lit is not impleemented"))
         | STupleLit (_, _) -> raise(Failure("tuple lit is not impleemented"))
