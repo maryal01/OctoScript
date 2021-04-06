@@ -1,13 +1,9 @@
 import subprocess
 
-p1 = subprocess.Popen(["./toplevel.native", "test.oc", "|", "tee" "test.ll"])
-p1.wait()
+p1 = subprocess.run(["./toplevel.native", "test.oc", "|", "tee" "test.ll"])
 
-p2 = subprocess.Popen(["llc", "test.ll"])
-p2.wait()
+p2 = subprocess.run(["llc", "test.ll"])
 
-p3 = subprocess.Popen(["gcc", "test.s"])
-p3.wait()
+p3 = subprocess.run(["gcc", "test.s"])
 
-p4 = subprocess.Popen(["./a.out"])
-p4.wait()
+p4 = subprocess.run(["./a.out"])
