@@ -9,10 +9,10 @@ Cleaning:
     `make clean`
 
 Running Test Script:
-    `python3 run.py`
+    `python3 hellotest.py`
     
 Validation of the Test :
-   The program compiles and runs appropriately if "hello world" is printed to the stdout.
+   The program compiles and runs appropriately if "hello world" is printed. The hellotest.py test scripts compiles and runs helloworld.oc file and validates it's output comparing against the goldstandard mentioned in helloworld.goldstd
     
 
 Members:
