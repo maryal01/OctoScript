@@ -10,6 +10,9 @@ code  = os.system('./toplevel.native helloworld.oc | lli > helloworld.output')
 
 with open('helloworld.output', 'r') as f:
     with open('helloworld.goldstd', 'r') as gs:
-        if gs.read() == f.read():
+        out = f.read()
+        if gs.read() == out:
             print('Hello world check passed')
+        else: 
+            print(f'Unexpected output: {out}.')
 

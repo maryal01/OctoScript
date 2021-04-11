@@ -2,6 +2,8 @@ module L = Llvm
 module A = Ast
 open Sast 
 
+module P = Predef
+
 module StringMap = Map.Make(String)
 
 (* Change to MicroC, statement lists instead of globals *)
@@ -32,13 +34,20 @@ let translate (functions, statements) =
 
   in
   (* skipping globals part because we support more than globals *)
-  let printf_t : L.lltype = 
+  (* let printf_t : L.lltype = 
     L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = 
-    L.declare_function "printf" printf_t the_module in
+    L.declare_function "printf" printf_t the_module in *)
 
-  let debug_func : L.llvalue = 
-    L.declare_function "debug" (L.function_type i32_t [| |]) the_module in
+  let predef_decls : L.llvalue StringMap.t =
+    let predef_type rt ps = 
+      (match ps with 
+          P.Fixed ps -> L.function_type (ltype_of_typ rt) (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))
+        | P.Var ps -> L.var_arg_function_type (ltype_of_typ rt) (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))) in
+    let predef_decl m (on, cn, rt, ps) = 
+      StringMap.add on (L.declare_function cn (predef_type rt ps) the_module) m
+    in List.fold_left predef_decl StringMap.empty P.predefs
+  in
 
   let function_decls : (L.llvalue * sfunc_decl) StringMap.t =
     let function_decl m fdecl =
@@ -59,7 +68,7 @@ let translate (functions, statements) =
     (* TODO: not sure why we need these things
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and float_format_str = L.build_global_stringptr "%g\n" "fmt" builder in *)
-    let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
+    (* let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in *)
 
     (* Construct the function's "locals": formal arguments and locally
     declared variables.  Allocate each on the stack, initialize their
@@ -170,15 +179,19 @@ let translate (functions, statements) =
                             A.NONE -> ""
                           | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-        | SCall ("print", [e]) -> L.build_call printf_func [| string_format_str ; expr builder e |] "print" builder
-        | SCall ("debug", []) -> L.build_call debug_func [||] "debug" builder
+        (* | SCall ("print", [e]) -> L.build_call printf_func [| string_format_str ; expr builder e |] "print" builder *)
         | SCall (f, args) -> 
-            let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure "not found in SCall"))  in
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
-            let result = (match fdecl.styp with
-                            A.NONE -> ""
-                          | _ -> f ^ "_result") in
-              L.build_call fdef (Array.of_list llargs) result builder
+            let userdef f =
+              let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
+              let result = (match fdecl.styp with
+                              A.NONE -> ""
+                            | _ -> f ^ "_result") in
+                L.build_call fdef (Array.of_list llargs) result builder
+            and predef f = 
+              let pdecl = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
+              L.build_call pdecl (Array.of_list llargs) f builder
+            in if List.mem f P.predef_names then predef f else userdef f
         | SNoExp -> L.const_null void_t)   (* Actually not quite sure? *)
       in
       
