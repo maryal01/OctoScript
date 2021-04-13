@@ -143,7 +143,7 @@ let check (functions, statements) =
         let typ_list = List.map fold_func elements in
         (TUPLE, STupleLit (typ_list, elements))
     | TableLit _ -> (TUPLE, STupleLit ([], []))
-    | Apply (_, _, _) -> (TUPLE, STupleLit ([], [])) (* TODO: *)
+    | Apply (obj, fname, args) -> check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
       let fdecl = find_func fname in
       let param_length = List.length fdecl.formals in

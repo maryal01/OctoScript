@@ -171,15 +171,6 @@ let translate (functions, statements) =
             let e2' = expr builder e2 in
             L.build_select cond' e1' e2' "tmp" builder 
         | SLambda (_, _) -> raise(Failure("Lambda has not been implemented"))
-        | SApply (e, f, es) ->
-            let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure "not found in SApply")) in
-            let args = e :: es in
-            let llargs = List.rev (List.map (expr builder) (List.rev args)) in
-            let result = (match fdecl.styp with
-                            A.NONE -> ""
-                          | _ -> f ^ "_result") in
-              L.build_call fdef (Array.of_list llargs) result builder
-        (* | SCall ("print", [e]) -> L.build_call printf_func [| string_format_str ; expr builder e |] "print" builder *)
         | SCall (f, args) -> 
             let llargs = List.rev (List.map (expr builder) (List.rev args)) in
             let userdef f =

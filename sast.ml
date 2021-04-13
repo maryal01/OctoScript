@@ -15,7 +15,6 @@ and sx =
   | SIfExpr of sexpr * sexpr * sexpr
   | SLambda of bind list * sexpr
   | SVar of string
-  | SApply of sexpr * string * sexpr list
   | SCall of string * sexpr list
   | SNoExp
 
@@ -93,8 +92,6 @@ let rec sexpr_to_string (ty, sx) =
     | SLambda (bl, sx) ->
         "(" ^ blist_to_string bl ^ ") => " ^ "{ " ^ sexpr_to_string sx ^ " }"
     | SVar s -> "Variable " ^ s
-    | SApply (sx, s, sxl) ->
-        sexpr_to_string sx ^ "." ^ s ^ "(" ^ sexprlist_to_string sxl ^ ")"
     | SCall (s, sxl) -> s ^ "(" ^ sexprlist_to_string sxl ^ ")"
     | SNoExp -> "SNoExpr"
   in
