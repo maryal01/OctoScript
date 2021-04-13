@@ -65,11 +65,6 @@ let translate (functions, statements) =
     let (the_function, _) = (try StringMap.find fdecl.sfname function_decls with Not_found -> raise (Failure "build body func")) in
     let builder = L.builder_at_end context (L.entry_block the_function) in
 
-    (* TODO: not sure why we need these things
-    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
-    and float_format_str = L.build_global_stringptr "%g\n" "fmt" builder in *)
-    (* let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in *)
-
     (* Construct the function's "locals": formal arguments and locally
     declared variables.  Allocate each on the stack, initialize their
     value, if appropriate, and remember their values in the "locals" map *)
@@ -93,18 +88,31 @@ let translate (functions, statements) =
       (* Original code: 
       let lookup n = try StringMap.find n local_vars
                       with Not_found -> StringMap.find n global_vars *)
+      (* TODO: we actually never handle how scoping would work *)
       let lookup n = try StringMap.find n local_vars with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
       in
 
       (* Construct code for an expression; return its value *)
-      let rec expr builder ((_, e) : sexpr) = (match e with 
-          SIntLit i -> L.const_int i32_t i
-        | SFloatLit f -> L.const_float float_t f
-        | SStringLit s -> L.build_global_stringptr s "string" builder
-        | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
-        | SListLit (_, _) -> raise(Failure("list lit is not impleemented"))
-        | STupleLit (_, _) -> raise(Failure("tuple lit is not impleemented"))
-        | STableLit (_, _) -> raise(Failure("table lit is not impleemented"))
+      (* TODO: do we actually need the type coupled with sexpr?? *)
+      let rec expr builder ((_, e) : sexpr) = 
+        let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts)
+        and lval_of_prim p = 
+          (match p with 
+              A.Int     i -> L.const_int i32_t i
+            | A.Float   f -> L.const_float float_t f
+            | A.String  s -> L.build_global_stringptr s "string" builder
+            | A.Boolean b -> L.const_int i1_t (if b then 1 else 0))
+        in (match e with 
+          SIntLit i     -> lval_of_prim (A.Int i)
+        | SFloatLit f   -> lval_of_prim (A.Float f)
+        | SStringLit s  -> lval_of_prim (A.String s)
+        | SBoolLit b    -> lval_of_prim (A.Boolean b)
+        | SListLit (t, ps) -> L.const_array (ltype_of_typ t) (Array.of_list (List.map lval_of_prim ps))
+        | STupleLit (_, ps) -> L.const_struct context (Array.of_list (List.map lval_of_prim ps))
+        | STableLit (ts, pss) -> 
+            let rowTyp = L.struct_type context (ltype_of_typs ts)
+            in L.const_array rowTyp 
+                  (Array.of_list (List.map (fun row -> expr builder (A.TUPLE, (STupleLit (ts, row)))) pss))
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
               and e1' = expr builder e1
