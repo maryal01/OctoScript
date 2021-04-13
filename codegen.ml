@@ -17,27 +17,19 @@ let translate (functions, statements) =
 
   and the_module = L.create_module context "OctoScript" in
 
-  (* COMPLEX TYPES HMMMMMMMMM? *)
-  (* IDEAS: seperate type representation in sast with prim vs complex, for easier
-            pattern matching (also metadata like how long is string) *)
   (* Complex types and their pointers will have to be generated dynamically *)
   let ltype_of_typ = function
     A.INT     -> i32_t
   | A.BOOLEAN -> i1_t
   | A.FLOAT   -> float_t
   | A.NONE    -> void_t
-  | A.STRING  -> L.pointer_type i8_t (* would this work?? for all? how about arrays? *)
+  | A.STRING  -> L.pointer_type i8_t
   | A.LAMBDA  -> raise(Failure("lambda lit type is not impleemented"))
   | A.TABLE   -> raise(Failure("table lit type is not impleemented"))
   | A.TUPLE   -> raise(Failure("tuple lit type is not impleemented"))
   | A.LIST    -> raise(Failure("list lit type is not impleemented"))
 
   in
-  (* skipping globals part because we support more than globals *)
-  (* let printf_t : L.lltype = 
-    L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
-  let printf_func : L.llvalue = 
-    L.declare_function "printf" printf_t the_module in *)
 
   let predef_decls : L.llvalue StringMap.t =
     let predef_type rt ps = 
@@ -57,29 +49,20 @@ let translate (functions, statements) =
       in let ftype = L.function_type (ltype_of_typ fdecl.styp) formal_types in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m in
     List.fold_left function_decl StringMap.empty ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions) in
-    (* TODO: code to gather the statement list into a "main" function *)
-    (* maybe we still need globals????? think about scoping when done like this *)
   
   (* Fill in the body of the given function *)
   let build_function_body fdecl =
     let (the_function, _) = (try StringMap.find fdecl.sfname function_decls with Not_found -> raise (Failure "build body func")) in
     let builder = L.builder_at_end context (L.entry_block the_function) in
 
-    (* Construct the function's "locals": formal arguments and locally
-    declared variables.  Allocate each on the stack, initialize their
-    value, if appropriate, and remember their values in the "locals" map *)
-    let local_vars =
+    let formal_env =
       let add_formal m (t, n) p = 
         let () = L.set_value_name n p in
-          let local = L.build_alloca (ltype_of_typ t) n builder in
-            let _  = L.build_store p local builder in
-              StringMap.add n local m 
-      in
-      let formals = List.fold_left2 add_formal StringMap.empty fdecl.sformals
-          (Array.to_list (L.params the_function)) in
-          formals
-          (* NOTE: we removed the part where slocal is added *)
-      in
+        let local = L.build_alloca (ltype_of_typ t) n builder in
+        let _  = L.build_store p local builder 
+        in StringMap.add n local m 
+      in List.fold_left2 add_formal StringMap.empty fdecl.sformals (Array.to_list (L.params the_function))
+    in
 
       (* Return the value for a variable or formal argument. First check
         * locals, then globals *)
@@ -89,13 +72,15 @@ let translate (functions, statements) =
       let lookup n = try StringMap.find n local_vars
                       with Not_found -> StringMap.find n global_vars *)
       (* TODO: we actually never handle how scoping would work *)
-      let lookup n = try StringMap.find n local_vars with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
+      let lookup n env = try StringMap.find n env with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
       in
 
       (* Construct code for an expression; return its value *)
       (* TODO: do we actually need the type coupled with sexpr?? *)
-      let rec expr builder ((_, e) : sexpr) = 
-        let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts)
+      (* NOTE: expr is guaranteed to not modify the env, so its only here for lookup *)
+      let rec expr builder env ((_, e) : sexpr) = 
+        let rexpr = expr builder env
+        and ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts)
         and lval_of_prim p = 
           (match p with 
               A.Int     i -> L.const_int i32_t i
@@ -112,11 +97,11 @@ let translate (functions, statements) =
         | STableLit (ts, pss) -> 
             let rowTyp = L.struct_type context (ltype_of_typs ts)
             in L.const_array rowTyp 
-                  (Array.of_list (List.map (fun row -> expr builder (A.TUPLE, (STupleLit (ts, row)))) pss))
+                  (Array.of_list (List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss))
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
-              and e1' = expr builder e1
-              and e2' = expr builder e2
+              and e1' = rexpr e1
+              and e2' = rexpr e2
               and raise_typerr op t = raise (Failure ("Internal error: " ^ op ^ " with " ^ t ^ " operands not allowed"))
             in
             (match t with 
@@ -165,22 +150,22 @@ let translate (functions, statements) =
           ) e1' e2' "tmp" builder
         | SUnop(op, e) -> 
             let (t, _) = e in
-            let e' = expr builder e in
+            let e' = rexpr e in
             (match op with 
                 A.NOT when t = A.BOOLEAN -> L.build_not
               | A.NEG when t = A.FLOAT -> L.build_fneg
               | A.NEG when t = A.INT -> L.build_neg
               | _ -> raise (Failure "Internal Error: Not a unary operator")
             ) e' "tmp" builder
-        | SVar s -> L.build_load (lookup s) s builder
+        | SVar s -> L.build_load (lookup s env) s builder
         | SIfExpr (cond, e1, e2) -> 
-            let cond' = expr builder cond in
-            let e1' = expr builder e1 in
-            let e2' = expr builder e2 in
+            let cond' = rexpr cond in
+            let e1' = rexpr e1 in
+            let e2' = rexpr e2 in
             L.build_select cond' e1' e2' "tmp" builder 
         | SLambda (_, _) -> raise(Failure("Lambda has not been implemented"))
         | SCall (f, args) -> 
-            let llargs = List.rev (List.map (expr builder) (List.rev args)) in
+            let llargs = List.rev (List.map (rexpr) (List.rev args)) in
             let userdef f =
               let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
               let result = (match fdecl.styp with
@@ -200,47 +185,54 @@ let translate (functions, statements) =
          | None -> ignore (instr builder) )
       in
 
-      let rec stmt builder = function
-          SBlock sl -> List.fold_left stmt builder sl
+      (* return a builder env tuple *)
+      let rec stmt builder env = function
+          SBlock sl -> 
+            let (_, b) = List.fold_left (fun (e, b) s -> stmt b e s) (env, builder) sl
+            in (env, b)
         | SWhile (cond, s) -> 
+            (* some work for scoping *)
             let pred_bb = L.append_block context "while_cond" the_function in
               let _ = L.build_br pred_bb builder in
             let body_bb = L.append_block context "while_body" the_function in
-              let while_builder = stmt (L.builder_at_end context body_bb) s in
+              let (_, while_builder) = stmt (L.builder_at_end context body_bb) env s in
               let () = add_terminal while_builder (L.build_br pred_bb) in
             let pred_builder = L.builder_at_end context pred_bb in
-	          let bool_val = expr pred_builder cond in
+	          let bool_val = expr pred_builder env cond in
             let merge_bb = L.append_block context "merge" the_function in
 	          let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
-	          L.builder_at_end context merge_bb
+	          (env, L.builder_at_end context merge_bb)
         | SIf (cond, s1, s2) ->
-            let bool_val = expr builder cond in
+            let bool_val = expr builder env cond in
             let merge_bb = L.append_block context "merge" the_function in
               let branch_instr = L.build_br merge_bb in
             let then_bb = L.append_block context "then" the_function in
-              let then_builder = stmt (L.builder_at_end context then_bb) s1 in
+              let (_, then_builder) = stmt (L.builder_at_end context then_bb) env s1 in
               let () = add_terminal then_builder branch_instr in
             let else_bb = L.append_block context "else" the_function in
-              let else_builder = stmt (L.builder_at_end context else_bb) s2 in
+              let (_, else_builder) = stmt (L.builder_at_end context else_bb) env s2 in
               let () = add_terminal else_builder branch_instr in
             let _ = L.build_cond_br bool_val then_bb else_bb builder in
-            L.builder_at_end context merge_bb
+            (env, L.builder_at_end context merge_bb)
         | SReturn e -> 
             let _ = 
               (match fdecl.styp with
                   A.NONE -> L.build_ret_void builder 
-                | _ -> L.build_ret (expr builder e) builder)
-            in builder
+                | _ -> L.build_ret (expr builder env e) builder)
+            in (env, builder)
         | SBreak -> raise(Failure("break is not impleemented"))
-        | SDeclare (_, _, _) -> raise(Failure("declare is not impleemented"))
+        | SDeclare (t, n, e) -> 
+            let v = L.build_alloca (ltype_of_typ t) n builder in
+            let env' = StringMap.add n v env 
+            in stmt builder env' (SAssign (n, e))
         | SAssign (n, e) ->
-            let e' = expr builder e in
-            let _ = L.build_store e' (lookup n) builder 
-            in builder 
-        | SExpr e -> let _ = expr builder e in builder 
+            let e' = expr builder env e in
+            let _ = L.build_store e' (lookup n env) builder 
+            in (env, builder) 
+        | SExpr e -> let _ = expr builder env e in (env, builder) 
       in
       
-      let builder = stmt builder (SBlock fdecl.sbody) in
+      let (_, builder) = stmt builder formal_env (SBlock fdecl.sbody) in
       add_terminal builder (match fdecl.styp with
           A.NONE -> L.build_ret_void
         | A.FLOAT -> L.build_ret (L.const_float float_t 0.0)
