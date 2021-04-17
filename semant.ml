@@ -1,6 +1,8 @@
 open Ast
 open Sast
 module StringMap = Map.Make (String)
+module StringSet = Set.Make (String)
+
 
 type symbol_table = {
   identifiers : typ StringMap.t;
@@ -70,6 +72,43 @@ let check (functions, statements) =
     try StringMap.find s function_decls
     with Not_found -> raise (Failure ("unrecognized function " ^ s))
   in
+  (* let rec extract_unbound formal_names expression unbound =
+    let ext = extract_unbound formal_names in
+    (match expression with 
+        Binop (e1, _, e2) -> 
+          let ub1 = ext e1 unbound
+          in ext e2 ub1
+      | Unop (_, e) -> ext e unbound 
+      | PrimLit _ -> unbound
+      | ListLit _ -> unbound
+      | TupleLit _ -> unbound
+      | TableLit _ -> unbound
+      | IfExpr (e1, e2, e3) ->
+          let ub1 = ext e1 unbound in
+          let ub2 = ext e2 ub1 
+          in ext e3 ub2
+      | Lambda (bs, e) -> 
+          let fml = List.map (fun (_, n) -> n) bs
+          in extract_unbound fml e unbound
+      | Var n -> 
+          (if (List.mem n formal_names) 
+          then StringSet.add n unbound
+          else unbound)
+      | Apply (e, _, ps) -> 
+          List.fold_left (fun s e -> ext e s) unbound (e :: ps)
+      | Call (_, ps) ->
+          (* TODO: not sure how calls to lambdas stored in vars 
+             are handled up to this point *)
+          (* TODO: I'm just not going to worry about nested lambda calls at this point
+             but this could very well be a problem here *)
+          List.fold_left (fun s e -> ext e s) unbound ps
+      | Noexpr -> unbound)
+  in *)
+  let lambda_name = 
+    let counter = ref 0 in
+    let next_id = fun () -> counter := (!counter) + 1; !counter in
+    fun () -> "__lambda_" ^ (string_of_int (next_id ())) ^ "__"
+  in
   let rec check_expr expression scope =
     match expression with
     | PrimLit l -> (
@@ -117,7 +156,9 @@ let check (functions, statements) =
         (ty, SBinop ((t1, e1'), op, (t2, e2')))
     | Lambda (args, e) ->
         let t1, e1 = check_expr e scope in
-        (t1, SLambda (args, (t1, e1)))
+        (* let _, formal_names = List.split args in *)
+        (* let unbound = extract_unbound formal_names e StringSet.empty in  *)
+        (t1, SLambda (lambda_name (), args, (t1, e1)))
     | ListLit elements as list -> (
         match elements with
         | [] -> (NONE, SListLit (NONE, elements))
@@ -237,4 +278,4 @@ let check (functions, statements) =
         | _ -> raise (Failure "Internal Error: Block did not become block"));
     }
   in
-  ( (List.map check_function functions), (List.map (fun st -> check_stmt st id_table) statements))
+  ((List.map check_function functions), (List.map (fun st -> check_stmt st id_table) statements))

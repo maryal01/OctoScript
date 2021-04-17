@@ -13,7 +13,7 @@ and sx =
   | SBinop of sexpr * binaryOp * sexpr
   | SUnop of unaryOp * sexpr
   | SIfExpr of sexpr * sexpr * sexpr
-  | SLambda of bind list * sexpr
+  | SLambda of string * bind list * sexpr
   | SVar of string
   | SCall of string * sexpr list
   | SNoExp
@@ -89,7 +89,7 @@ let rec sexpr_to_string (ty, sx) =
     | SIfExpr (sx1, sx2, sx3) ->
         "if( " ^ sexpr_to_string sx1 ^ "\nthen { " ^ sexpr_to_string sx2
         ^ "}\n else {" ^ sexpr_to_string sx3 ^ "}\n"
-    | SLambda (bl, sx) ->
+    | SLambda (_, bl, sx) ->
         "(" ^ blist_to_string bl ^ ") => " ^ "{ " ^ sexpr_to_string sx ^ " }"
     | SVar s -> "Variable " ^ s
     | SCall (s, sxl) -> s ^ "(" ^ sexprlist_to_string sxl ^ ")"

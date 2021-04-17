@@ -24,13 +24,14 @@ let translate (functions, statements) =
   | A.FLOAT   -> float_t
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t
-  | A.LAMBDA  -> raise(Failure("lambda lit type is not impleemented"))
+  | A.LAMBDA  -> L.pointer_type i8_t
   | A.TABLE   -> raise(Failure("table lit type is not impleemented"))
   | A.TUPLE   -> raise(Failure("tuple lit type is not impleemented"))
   | A.LIST    -> raise(Failure("list lit type is not impleemented"))
-
   in
 
+  let program = ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions)
+  in
   let predef_decls : L.llvalue StringMap.t =
     let predef_type rt ps = 
       (match ps with 
@@ -48,8 +49,61 @@ let translate (functions, statements) =
         Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals)
       in let ftype = L.function_type (ltype_of_typ fdecl.styp) formal_types in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m in
-    List.fold_left function_decl StringMap.empty ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions) in
+    List.fold_left function_decl StringMap.empty program in
   
+  let extract_lambda ls fdecl = 
+    let rec ext_sx (_, e) ls = 
+      (match e with
+        SIntLit _ -> ls
+      | SFloatLit _ -> ls
+      | SStringLit _ -> ls
+      | SBoolLit _ -> ls
+      | SListLit _ -> ls
+      | STupleLit _ -> ls
+      | STableLit _ -> ls
+      | SBinop (e1, _, e2) ->
+          let ls' = ext_sx e1 ls in
+          ext_sx e2 ls'  
+      | SUnop (_, e) -> ext_sx e ls
+      | SIfExpr (cond, e1, e2) -> 
+          let ls' = ext_sx cond ls in
+          let ls'' = ext_sx e1 ls' in
+          ext_sx e2 ls''
+      | SLambda (s, bs, e) -> (s, bs, e) :: ls
+      | SVar _ -> ls
+      | SCall (_, ps) -> List.fold_right ext_sx ps ls 
+      | SNoExp -> ls)
+    in 
+    let rec ext_stmt s ls = 
+      (match s with
+        SBlock sl -> List.fold_right ext_stmt sl ls
+      | SWhile (cond, s) -> 
+          let ls' = ext_sx cond ls in
+          ext_stmt s ls'  
+      | SIf (cond, s1, s2) ->
+          let ls' = ext_sx cond ls in
+          let ls'' = ext_stmt s1 ls' in
+          ext_stmt s2 ls'' 
+      | SReturn e -> ext_sx e ls
+      | SBreak -> ls
+      | SDeclare (_, _, e) -> ext_sx e ls
+      | SAssign (_, e) -> ext_sx e ls
+      | SExpr e -> ext_sx e ls)
+    in 
+    (ext_stmt (SBlock fdecl.sbody) []) @ ls
+  in
+  let extracted_lambdas = List.fold_left extract_lambda [] program in
+  let lambda_decls : (L.llvalue * sfunc_decl) StringMap.t =
+    let lam_func = List.map (fun (n, bs, (t, e)) -> { styp = t; sfname = n; sformals = bs; sbody = (SExpr (t, e)) :: []}) extracted_lambdas in
+    let lambda_decl m fdecl =
+      let name = fdecl.sfname
+      and formal_types = 
+        Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals)
+      in let ftype = L.function_type (ltype_of_typ fdecl.styp) formal_types in
+      StringMap.add name (L.define_function name ftype the_module, fdecl) m in
+    List.fold_left lambda_decl StringMap.empty lam_func in
+
+
   (* Fill in the body of the given function *)
   let build_function_body fdecl =
     let (the_function, _) = (try StringMap.find fdecl.sfname function_decls with Not_found -> raise (Failure "build body func")) in
@@ -60,7 +114,7 @@ let translate (functions, statements) =
         let () = L.set_value_name n p in
         let local = L.build_alloca (ltype_of_typ t) n builder in
         let _  = L.build_store p local builder 
-        in StringMap.add n local m 
+        in StringMap.add n (t, local) m 
       in List.fold_left2 add_formal StringMap.empty fdecl.sformals (Array.to_list (L.params the_function))
     in
 
@@ -72,7 +126,10 @@ let translate (functions, statements) =
       let lookup n = try StringMap.find n local_vars
                       with Not_found -> StringMap.find n global_vars *)
       (* TODO: we actually never handle how scoping would work *)
-      let lookup n env = try StringMap.find n env with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
+      let lookup n env = 
+        let (_, v) =
+          try StringMap.find n env with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
+        in v
       in
 
       (* Construct code for an expression; return its value *)
@@ -163,11 +220,11 @@ let translate (functions, statements) =
             let e1' = rexpr e1 in
             let e2' = rexpr e2 in
             L.build_select cond' e1' e2' "tmp" builder 
-        | SLambda (_, _) -> raise(Failure("Lambda has not been implemented"))
+        | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
         | SCall (f, args) -> 
             let llargs = List.rev (List.map (rexpr) (List.rev args)) in
-            let userdef f =
-              let (fdef, fdecl) = (try StringMap.find f function_decls with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
+            let userdef dom =
+              let (fdef, fdecl) = (try StringMap.find f dom with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
               let result = (match fdecl.styp with
                               A.NONE -> ""
                             | _ -> f ^ "_result") in
@@ -175,7 +232,9 @@ let translate (functions, statements) =
             and predef f = 
               let pdecl = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
               L.build_call pdecl (Array.of_list llargs) f builder
-            in if List.mem f P.predef_names then predef f else userdef f
+            and is_lambda = StringMap.mem f env
+            and is_predef = List.mem f P.predef_names 
+            in if is_lambda then userdef lambda_decls else (if is_predef then predef f else userdef function_decls)
         | SNoExp -> L.const_null void_t)   (* Actually not quite sure? *)
       in
       
@@ -223,7 +282,7 @@ let translate (functions, statements) =
         | SBreak -> raise(Failure("break is not impleemented"))
         | SDeclare (t, n, e) -> 
             let v = L.build_alloca (ltype_of_typ t) n builder in
-            let env' = StringMap.add n v env 
+            let env' = StringMap.add n (t, v) env 
             in stmt builder env' (SAssign (n, e))
         | SAssign (n, e) ->
             let e' = expr builder env e in
@@ -238,7 +297,6 @@ let translate (functions, statements) =
         | A.FLOAT -> L.build_ret (L.const_float float_t 0.0)
         | t -> L.build_ret (L.const_int (ltype_of_typ t) 0))
     in
-    (* List.iter build_function_body functions; *)
-    List.iter build_function_body ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: []);
+    List.iter build_function_body program;
     the_module
 
