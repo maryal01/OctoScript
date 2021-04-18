@@ -1,4 +1,4 @@
-all : toplevel.native
+all : toplevel.native test.o
 
 clean: 
 	ocamlbuild -clean
@@ -7,3 +7,6 @@ clean:
 toplevel.native :
 	opam config exec -- \
 	ocamlbuild -use-ocamlfind toplevel.native
+
+test : test.c
+	cc -o test -DBUILD_TEST test.c

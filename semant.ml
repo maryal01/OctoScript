@@ -2,7 +2,7 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 module StringSet = Set.Make (String)
-
+module P = Predef
 
 type symbol_table = {
   identifiers : typ StringMap.t;
@@ -25,15 +25,14 @@ let check (functions, statements) =
     to_check
   in
   let built_in_decls =
-    let add_bind map (name, ty) =
+    let add_bind map (name, _, ty, ps) =
+      let formal_types = function P.Fixed ts -> ts | P.Var ts -> ts  
+      in
       StringMap.add name
-        { typ = NONE; fname = name; formals = [ (ty, "x") ]; body = [] }
+        { typ = ty; fname = name; formals = List.map (fun t -> (t, "p")) (formal_types ps); body = [] }
         map
     in
-    List.fold_left add_bind StringMap.empty
-      [
-        ("print", STRING); ("printb", BOOLEAN); ("printf", FLOAT); ("printbig", INT);
-      ]
+    List.fold_left add_bind StringMap.empty P.predefs
   in
   let add_func map fd =
     let built_in_err = "function " ^ fd.fname ^ " may not be defined"
@@ -54,7 +53,7 @@ let check (functions, statements) =
     with Not_found -> (
       match scope.parent with
       | Some parent -> find_identifier name parent
-      | None -> raise (Failure "The identifier is not already defined. "))
+      | None -> raise (Failure ("The identifier " ^ name ^ " is not already defined. ")))
   in
   let add_identifier name typ scope =
     try
@@ -72,38 +71,6 @@ let check (functions, statements) =
     try StringMap.find s function_decls
     with Not_found -> raise (Failure ("unrecognized function " ^ s))
   in
-  (* let rec extract_unbound formal_names expression unbound =
-    let ext = extract_unbound formal_names in
-    (match expression with 
-        Binop (e1, _, e2) -> 
-          let ub1 = ext e1 unbound
-          in ext e2 ub1
-      | Unop (_, e) -> ext e unbound 
-      | PrimLit _ -> unbound
-      | ListLit _ -> unbound
-      | TupleLit _ -> unbound
-      | TableLit _ -> unbound
-      | IfExpr (e1, e2, e3) ->
-          let ub1 = ext e1 unbound in
-          let ub2 = ext e2 ub1 
-          in ext e3 ub2
-      | Lambda (bs, e) -> 
-          let fml = List.map (fun (_, n) -> n) bs
-          in extract_unbound fml e unbound
-      | Var n -> 
-          (if (List.mem n formal_names) 
-          then StringSet.add n unbound
-          else unbound)
-      | Apply (e, _, ps) -> 
-          List.fold_left (fun s e -> ext e s) unbound (e :: ps)
-      | Call (_, ps) ->
-          (* TODO: not sure how calls to lambdas stored in vars 
-             are handled up to this point *)
-          (* TODO: I'm just not going to worry about nested lambda calls at this point
-             but this could very well be a problem here *)
-          List.fold_left (fun s e -> ext e s) unbound ps
-      | Noexpr -> unbound)
-  in *)
   let lambda_name = 
     let counter = ref 0 in
     let next_id = fun () -> counter := (!counter) + 1; !counter in
@@ -118,7 +85,7 @@ let check (functions, statements) =
         | String s -> (STRING, SStringLit s)
         | Boolean b -> (BOOLEAN, SBoolLit b))
     | Noexpr -> (NONE, SNoExp)
-    | Var s -> (find_identifier s scope, SVar s)
+    | Var s -> (LIST, SVar s)
     | Unop (op, e) as ex ->
         let t, e' = check_expr e scope in
         let ty =
@@ -161,7 +128,7 @@ let check (functions, statements) =
         (t1, SLambda (lambda_name (), args, (t1, e1)))
     | ListLit elements as list -> (
         match elements with
-        | [] -> (NONE, SListLit (NONE, elements))
+        | [] -> (LIST, SListLit (NONE, elements))
         | elem :: elems -> (
             let ex = PrimLit elem in
             let t1, _ = check_expr ex scope in (* check why e' not needed?*)
@@ -170,7 +137,7 @@ let check (functions, statements) =
               t1 = t'
             in
             match List.for_all all_func elems with
-            | true -> (t1, SListLit (t1, elements))
+            | true -> (LIST, SListLit (t1, elements))
             | false ->
                 raise
                   (Failure
@@ -191,7 +158,7 @@ let check (functions, statements) =
           if List.length args != param_length then
             raise (Failure ("Arguments-Parameters MisMatch"))
           else let check_call (ft, _) e = 
-            let (et, e') = check_expr e scope
+            let (et, e') = check_expr e scope 
             in (check_assign ft et, e')
           in 
           let args' = List.map2 check_call fdecl.formals args

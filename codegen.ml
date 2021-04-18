@@ -6,7 +6,6 @@ module P = Predef
 
 module StringMap = Map.Make(String)
 
-(* Change to MicroC, statement lists instead of globals *)
 let translate (functions, statements) = 
   let context    = L.global_context () in
   let i32_t      = L.i32_type    context
@@ -14,10 +13,9 @@ let translate (functions, statements) =
   and i1_t       = L.i1_type     context  (* bool *)
   and float_t    = L.double_type context
   and void_t     = L.void_type   context
-
+  
   and the_module = L.create_module context "OctoScript" in
-
-  (* Complex types and their pointers will have to be generated dynamically *)
+  
   let ltype_of_typ = function
     A.INT     -> i32_t
   | A.BOOLEAN -> i1_t
@@ -25,9 +23,9 @@ let translate (functions, statements) =
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t
   | A.LAMBDA  -> L.pointer_type i8_t
-  | A.TABLE   -> raise(Failure("table lit type is not impleemented"))
-  | A.TUPLE   -> raise(Failure("tuple lit type is not impleemented"))
-  | A.LIST    -> raise(Failure("list lit type is not impleemented"))
+  | A.TABLE   -> L.pointer_type i8_t
+  | A.TUPLE   -> L.pointer_type i8_t
+  | A.LIST    -> L.pointer_type i8_t
   in
 
   let program = ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions)
@@ -101,8 +99,8 @@ let translate (functions, statements) =
         Array.of_list (List.map (fun (t,_) -> ltype_of_typ t) fdecl.sformals)
       in let ftype = L.function_type (ltype_of_typ fdecl.styp) formal_types in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m in
-    List.fold_left lambda_decl StringMap.empty lam_func in
-
+    List.fold_left lambda_decl StringMap.empty lam_func 
+  in
 
   (* Fill in the body of the given function *)
   let build_function_body fdecl =
@@ -122,39 +120,61 @@ let translate (functions, statements) =
         * locals, then globals *)
 
 
-      (* Original code: 
-      let lookup n = try StringMap.find n local_vars
-                      with Not_found -> StringMap.find n global_vars *)
-      (* TODO: we actually never handle how scoping would work *)
       let lookup n env = 
         let (_, v) =
           try StringMap.find n env with Not_found -> raise (Failure ("lookup for " ^ n ^ " failed"))
         in v
       in
 
+      (* Complex type memeory layout:
+          List  : int length, char type, data...
+          Tuple : int length, char type[lenght], data... 
+          Table : Same as a list containing tuples
+      *)
+
       (* Construct code for an expression; return its value *)
-      (* TODO: do we actually need the type coupled with sexpr?? *)
-      (* NOTE: expr is guaranteed to not modify the env, so its only here for lookup *)
+      (* NOTE: expr is guaranteed to not modify the env *)
       let rec expr builder env ((_, e) : sexpr) = 
-        let rexpr = expr builder env
-        and ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts)
-        and lval_of_prim p = 
+        let rexpr = expr builder env in
+        let global_str s n = L.build_global_stringptr s n builder in
+        (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
+        let lval_of_prim p = 
           (match p with 
               A.Int     i -> L.const_int i32_t i
             | A.Float   f -> L.const_float float_t f
-            | A.String  s -> L.build_global_stringptr s "string" builder
+            | A.String  s -> global_str s "string"
             | A.Boolean b -> L.const_int i1_t (if b then 1 else 0))
+        and type_sym t = 
+          (match t with 
+              A.INT     -> global_str "i" "i_sym" 
+            | A.BOOLEAN -> global_str "b" "b_sym" 
+            | A.FLOAT   -> global_str "f" "f_sym" 
+            | A.STRING  -> global_str "s" "s_sym" 
+            | A.LAMBDA  -> global_str "l" "l_sym"
+            | A.TABLE   -> global_str "T" "ta_sym"
+            | A.TUPLE   -> global_str "U" "tu_sym"
+            | A.LIST    -> global_str "L" "l_sym"
+            | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
         in (match e with 
           SIntLit i     -> lval_of_prim (A.Int i)
         | SFloatLit f   -> lval_of_prim (A.Float f)
         | SStringLit s  -> lval_of_prim (A.String s)
         | SBoolLit b    -> lval_of_prim (A.Boolean b)
-        | SListLit (t, ps) -> L.const_array (ltype_of_typ t) (Array.of_list (List.map lval_of_prim ps))
-        | STupleLit (_, ps) -> L.const_struct context (Array.of_list (List.map lval_of_prim ps))
+        | SListLit (t, ps) -> 
+            let data = L.const_array (ltype_of_typ t) (Array.of_list (List.map lval_of_prim ps))
+            and len = L.const_int i32_t (List.length ps) in
+            let value = L.const_struct context [| len; (type_sym t); data |]  
+            in value
+        | STupleLit (ts, ps) -> 
+            let len = L.const_int i32_t (List.length ps) in
+            let types = List.map type_sym ts in
+            let content = len :: (types @ (List.map lval_of_prim ps))
+            in L.const_struct context (Array.of_list content)
         | STableLit (ts, pss) -> 
-            let rowTyp = L.struct_type context (ltype_of_typs ts)
-            in L.const_array rowTyp 
-                  (Array.of_list (List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss))
+            let num_rows = L.const_int i32_t (List.length pss) in
+            let row_data = List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss in
+            let content = [num_rows; type_sym A.TUPLE] @ (row_data)
+            in L.const_struct context (Array.of_list content)
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
               and e1' = rexpr e1
@@ -163,22 +183,22 @@ let translate (functions, statements) =
             in
             (match t with 
                 A.INT -> 
-                  (match op with
-                      A.AND -> raise_typerr "AND" "int"
-                    | A.OR ->  raise_typerr "OR" "int"
-                    | A.Add -> L.build_add
-                    | A.Sub -> L.build_sub
-                    | A.Mul -> L.build_mul
-                    | A.Div -> L.build_sdiv
-                    | A.Pow -> raise(Failure("pow for int is not impleemented"))
-                    | A.Log -> raise(Failure("log for int is not impleemented")) (* TODO: no operator in LLVM so maybe make this an actual function call? *)
-                    | A.GT -> L.build_icmp L.Icmp.Sgt
-                    | A.GTE -> L.build_icmp L.Icmp.Sge
-                    | A.LT -> L.build_icmp L.Icmp.Slt
-                    | A.LTE -> L.build_icmp L.Icmp.Sle
-                    | A.EQ -> L.build_icmp L.Icmp.Eq
-                    | A.NEQ -> L.build_icmp L.Icmp.Ne
-                    | A.Mod -> L.build_srem)
+                (match op with
+                    A.AND -> raise_typerr "AND" "int"
+                  | A.OR ->  raise_typerr "OR" "int"
+                  | A.Add -> L.build_add
+                  | A.Sub -> L.build_sub
+                  | A.Mul -> L.build_mul
+                  | A.Div -> L.build_sdiv
+                  | A.Pow -> raise(Failure("pow for int is not impleemented"))
+                  | A.Log -> raise(Failure("log for int is not impleemented")) (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                  | A.GT -> L.build_icmp L.Icmp.Sgt
+                  | A.GTE -> L.build_icmp L.Icmp.Sge
+                  | A.LT -> L.build_icmp L.Icmp.Slt
+                  | A.LTE -> L.build_icmp L.Icmp.Sle
+                  | A.EQ -> L.build_icmp L.Icmp.Eq
+                  | A.NEQ -> L.build_icmp L.Icmp.Ne
+                  | A.Mod -> L.build_srem)
               | A.FLOAT ->                  
                  (match op with
                     A.AND -> raise_typerr "AND" "float"
@@ -222,7 +242,7 @@ let translate (functions, statements) =
             L.build_select cond' e1' e2' "tmp" builder 
         | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
         | SCall (f, args) -> 
-            let llargs = List.rev (List.map (rexpr) (List.rev args)) in
+            let llargs = List.map rexpr args in
             let userdef dom =
               let (fdef, fdecl) = (try StringMap.find f dom with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
               let result = (match fdecl.styp with
@@ -281,9 +301,11 @@ let translate (functions, statements) =
             in (env, builder)
         | SBreak -> raise(Failure("break is not impleemented"))
         | SDeclare (t, n, e) -> 
-            let v = L.build_alloca (ltype_of_typ t) n builder in
-            let env' = StringMap.add n (t, v) env 
-            in stmt builder env' (SAssign (n, e))
+            let e' = expr builder env e in
+            let v = L.build_alloca (L.type_of e') n builder in
+            let env' = StringMap.add n (t, v) env in
+            let _ = L.build_store e' v builder
+            in (env', builder)
         | SAssign (n, e) ->
             let e' = expr builder env e in
             let _ = L.build_store e' (lookup n env) builder 
