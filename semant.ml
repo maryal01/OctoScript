@@ -29,7 +29,7 @@ let check (functions, statements) =
       let formal_types = function P.Fixed ts -> ts | P.Var ts -> ts  
       in
       StringMap.add name
-        { typ = NONE; fname = name; formals = List.map (fun t -> (t, "p")) (formal_types ps); body = [] }
+        { typ = ty; fname = name; formals = List.map (fun t -> (t, "p")) (formal_types ps); body = [] }
         map
     in
     List.fold_left add_bind StringMap.empty P.predefs
