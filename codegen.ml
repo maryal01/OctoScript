@@ -134,7 +134,7 @@ let translate (functions, statements) =
 
       (* Construct code for an expression; return its value *)
       (* NOTE: expr is guaranteed to not modify the env *)
-      let rec expr builder env ((_, e) : sexpr) = 
+      let rec expr builder env ((t, e) : sexpr) = 
         let rexpr = expr builder env in
         let global_str s n = L.build_global_stringptr s n builder in
         (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
@@ -236,8 +236,17 @@ let translate (functions, statements) =
             ) e' "tmp" builder
         (* additional logic required here to cast complex types into pointers *)
         | SVar s -> 
-            let v = lookup s env
-            in L.build_bitcast v (L.pointer_type i8_t) "v_tmp" builder
+            let v = lookup s env in
+            (match t with 
+                A.INT     -> L.build_load v s builder
+              | A.FLOAT   -> L.build_load v s builder
+              | A.STRING  -> L.build_load v s builder
+              | A.BOOLEAN -> L.build_load v s builder
+              | A.LAMBDA  -> L.build_load v s builder
+              | A.NONE  -> raise (Failure "Cannot have var of None type")
+              | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+              | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+              | A.LIST  -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder)
         | SIfExpr (cond, e1, e2) -> 
             let cond' = rexpr cond in
             let e1' = rexpr e1 in
