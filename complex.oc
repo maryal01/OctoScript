@@ -1,2 +1,2 @@
-list l = [ 1 ];
+list l = [ 2, 3 ];
 test(l);
