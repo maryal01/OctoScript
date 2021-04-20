@@ -1,0 +1,17 @@
+int test-if (int i, bool b) {
+    if (b) {
+        if ( i < 5) {
+            return 2;
+        }
+        else {
+            return i;
+        }
+    }
+    else {
+        return -i;
+    }
+}
+
+print(test-if(-10, true));
+print(test-if(10,  true));
+print(test-if(10, false));

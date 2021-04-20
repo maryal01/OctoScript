@@ -1,0 +1,9 @@
+int test-assign(int i) {
+    int x;
+    int y = 1;
+    int z = i;
+    x = y + z;
+    return x;
+}
+
+print(test-assign(12));

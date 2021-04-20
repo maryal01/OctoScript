@@ -1,0 +1,15 @@
+int test-if (int i) {
+    if (i > 10) {
+        if (i < 50) {
+            return 1;
+        }
+        else {
+            return 10;
+        }
+    }
+    return 100;
+}
+
+print(test-if(1));
+print(test-if(20));
+print(test-if(75));
