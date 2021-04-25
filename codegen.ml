@@ -30,13 +30,13 @@ let translate (functions, statements) =
 
   let program = ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions)
   in
-  let predef_decls : L.llvalue StringMap.t =
+  let predef_decls : (L.llvalue * A.typ) StringMap.t =
     let predef_type rt ps = 
       (match ps with 
           P.Fixed ps -> L.function_type (ltype_of_typ rt) (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))
         | P.Var ps -> L.var_arg_function_type (ltype_of_typ rt) (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))) in
     let predef_decl m (on, cn, rt, ps) = 
-      StringMap.add on (L.declare_function cn (predef_type rt ps) the_module) m
+      StringMap.add on (L.declare_function cn (predef_type rt ps) the_module, rt) m
     in List.fold_left predef_decl StringMap.empty P.predefs
   in
 
@@ -134,7 +134,7 @@ let translate (functions, statements) =
 
       (* Construct code for an expression; return its value *)
       (* NOTE: expr is guaranteed to not modify the env *)
-      let rec expr builder env ((_, e) : sexpr) = 
+      let rec expr builder env ((t, e) : sexpr) = 
         let rexpr = expr builder env in
         let global_str s n = L.build_global_stringptr s n builder in
         (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
@@ -234,7 +234,19 @@ let translate (functions, statements) =
               | A.NEG when t = A.INT -> L.build_neg
               | _ -> raise (Failure "Internal Error: Not a unary operator")
             ) e' "tmp" builder
-        | SVar s -> L.build_load (lookup s env) s builder
+        (* additional logic required here to cast complex types into pointers *)
+        | SVar s -> 
+            let v = lookup s env in
+            (match t with 
+                A.INT     -> L.build_load v s builder
+              | A.FLOAT   -> L.build_load v s builder
+              | A.STRING  -> L.build_load v s builder
+              | A.BOOLEAN -> L.build_load v s builder
+              | A.LAMBDA  -> L.build_load v s builder
+              | A.NONE  -> raise (Failure "Cannot have var of None type")
+              | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+              | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+              | A.LIST  -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder)
         | SIfExpr (cond, e1, e2) -> 
             let cond' = rexpr cond in
             let e1' = rexpr e1 in
@@ -250,8 +262,11 @@ let translate (functions, statements) =
                             | _ -> f ^ "_result") in
                 L.build_call fdef (Array.of_list llargs) result builder
             and predef f = 
-              let pdecl = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
-              L.build_call pdecl (Array.of_list llargs) f builder
+              let (pdecl, rt) = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
+              let result = (match rt  with
+                              A.NONE -> ""
+                            | _ -> f ^ "_result") in
+              L.build_call pdecl (Array.of_list llargs) result builder
             and is_lambda = StringMap.mem f env
             and is_predef = List.mem f P.predef_names 
             in if is_lambda then userdef lambda_decls else (if is_predef then predef f else userdef function_decls)

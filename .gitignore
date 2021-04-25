@@ -2,3 +2,7 @@ _build
 *.native
 *.out
 *.output
+*.ll
+*.exe
+*.s
+*.o
