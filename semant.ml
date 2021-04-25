@@ -85,7 +85,7 @@ let check (functions, statements) =
         | String s -> (STRING, SStringLit s)
         | Boolean b -> (BOOLEAN, SBoolLit b))
     | Noexpr -> (NONE, SNoExp)
-    | Var s -> (LIST, SVar s)
+    | Var s -> (LIST INT, SVar s)
     | Unop (op, e) as ex ->
         let t, e' = check_expr e scope in
         let ty =
@@ -128,7 +128,7 @@ let check (functions, statements) =
         (t1, SLambda (lambda_name (), args, (t1, e1)))
     | ListLit elements as list -> (
         match elements with
-        | [] -> (LIST, SListLit (NONE, elements))
+        | [] -> (LIST NONE, SListLit (NONE, elements))
         | elem :: elems -> (
             let ex = PrimLit elem in
             let t1, _ = check_expr ex scope in (* check why e' not needed?*)
@@ -137,7 +137,7 @@ let check (functions, statements) =
               t1 = t'
             in
             match List.for_all all_func elems with
-            | true -> (LIST, SListLit (t1, elements))
+            | true -> (LIST t1, SListLit (t1, elements))
             | false ->
                 raise
                   (Failure
@@ -149,8 +149,9 @@ let check (functions, statements) =
           t1
         in
         let typ_list = List.map fold_func elements in
-        (TUPLE, STupleLit (typ_list, elements))
-    | TableLit _ -> (TUPLE, STupleLit ([], []))
+        (TUPLE (typ_list), STupleLit (typ_list, elements))
+    (* | TableLit _ -> (TUPLE, STupleLit ([], []))  *)
+    | TableLit _ -> raise (Failure "table literals not currently implemented") (* TODO: This seems unfinished*)
     | Apply (obj, fname, args) -> check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
       let fdecl = find_func fname in

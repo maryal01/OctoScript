@@ -6,6 +6,14 @@ module P = Predef
 
 module StringMap = Map.Make(String)
 
+(* TODO: new styp in sast capturing internal types of complex types (or propogate changes all the way to the start)
+         update type checker in semant to check with updated type representations
+         
+         intercept complex data access & size information in APPLY form, and add as new sast type
+         handle logic in codegen (which should be as easy as struct/array access)
+         needs to be singled out because the same function needs to work with different types
+ *)
+
 let translate (functions, statements) = 
   let context    = L.global_context () in
   let i32_t      = L.i32_type    context
@@ -23,9 +31,9 @@ let translate (functions, statements) =
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t
   | A.LAMBDA  -> L.pointer_type i8_t
-  | A.TABLE   -> L.pointer_type i8_t
-  | A.TUPLE   -> L.pointer_type i8_t
-  | A.LIST    -> L.pointer_type i8_t
+  | A.TABLE _ -> L.pointer_type i8_t
+  | A.TUPLE _ -> L.pointer_type i8_t
+  | A.LIST  _ -> L.pointer_type i8_t
   in
 
   let program = ({ styp = A.NONE; sfname = "main"; sformals = []; sbody = statements } :: functions)
@@ -151,9 +159,9 @@ let translate (functions, statements) =
             | A.FLOAT   -> global_str "f" "f_sym" 
             | A.STRING  -> global_str "s" "s_sym" 
             | A.LAMBDA  -> global_str "l" "l_sym"
-            | A.TABLE   -> global_str "T" "ta_sym"
-            | A.TUPLE   -> global_str "U" "tu_sym"
-            | A.LIST    -> global_str "L" "l_sym"
+            | A.TABLE _ -> global_str "T" "ta_sym"
+            | A.TUPLE _ -> global_str "U" "tu_sym"
+            | A.LIST  _ -> global_str "L" "l_sym"
             | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
         in (match e with 
           SIntLit i     -> lval_of_prim (A.Int i)
@@ -170,10 +178,10 @@ let translate (functions, statements) =
             let types = List.map type_sym ts in
             let content = len :: (types @ (List.map lval_of_prim ps))
             in L.const_struct context (Array.of_list content)
-        | STableLit (ts, pss) -> 
+        | STableLit (ts, pss) ->  
             let num_rows = L.const_int i32_t (List.length pss) in
-            let row_data = List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss in
-            let content = [num_rows; type_sym A.TUPLE] @ (row_data)
+            let row_data = List.map (fun row -> rexpr (A.TUPLE ts, (STupleLit (ts, row)))) pss in
+            let content = [num_rows; type_sym (A.TUPLE ts)] @ (row_data)
             in L.const_struct context (Array.of_list content)
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
@@ -244,9 +252,9 @@ let translate (functions, statements) =
               | A.BOOLEAN -> L.build_load v s builder
               | A.LAMBDA  -> L.build_load v s builder
               | A.NONE  -> raise (Failure "Cannot have var of None type")
-              | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
-              | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-              | A.LIST  -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder)
+              | A.TABLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+              | A.TUPLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+              | A.LIST  _ -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder)
         | SIfExpr (cond, e1, e2) -> 
             let cond' = rexpr cond in
             let e1' = rexpr e1 in
@@ -314,7 +322,7 @@ let translate (functions, statements) =
                   A.NONE -> L.build_ret_void builder 
                 | _ -> L.build_ret (expr builder env e) builder)
             in (env, builder)
-        | SBreak -> raise(Failure("break is not impleemented"))
+        | SBreak -> raise(Failure("break is not implemented"))
         | SDeclare (t, n, e) -> 
             let e' = expr builder env e in
             let v = L.build_alloca (L.type_of e') n builder in

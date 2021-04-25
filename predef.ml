@@ -11,7 +11,7 @@ type predef_func = string * string * A.typ * params
 
 let predefs = 
   [("print", "printf", A.INT, (Var [A.STRING]));
-   ("test", "test", A.NONE, (Fixed [A.LIST]))]
+   ("test", "test", A.NONE, (Fixed [A.LIST (A.INT)]))]
 
 let predef_names = 
   List.map (fun (n,_,_,_)-> n) predefs
