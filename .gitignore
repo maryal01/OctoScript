@@ -5,3 +5,4 @@ _build
 *.ll
 *.exe
 *.s
+*.o
