@@ -89,7 +89,7 @@ let check (functions, statements) =
         | String s -> (STRING, SStringLit s)
         | Boolean b -> (BOOLEAN, SBoolLit b))
     | Noexpr -> (NONE, SNoExp)
-    | Var s -> (LIST, SVar s)
+    | Var s -> (find_identifier s scope, SVar s)
     | Unop (op, e) as ex ->
         let t, e' = check_expr e scope in
         let ty =
