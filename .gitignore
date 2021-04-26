@@ -7,3 +7,5 @@ _build
 *.s
 *.o
 .vscode
+*.log
+*.err
