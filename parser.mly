@@ -68,7 +68,7 @@ args_list:
 
 fdecl: 
   FUNC ID LPAREN formals_opt RPAREN FARROW typ  LBRACE stmnt_list RBRACE  
-    { { typ = $7; fname = $2; formals = $4; body = List.rev $9 } } 
+    { { typ = $7; fname = $2; formals = $4; body = List.rev $9; is_vararg = false } } 
 
 stmnt_list:
     /* nothing */  { [] }

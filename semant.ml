@@ -2,6 +2,8 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 
+module P = Predef
+
 type symbol_table = {
   identifiers : typ StringMap.t;
   parent : symbol_table option;
@@ -23,19 +25,15 @@ let check (functions, statements) =
     to_check
   in
   let built_in_decls =
-    let add_bind map (name, ty) =
+    let add_bind map (name, _, ty, ps) =
+      let formal_types = function P.Fixed ts -> ts | P.Var ts -> ts in
+      let is_var = function P.Fixed _ -> false | P.Var _ -> true  
+      in
       StringMap.add name
-        { typ = NONE; fname = name; formals = [ (ty, "x") ]; body = [] }
+        { typ = ty; fname = name; formals = List.map (fun t -> (t, "p")) (formal_types ps); body = []; is_vararg = is_var ps }
         map
     in
-    List.fold_left add_bind StringMap.empty
-      [
-        ("print", STRING);
-        ("printb", BOOLEAN);
-        ("printf", FLOAT);
-        ("printbig", INT);
-        ("test", LIST)
-      ]
+    List.fold_left add_bind StringMap.empty P.predefs
   in
   let add_func map fd =
     let built_in_err = "function " ^ fd.fname ^ " may not be defined"
@@ -57,7 +55,7 @@ let check (functions, statements) =
     with Not_found -> (
       match !scope.parent with
       | Some parent -> find_identifier name (ref parent)
-      | None -> raise (Failure "The identifier is not already defined. "))
+      | None -> raise (Failure ("The identifier " ^ name ^ " is not already defined. ")))
   in
   let add_identifier name typ (scope : symbol_table ref) =
     try
@@ -161,15 +159,42 @@ let check (functions, statements) =
     | Call (fname, args) ->
         let fdecl = find_func fname in
         let param_length = List.length fdecl.formals in
-        if List.length args != param_length then
-          raise (Failure "Arguments-Parameters MisMatch")
+        (* TODO: Param types for var args are not checked *)
+        if fdecl.is_vararg then 
+          (if List.length args < param_length then 
+            raise (Failure ("Function " ^ fdecl.fname ^ " requires at least " ^ (string_of_int param_length) ^ " arguments"))
+          else  
+            let rec first_n ls n = 
+              if n == 0 then
+                []
+              else 
+                (match ls with 
+                    []      -> raise (Failure "first_n list smaller than specified length")
+                  | v :: vs -> v :: (first_n vs (n - 1)))
+            in
+            let check_call (ft, _) e =
+              let et, e' = check_expr e scope in
+              (check_assign ft et, e')
+            in
+            (* TODO: messy code for checking and evaluating varargs, but this will do for now *)
+            (* leaving this here just for type checking *)
+            let _ = List.map2 check_call fdecl.formals (first_n args param_length) in
+            let eval_params e =
+              let et, e' = check_expr e scope in
+              (et, e')
+            in
+            let vargs = List.map eval_params args in
+            (fdecl.typ, SCall (fname, vargs)))
         else
-          let check_call (ft, _) e =
-            let et, e' = check_expr e scope in
-            (check_assign ft et, e')
-          in
-          let args' = List.map2 check_call fdecl.formals args in
-          (fdecl.typ, SCall (fname, args'))
+          (if List.length args != param_length then
+            raise (Failure "Arguments-Parameters MisMatch")
+          else
+            let check_call (ft, _) e =
+              let et, e' = check_expr e scope in
+              (check_assign ft et, e')
+            in
+            let args' = List.map2 check_call fdecl.formals args in
+            (fdecl.typ, SCall (fname, args')))
     | IfExpr (e1, e2, e3) as e -> (
         let t1, e1' = check_expr e1 scope
         and t2, e2' = check_expr e2 scope
@@ -265,6 +290,6 @@ let check (functions, statements) =
     List.map
       (fun st ->
         check_stmt st
-          { typ = NONE; fname = "_"; formals = []; body = [] }
+          { typ = NONE; fname = "_"; formals = []; body = []; is_vararg = false }
           global_scope)
       statements )
