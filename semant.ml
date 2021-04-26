@@ -48,7 +48,7 @@ let check (functions, statements) =
     | _ -> StringMap.add n fd map
   in
   let check_assign lvaluet rvaluet =
-    if lvaluet = rvaluet then lvaluet else raise (Failure "Invalid assignment")
+    if lvaluet = rvaluet then lvaluet else raise (Failure ("Invalid assignment from " ^ (typ_to_string rvaluet) ^ " to " ^ (typ_to_string lvaluet)))
   in
   let variable_table = { identifiers = StringMap.empty; parent = None } in
   let global_scope = ref variable_table in

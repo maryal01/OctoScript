@@ -6,6 +6,9 @@ module P = Predef
 
 module StringMap = Map.Make(String)
 
+(* TODO: Test creating and evocation of lambdas, especially passed to a C predef function *)
+(* TODO: Implement built in functions within ocaml; get, len, type conversions? *)
+
 let translate (functions, statements) = 
   let context    = L.global_context () in
   let i32_t      = L.i32_type    context
