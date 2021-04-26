@@ -1,0 +1,8 @@
+fn test-complex () -> int {
+    tuple x = (1, 2, 3);
+    tuple y = (true, "cat", 3.14);
+    list  z = ["a", "b", "c"];
+    return 0;
+}
+
+print(test-complex());

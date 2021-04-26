@@ -1,4 +1,4 @@
-int test-if (int i, bool b) {
+fn test-if (int i, bool b) -> int {
     if (b) {
         if ( i < 5) {
             return 2;

@@ -1,0 +1,5 @@
+fn fail-function (int x) -> int {
+    return x;
+}
+
+failFunction(1);

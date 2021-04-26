@@ -1,0 +1,6 @@
+fn fail-return () -> int {
+    return 1;
+    return 2;
+}
+
+fail-return();

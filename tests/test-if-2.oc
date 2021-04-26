@@ -1,4 +1,4 @@
-int test-if (int i) {
+fn test-if (int i) -> int {
     if (i > 10) {
         if (i < 50) {
             return 1;
