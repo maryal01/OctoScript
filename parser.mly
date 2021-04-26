@@ -101,7 +101,7 @@ array:
 statement:
     expr SEMI                                                                     { Expr $1                 }
   | RETURN expr_opt SEMI                                                          { Return $2               }
-  | LBRACE stmnt_list LBRACE                                                      { Block (List.rev $2)     } 
+  | LBRACE stmnt_list RBRACE                                                      { Block (List.rev $2)     } 
   | IF LPAREN expr RPAREN LBRACE statement RBRACE %prec NOELSE                    { If($3, $6, Block([]))   }
   | IF LPAREN expr RPAREN LBRACE statement RBRACE ELSE LBRACE statement RBRACE    { If($3, $6, $10)         }
   | WHILE LPAREN expr RPAREN LBRACE statement RBRACE                              { While($3, $6)           }
