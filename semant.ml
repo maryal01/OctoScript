@@ -82,7 +82,8 @@ let check (functions, statements) =
   let function_decls = List.fold_left add_func built_in_decls functions in
   let find_func s =
     try StringMap.find s function_decls
-    with Not_found -> raise (Failure ("unrecognized function " ^ s))
+    with Not_found -> 
+      raise (Failure ("unrecognized function " ^ s))
   in
   let lambda_name =
     let counter = ref 0 in
@@ -169,7 +170,8 @@ let check (functions, statements) =
         let typ_list = List.map fold_func elements in
         (TUPLE, STupleLit (typ_list, elements))
     | TableLit _ -> (TUPLE, STupleLit ([], []))
-    | Apply (obj, fname, args) -> check_expr (Call (fname, obj :: args)) scope
+    | Apply (obj, fname, args) -> 
+      check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
         let fdecl = find_func fname in
         let param_length = List.length fdecl.formals in

@@ -102,9 +102,10 @@ statement:
     expr SEMI                                                                     { Expr $1                 }
   | RETURN expr_opt SEMI                                                          { Return $2               }
   | LBRACE stmnt_list RBRACE                                                      { Block (List.rev $2)     } 
-  | IF LPAREN expr RPAREN  statement  %prec NOELSE                    { If($3, $5, Block([]))   }
-  | IF LPAREN expr RPAREN  statement  ELSE LBRACE statement RBRACE    { If($3, $5, $8)         }
-  | WHILE LPAREN expr RPAREN statement                               { While($3, $5)           }
+
+  | IF LPAREN expr RPAREN statement %prec NOELSE                                  { If($3, $5, Block([]))   }
+  | IF LPAREN expr RPAREN statement ELSE statement                                { If($3, $5, $7)         }
+  | WHILE LPAREN expr RPAREN statement                                            { While($3, $5)           }
   | BREAK SEMI                                                                    { Break                   }
   | ID ASSIGN expr SEMI                                                           { Assign($1, $3)          }
   | typ ID ASSIGN expr SEMI                                                       { Declare($1, $2, $4)     }
@@ -129,11 +130,13 @@ expr:
   | expr OP_LEQ    expr                       { Binop($1, LTE,   $3)   }
   | expr OP_GT     expr                       { Binop($1, GT,    $3)   }
   | expr OP_GEQ    expr                       { Binop($1, GTE,   $3)   }
-  | expr OP_AND    expr                       {  Binop($1, AND,   $3)  }
+  | expr OP_AND    expr                       { Binop($1, AND,   $3)   }
   | expr OP_OR     expr                       { Binop($1, OR,    $3)   }
   | MINUS expr %prec OP_NOT                   { Unop(NEG, $2)          }
   | OP_NOT expr                               { Unop(NOT, $2)          }
-  | ID LPAREN  args_opt RPAREN                { Call($1, $3)           }  
+  | ID LPAREN  args_opt RPAREN                { Call($1, $3)           }
+  // | IF LPAREN expr RPAREN  expr %prec NOELSE  { IfExpr($3, $5, Noexpr) }
+  // | IF LPAREN expr RPAREN  expr  ELSE  expr   { IfExpr($3, $5, $7)     }
   | expr DOT ID LPAREN  args_opt RPAREN       { Apply($1, $3, $5)      }
   | LBRACK  array  RBRACK                     { ListLit(List.rev $2)   } 
   | LPAREN  array  RPAREN                     { TupleLit(List.rev $2)  }

@@ -43,6 +43,8 @@ let translate (functions, statements) =
             (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))
     in
     let predef_decl m (on, cn, rt, ps) =
+      if on = "length" then m else
+
       StringMap.add on
         (L.declare_function cn (predef_type rt ps) the_module, rt)
         m
@@ -193,20 +195,20 @@ let translate (functions, statements) =
           let data =
             L.const_array (ltype_of_typ t)
               (Array.of_list (List.map lval_of_prim ps))
-          and len = L.const_int i32_t (List.length ps) in
+          and len = mk_int (List.length ps) in
           let value =
             L.const_struct context [| type_sym A.LIST; len; type_sym t; data |]
           in
           value
       | STupleLit (ts, ps) ->
-          let len = L.const_int i32_t (List.length ps) in
+          let len = mk_int (List.length ps) in
           let types = List.map type_sym ts in
           let content =
             type_sym A.TUPLE :: len :: (types @ List.map lval_of_prim ps)
           in
           L.const_struct context (Array.of_list content)
       | STableLit (ts, pss) ->
-          let num_rows = L.const_int i32_t (List.length pss) in
+          let num_rows = mk_int (List.length pss) in
           let row_data =
             List.map (fun row -> rexpr (A.TUPLE, STupleLit (ts, row))) pss
           in
@@ -303,31 +305,37 @@ let translate (functions, statements) =
           let e2' = rexpr e2 in
           L.build_select cond' e1' e2' "tmp" builder
       | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
-      | SCall (f, args) ->
-          let llargs = List.map rexpr args in
-          let userdef dom =
-            let fdef, fdecl =
-              try StringMap.find f dom
-              with Not_found ->
-                raise (Failure (f ^ " is not a declared function"))
-            in
-            let result =
-              match fdecl.styp with A.NONE -> "" | _ -> f ^ "_result"
-            in
-            L.build_call fdef (Array.of_list llargs) result builder
-          and predef f =
-            let pdecl, rt =
-              try StringMap.find f predef_decls
-              with Not_found ->
-                raise (Failure (f ^ " is not a recognized built-in function"))
-            in
-            let result = match rt with A.NONE -> "" | _ -> f ^ "_result" in
-            L.build_call pdecl (Array.of_list llargs) result builder
-          and is_lambda = StringMap.mem f env
-          and is_predef = List.mem f P.predef_names in
-          if is_lambda then userdef lambda_decls
-          else if is_predef then predef f
-          else userdef function_decls
+      | SCall (f, args) -> 
+          if f = "length" then (*  L.const_struct context [| type_sym A.LIST; len; type_sym t; data |] *)
+            let listt = (expr builder env (List.hd args)) in
+            let v = L.build_alloca (L.type_of listt) "tmp1" builder in
+            let _ = L.build_store listt v builder in
+            L.build_load (L.build_struct_gep v 1 "tmp2" builder) "tmp3" builder
+          else
+            let llargs = List.map rexpr args in
+            let userdef dom =
+              let fdef, fdecl =
+                try StringMap.find f dom
+                with Not_found ->
+                  raise (Failure (f ^ " is not a declared function"))
+              in
+              let result =
+                match fdecl.styp with A.NONE -> "" | _ -> f ^ "_result"
+              in
+              L.build_call fdef (Array.of_list llargs) result builder
+            and predef f =
+              let pdecl, rt =
+                try StringMap.find f predef_decls
+                with Not_found ->
+                  raise (Failure (f ^ " is not a recognized built-in function"))
+              in
+              let result = match rt with A.NONE -> "" | _ -> f ^ "_result" in
+              L.build_call pdecl (Array.of_list llargs) result builder
+            and is_lambda = StringMap.mem f env
+            and is_predef = List.mem f P.predef_names in
+            if is_lambda then userdef lambda_decls
+            else if is_predef then predef f
+            else userdef function_decls
       | SNoExp -> L.const_null void_t
       (* Actually not quite sure? *)
     in

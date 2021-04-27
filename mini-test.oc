@@ -1,6 +1,3 @@
- {
-    int x = 7;
-    int z = x;
-    int y = x * 6;
-    print("The two values are: %d and %d \n", z, y);
-}
+int value = [1,2,3].length();
+int what = 7;
+print("The two values are: %d",value );
