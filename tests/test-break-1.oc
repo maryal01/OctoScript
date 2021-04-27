@@ -7,4 +7,4 @@ fn test-break () -> int {
     return i;
 }
 
-print(test-break());
+print("%d", test-break());

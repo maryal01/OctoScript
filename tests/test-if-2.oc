@@ -10,6 +10,6 @@ fn test-if (int i) -> int {
     return 100;
 }
 
-print(test-if(1));
-print(test-if(20));
-print(test-if(75));
+print("%d", test-if(1));
+print("%d", test-if(20));
+print("%d", test-if(75));

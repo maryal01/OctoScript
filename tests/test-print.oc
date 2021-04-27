@@ -1,7 +1,7 @@
-print(10);
-print(3.14);
+print("%d", 10);
+print("%f", 3.14);
 print("test");
-print(true);
+print("%d", true);
 
 /* need tests for printing complex types */
 

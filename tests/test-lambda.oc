@@ -10,4 +10,4 @@ fn test-lambda (int z) -> int {
     return x(z, true);    
 }
 
-print(test-lambda(3));
+print("%d", test-lambda(3));

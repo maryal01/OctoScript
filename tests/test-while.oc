@@ -8,4 +8,4 @@ fn testWhile (int i) -> int {
     return x;
 }
 
-print(testWhile(10));
+print("%d", testWhile(10));

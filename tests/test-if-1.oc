@@ -12,6 +12,6 @@ fn test-if (int i, bool b) -> int {
     }
 }
 
-print(test-if(-10, true));
-print(test-if(10,  true));
-print(test-if(10, false));
+print("%d", test-if(-10, true));
+print("%d", test-if(10,  true));
+print("%d", test-if(10, false));
