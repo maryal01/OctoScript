@@ -88,8 +88,8 @@ void test(void *data){
     char buf[BUF_SIZE];
 
     toString(lp->type, lp->data, buf);
-    printf("Data in list: self_type %d, length %d, type %d, first value %s\n",
-            lp->self_type, lp->len, lp->type, buf);
+    printf("Data in list: self_type %d, length %d, type %d, first value %d\n",
+            lp->self_type, lp->len, lp->type, *((int *)lp->data));
 }
 
 

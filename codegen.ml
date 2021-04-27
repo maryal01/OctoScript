@@ -165,9 +165,9 @@ let translate (functions, statements) =
         | SStringLit s  -> lval_of_prim (A.String s)
         | SBoolLit b    -> lval_of_prim (A.Boolean b)
         | SListLit (t, ps) -> 
-            let data = L.const_array (ltype_of_typ t) (Array.of_list (List.map lval_of_prim ps))
-            and len = L.const_int i32_t (List.length ps) in
-            let value = L.const_struct context [| (type_sym A.LIST); len; (type_sym t); data |]  
+            let len = L.const_int i32_t (List.length ps) in
+            let content =  (type_sym A.LIST) :: (len :: ((type_sym t) :: List.map lval_of_prim ps)) in
+            let value = L.const_struct context (Array.of_list content)  
             in value
         | STupleLit (ts, ps) -> 
             let len = L.const_int i32_t (List.length ps) in
@@ -244,7 +244,7 @@ let translate (functions, statements) =
             (match t with 
                 A.INT     -> L.build_load v s builder
               | A.FLOAT   -> L.build_load v s builder
-              | A.STRING  -> L.build_load v s builder
+              | A.STRING  -> L.build_bitcast v (L.pointer_type i8_t) "var_string_tmp" builder
               | A.BOOLEAN -> L.build_load v s builder
               | A.LAMBDA  -> L.build_load v s builder
               | A.NONE  -> raise (Failure "Cannot have var of None type")

@@ -1,7 +1,2 @@
-list l = [ 2, 3 ];
+list l = [ 1, 2, 3 ];
 test(l);
-print(string_of_list(l));
-
-list b = [ true, false ];
-test(b);
-print(string_of_list(b));
