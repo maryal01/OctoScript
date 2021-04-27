@@ -319,7 +319,7 @@ let translate (functions, statements) =
 
           else if f = "get" then
             let value = List.hd (List.tl args) in
-            let idx = (expr builder env ((A.INT, SBinop((A.INT, SIntLit 3), A.Add, (A.INT, SIntLit 2))))) in 
+            let idx = (expr builder env ((A.INT, SBinop((A.INT, SIntLit 3), A.Add, value)))) in 
             let listt =
               match (List.hd args) with
               | (_, SVar s) ->
