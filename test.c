@@ -40,6 +40,11 @@ void toString(int type, void *data, char *buf){
             sprintf(buf, "%d", *(int *)data);
             break;
         case 1: //boolean
+            if(*(char *)data == 0){
+                strcpy(buf, "false");
+            }else{
+                strcpy(buf, "true");
+            }
             break;
         case 2: //float
             break;
