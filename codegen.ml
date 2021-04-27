@@ -244,7 +244,7 @@ let translate (functions, statements) =
             (match t with 
                 A.INT     -> L.build_load v s builder
               | A.FLOAT   -> L.build_load v s builder
-              | A.STRING  -> L.build_bitcast v (L.pointer_type i8_t) "var_string_tmp" builder
+              | A.STRING  -> L.build_load v s builder
               | A.BOOLEAN -> L.build_load v s builder
               | A.LAMBDA  -> L.build_load v s builder
               | A.NONE  -> raise (Failure "Cannot have var of None type")
