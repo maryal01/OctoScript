@@ -261,9 +261,20 @@ let check (functions, statements) =
         SWhile (p', s')
     | Declare (t, id, e) ->
         let et', e' = check_expr e scope in
-        let same_type = t = et'|| (et' = NONE) in
-        (*  *)
+        let same_type = t = et' in
+        let empty_declaration = et' = NONE in
         if same_type then
+          let _ = add_identifier id t scope in
+          SDeclare (t, id, (et', e'))
+        else if empty_declaration then
+          let (et', e') =
+            match t with
+            | INT -> (INT, SIntLit 0)
+            | FLOAT -> (FLOAT, SFloatLit 0.0)
+            | STRING -> (STRING, SStringLit "")
+            | BOOLEAN -> (BOOLEAN, SBoolLit false)
+            | _ -> raise (Failure ("The " ^ typ_to_string t ^ " doesn't support empty variable declaration." ))
+          in
           let _ = add_identifier id t scope in
           SDeclare (t, id, (et', e'))
         else

@@ -6,4 +6,4 @@ fn test-assign (int i) -> int {
     return x;
 }
 
-test-assign(12);
+print(test-assign(12));
