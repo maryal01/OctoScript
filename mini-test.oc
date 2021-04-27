@@ -1,0 +1,5 @@
+fn new_function(int y) -> int {
+int x = y;
+int z = x;
+return x;
+}
