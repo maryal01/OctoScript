@@ -1,2 +1,3 @@
 list l = [ 2, 3 ];
 test(l);
+print(string_of_list(l));
