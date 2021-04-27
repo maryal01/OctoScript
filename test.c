@@ -5,30 +5,31 @@
 #define BUF_SIZE 10
 
 typedef struct ListType{
+    int self_type;
     int len;
-    char *type;
+    int type;
     char data[];
 } ListType;
 
-void toString(char sym, void *data, char *buf){
-    switch(sym) {
-        case 'i': //int
+void toString(int type, void *data, char *buf){
+    switch(type) {
+        case 0: //int
             sprintf(buf, "%d", *(int *)data);
             break;
-        case 'b': //boolean
+        case 1: //boolean
             break;
-        case 'f': //float
+        case 2: //float
             break;
-        case 's': //string
+        case 3: //string
             break;
-        case 'l': //lambda
+        case 4: //lambda
             break;
-        case 'T': //table
+        case 10: //list
             break;
-        case 'U': //tuple
+        case 11: //tuple
             break;
-        case 'L': //list
-            break;
+        // TABLEs are represented as a list of tuples, so there is no 
+        // actual table type under the hood
     }
 }
 
@@ -37,9 +38,9 @@ void test(void *data){
     
     char buf[BUF_SIZE];
 
-    toString(*(lp->type), lp->data, buf);
-    printf("Data in list: length %d, type %s, first value %s\n",
-            lp->len, lp->type, buf);
+    toString(lp->type, lp->data, buf);
+    printf("Data in list: self_type %d, length %d, type %d, first value %s\n",
+            lp->self_type, lp->len, lp->type, buf);
 }
 
 

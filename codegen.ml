@@ -140,23 +140,24 @@ let translate (functions, statements) =
       let rec expr builder env ((t, e) : sexpr) = 
         let rexpr = expr builder env in
         let global_str s n = L.build_global_stringptr s n builder in
+        let mk_int i = L.const_int i32_t i in 
         (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
         let lval_of_prim p = 
           (match p with 
-              A.Int     i -> L.const_int i32_t i
+              A.Int     i -> mk_int i
             | A.Float   f -> L.const_float float_t f
             | A.String  s -> global_str s "string"
             | A.Boolean b -> L.const_int i1_t (if b then 1 else 0))
         and type_sym t = 
           (match t with 
-              A.INT     -> global_str "i" "i_sym" 
-            | A.BOOLEAN -> global_str "b" "b_sym" 
-            | A.FLOAT   -> global_str "f" "f_sym" 
-            | A.STRING  -> global_str "s" "s_sym" 
-            | A.LAMBDA  -> global_str "l" "l_sym"
-            | A.TABLE   -> global_str "T" "ta_sym"
-            | A.TUPLE   -> global_str "U" "tu_sym"
-            | A.LIST    -> global_str "L" "l_sym"
+              A.INT     -> mk_int 0
+            | A.BOOLEAN -> mk_int 1
+            | A.FLOAT   -> mk_int 2
+            | A.STRING  -> mk_int 3
+            | A.LAMBDA  -> mk_int 4
+            | A.LIST    -> mk_int 10
+            | A.TUPLE   -> mk_int 11
+            | A.TABLE   -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
             | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
         in (match e with 
           SIntLit i     -> lval_of_prim (A.Int i)
@@ -166,17 +167,17 @@ let translate (functions, statements) =
         | SListLit (t, ps) -> 
             let data = L.const_array (ltype_of_typ t) (Array.of_list (List.map lval_of_prim ps))
             and len = L.const_int i32_t (List.length ps) in
-            let value = L.const_struct context [| len; (type_sym t); data |]  
+            let value = L.const_struct context [| (type_sym A.LIST); len; (type_sym t); data |]  
             in value
         | STupleLit (ts, ps) -> 
             let len = L.const_int i32_t (List.length ps) in
             let types = List.map type_sym ts in
-            let content = len :: (types @ (List.map lval_of_prim ps))
+            let content =  (type_sym A.TUPLE) :: (len :: (types @ (List.map lval_of_prim ps)))
             in L.const_struct context (Array.of_list content)
         | STableLit (ts, pss) -> 
             let num_rows = L.const_int i32_t (List.length pss) in
             let row_data = List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss in
-            let content = [num_rows; type_sym A.TUPLE] @ (row_data)
+            let content = [(type_sym A.LIST); num_rows; type_sym A.TUPLE] @ (row_data)
             in L.const_struct context (Array.of_list content)
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
