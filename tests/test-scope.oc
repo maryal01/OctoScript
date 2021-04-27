@@ -13,6 +13,6 @@ fn test-scope3 () -> int {
     return i;
 }
 
-print("%d", test-scope1(1));
+print("%d", test-scope1(7));
 print("%d", test-scope2(1));
 print("%d", test-scope3());

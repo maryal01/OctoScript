@@ -5,4 +5,4 @@ fn test-complex () -> int {
     return 0;
 }
 
-print(test-complex());
+print("%d",test-complex());

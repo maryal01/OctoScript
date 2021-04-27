@@ -1,6 +1,6 @@
-fn new_function(int y) -> int {
-int x;
-x = 0;
-int z = x;
-return x;
+ {
+    int x = 7;
+    int z = x;
+    int y = x * 6;
+    print("The two values are: %d and %d \n", z, y);
 }

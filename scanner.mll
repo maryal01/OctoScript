@@ -18,6 +18,7 @@ rule token = parse
 | ','      { COMMA }
 | ':'      { COLON }
 | '.'      { DOT }
+| '?'      { QUESTION }
 
 | '+'      { PLUS }
 | '-'      { MINUS }
