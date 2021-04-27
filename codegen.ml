@@ -43,11 +43,11 @@ let translate (functions, statements) =
             (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))
     in
     let predef_decl m (on, cn, rt, ps) =
-      if on = "length" then m else
-
-      StringMap.add on
-        (L.declare_function cn (predef_type rt ps) the_module, rt)
-        m
+      if on = "length" then m
+      else
+        StringMap.add on
+          (L.declare_function cn (predef_type rt ps) the_module, rt)
+          m
     in
     List.fold_left predef_decl StringMap.empty P.predefs
   in
@@ -192,13 +192,11 @@ let translate (functions, statements) =
       | SStringLit s -> lval_of_prim (A.String s)
       | SBoolLit b -> lval_of_prim (A.Boolean b)
       | SListLit (t, ps) ->
-          let data =
-            L.const_array (ltype_of_typ t)
-              (Array.of_list (List.map lval_of_prim ps))
-          and len = mk_int (List.length ps) in
-          let value =
-            L.const_struct context [| type_sym A.LIST; len; type_sym t; data |]
+          let len = mk_int (List.length ps) in
+          let content =
+            type_sym A.LIST :: len :: type_sym t :: List.map lval_of_prim ps
           in
+          let value = L.const_struct context (Array.of_list content) in
           value
       | STupleLit (ts, ps) ->
           let len = mk_int (List.length ps) in
@@ -305,12 +303,35 @@ let translate (functions, statements) =
           let e2' = rexpr e2 in
           L.build_select cond' e1' e2' "tmp" builder
       | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
-      | SCall (f, args) -> 
-          if f = "length" then (*  L.const_struct context [| type_sym A.LIST; len; type_sym t; data |] *)
-            let listt = (expr builder env (List.hd args)) in
+      | SCall (f, args) ->
+          if f = "length" then
+            (*  L.const_struct context [| type_sym A.LIST; len; type_sym t; data |] *)
+            let listt =
+              match (List.hd args) with
+              | (_, SVar s) ->
+                  let v = lookup s env in
+                  L.build_load v s builder
+              | _ -> expr builder env (List.hd args)
+            in
             let v = L.build_alloca (L.type_of listt) "tmp1" builder in
             let _ = L.build_store listt v builder in
             L.build_load (L.build_struct_gep v 1 "tmp2" builder) "tmp3" builder
+
+          else if f = "get" then
+            let value = List.hd (List.tl args) in
+            let idx = (expr builder env ((A.INT, SBinop((A.INT, SIntLit 3), A.Add, (A.INT, SIntLit 2))))) in 
+            let listt =
+              match (List.hd args) with
+              | (_, SVar s) ->
+                  let v = lookup s env in
+                  L.build_load v s builder
+              | _ -> expr builder env (List.hd args)
+            in
+            let v = L.build_alloca (L.type_of listt) "tmp1" builder in
+            let _ = L.build_store listt v builder in
+            L.build_load
+              (L.build_gep v [| mk_int 0; idx|] "tmp2" builder)
+              "tmp3" builder
           else
             let llargs = List.map rexpr args in
             let userdef dom =
@@ -390,7 +411,7 @@ let translate (functions, statements) =
             | _ -> L.build_ret (expr builder env e) builder
           in
           (env, builder)
-      | SBreak -> raise (Failure "break is not impleemented")
+      | SBreak -> raise (Failure "break is not implemented")
       | SDeclare (t, n, e) ->
           let e' = expr builder env e in
           let v = L.build_alloca (L.type_of e') n builder in
