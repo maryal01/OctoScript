@@ -4,6 +4,7 @@ clean:
 	ocamlbuild -clean
 	rm -rf parser.mli parser.output parser.ml ocamlllvm *.diff *.o *.output *.ll *.s *.exe *.err *.out *.log tests/*.s
 
+
 toplevel.native :
 	opam config exec -- \
 	ocamlbuild -use-ocamlfind toplevel.native
