@@ -137,7 +137,7 @@ let translate (functions, statements) =
 
       (* Construct code for an expression; return its value *)
       (* NOTE: expr is guaranteed to not modify the env *)
-      let rec expr builder env ((t, e) : sexpr) = 
+      let rec expr builder env ((_, e) : sexpr) = 
         let rexpr = expr builder env in
         let global_str s n = L.build_global_stringptr s n builder in
         let mk_int i = L.const_int i32_t i in 
@@ -159,6 +159,10 @@ let translate (functions, statements) =
             | A.TUPLE   -> mk_int 11
             | A.TABLE   -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
             | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
+        and mallocate llval = 
+            let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
+            let _ = L.build_store llval v builder
+            in v
         in (match e with 
           SIntLit i     -> lval_of_prim (A.Int i)
         | SFloatLit f   -> lval_of_prim (A.Float f)
@@ -168,17 +172,19 @@ let translate (functions, statements) =
             let len = L.const_int i32_t (List.length ps) in
             let content =  (type_sym A.LIST) :: (len :: ((type_sym t) :: List.map lval_of_prim ps)) in
             let value = L.const_struct context (Array.of_list content)  
-            in value
+            in mallocate value
         | STupleLit (ts, ps) -> 
             let len = L.const_int i32_t (List.length ps) in
             let types = List.map type_sym ts in
-            let content =  (type_sym A.TUPLE) :: (len :: (types @ (List.map lval_of_prim ps)))
-            in L.const_struct context (Array.of_list content)
+            let content = (type_sym A.TUPLE) :: (len :: (types @ (List.map lval_of_prim ps))) in
+            let value = L.const_struct context (Array.of_list content) 
+            in mallocate value
         | STableLit (ts, pss) -> 
             let num_rows = L.const_int i32_t (List.length pss) in
             let row_data = List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss in
-            let content = [(type_sym A.LIST); num_rows; type_sym A.TUPLE] @ (row_data)
-            in L.const_struct context (Array.of_list content)
+            let content = [(type_sym A.LIST); num_rows; type_sym A.TUPLE] @ (row_data) in
+            let value = L.const_struct context (Array.of_list content)
+            in mallocate value
         | SBinop (e1, op, e2) -> 
             let (t, _) = e1
               and e1' = rexpr e1
@@ -239,38 +245,35 @@ let translate (functions, statements) =
               | _ -> raise (Failure "Internal Error: Not a unary operator")
             ) e' "tmp" builder
         (* additional logic required here to cast complex types into pointers *)
-        | SVar s -> 
-            let v = lookup s env in
-            (match t with 
-                A.INT     -> L.build_load v s builder
-              | A.FLOAT   -> L.build_load v s builder
-              | A.STRING  -> L.build_load v s builder
-              | A.BOOLEAN -> L.build_load v s builder
-              | A.LAMBDA  -> L.build_load v s builder
-              | A.NONE  -> raise (Failure "Cannot have var of None type")
-              | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
-              | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-              | A.LIST  -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder)
+        | SVar s -> L.build_load (lookup s env) s builder
         | SIfExpr (cond, e1, e2) -> 
             let cond' = rexpr cond in
             let e1' = rexpr e1 in
             let e2' = rexpr e2 in
             L.build_select cond' e1' e2' "tmp" builder 
         | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
-        | SCall (f, args) -> 
-            let llargs = List.map rexpr args in
+        | SCall (f, args) ->           
             let userdef dom =
+              let llargs = List.map rexpr args in
               let (fdef, fdecl) = (try StringMap.find f dom with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
               let result = (match fdecl.styp with
                               A.NONE -> ""
                             | _ -> f ^ "_result") in
                 L.build_call fdef (Array.of_list llargs) result builder
-            and predef f = 
+            and predef f =
+              let cast_complex (t, sx) = 
+                let v = rexpr (t, sx) in
+                (match t with 
+                    A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                  | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                  | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                  | _ -> v) in 
+              let pargs = List.map cast_complex args in 
               let (pdecl, rt) = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
               let result = (match rt  with
                               A.NONE -> ""
                             | _ -> f ^ "_result") in
-              L.build_call pdecl (Array.of_list llargs) result builder
+              L.build_call pdecl (Array.of_list pargs) result builder
             and is_lambda = StringMap.mem f env
             and is_predef = List.mem f P.predef_names 
             in if is_lambda then userdef lambda_decls else (if is_predef then predef f else userdef function_decls)
