@@ -1,15 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "list.c"
 
 #define BUF_SIZE 10
 
-typedef struct ListType{
-    int self_type;
-    int len;
-    int type;
-    char data[];
-} ListType;
+
 
 size_t size_of_type(int type)
 {
