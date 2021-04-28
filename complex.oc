@@ -1,2 +1,3 @@
-list l = [ 2, 3 ];
-test(l);
+list l = [0, 0, 2, 0];
+read("write name here", l, false, ",");
+

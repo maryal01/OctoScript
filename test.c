@@ -1,15 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "list.c"
 
 #define BUF_SIZE 10
 
-typedef struct ListType{
-    int self_type;
-    int len;
-    int type;
-    char data[];
-} ListType;
+
 
 void toString(int type, void *data, char *buf){
     switch(type) {
