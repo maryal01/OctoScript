@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "list.c"
+#include "prebuilt.c"
 
 
 
@@ -38,7 +38,7 @@ char *string_of_list(void *data){
         size_t offset = size_of_type(lp->type) * i;
         
         char int_buf[BUF_SIZE];
-        toString(lp->data + offset, lp->type, int_buf);
+        valToString(lp->data + offset, lp->type, int_buf);
         strcat(list_buf, int_buf);
         if(i + 1 != lp->len){
             strcat(list_buf, ", ");
@@ -54,7 +54,7 @@ void test(void *data){
     
     char buf[BUF_SIZE];
 
-    toString(lp->data, lp->type, buf);
+    valToString(lp->data, lp->type, buf);
     printf("Data in list: self_type %d, length %d, type %d, first value %d\n",
             lp->self_type, lp->len, lp->type, *((int *)lp->data));
 }

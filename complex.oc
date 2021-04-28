@@ -1,9 +1,2 @@
-list l = [0, 2, 2, 0];
-table t = read("/Users/sinan/Desktop/Book1.csv", l, false, ",");
-write(t, "/Users/sinan/Desktop/Book1out.csv", false, ",");
 
-fn list-in (list l) -> none {
-    print(string_of_list(l));
-}
-list l = list-out();
-list-in(l);
+
