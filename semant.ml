@@ -1,7 +1,6 @@
 open Ast
 open Sast
 module StringMap = Map.Make (String)
-
 module P = Predef
 
 type symbol_table = {
@@ -27,10 +26,15 @@ let check (functions, statements) =
   let built_in_decls =
     let add_bind map (name, _, ty, ps) =
       let formal_types = function P.Fixed ts -> ts | P.Var ts -> ts in
-      let is_var = function P.Fixed _ -> false | P.Var _ -> true  
-      in
+      let is_var = function P.Fixed _ -> false | P.Var _ -> true in
       StringMap.add name
-        { typ = ty; fname = name; formals = List.map (fun t -> (t, "p")) (formal_types ps); body = []; is_vararg = is_var ps }
+        {
+          typ = ty;
+          fname = name;
+          formals = List.map (fun t -> (t, "p")) (formal_types ps);
+          body = [];
+          is_vararg = is_var ps;
+        }
         map
     in
     List.fold_left add_bind StringMap.empty P.predefs
@@ -46,7 +50,12 @@ let check (functions, statements) =
     | _ -> StringMap.add n fd map
   in
   let check_assign lvaluet rvaluet =
-    if lvaluet = rvaluet then lvaluet else raise (Failure ("Invalid assignment from " ^ (typ_to_string rvaluet) ^ " to " ^ (typ_to_string lvaluet)))
+    if lvaluet = rvaluet then lvaluet
+    else
+      raise
+        (Failure
+           ("Invalid assignment from " ^ typ_to_string rvaluet ^ " to "
+          ^ typ_to_string lvaluet))
   in
   let variable_table = { identifiers = StringMap.empty; parent = None } in
   let global_scope = ref variable_table in
@@ -55,12 +64,14 @@ let check (functions, statements) =
     with Not_found -> (
       match !scope.parent with
       | Some parent -> find_identifier name (ref parent)
-      | None -> raise (Failure ("The identifier " ^ name ^ " is not already defined. ")))
+      | None ->
+          raise
+            (Failure ("The identifier " ^ name ^ " is not already defined. ")))
   in
   let add_identifier name typ (scope : symbol_table ref) =
     try
       let _ = StringMap.find name !scope.identifiers in
-      raise (Failure " The identifier has been already defined")
+      raise (Failure (" The identifier" ^ name ^ "has been already defined"))
     with Not_found ->
       scope :=
         {
@@ -73,10 +84,13 @@ let check (functions, statements) =
     try StringMap.find s function_decls
     with Not_found -> raise (Failure ("unrecognized function " ^ s))
   in
-  let lambda_name = 
+  let lambda_name =
     let counter = ref 0 in
-    let next_id = fun () -> counter := (!counter) + 1; !counter in
-    fun () -> "__lambda_" ^ (string_of_int (next_id ())) ^ "__"
+    let next_id () =
+      counter := !counter + 1;
+      !counter
+    in
+    fun () -> "__lambda_" ^ string_of_int (next_id ()) ^ "__"
   in
   let rec check_expr expression scope =
     match expression with
@@ -127,11 +141,11 @@ let check (functions, statements) =
         let t1, e1 = check_expr e scope in
         (* let _, formal_names = List.split args in *)
         (* let unbound = extract_unbound formal_names e StringSet.empty in  *)
-        (t1, SLambda ( lambda_name (), args, (t1, e1)))
+        (t1, SLambda (lambda_name (), args, (t1, e1)))
     | ListLit elements as list -> (
         match elements with
         | [] -> (NONE, SListLit (NONE, elements))
-        | elem :: elems -> (
+        | elem :: elems ->
             let ex = PrimLit elem in
             let t1, _ = check_expr ex scope in
             (* check why e' not needed?*)
@@ -140,12 +154,12 @@ let check (functions, statements) =
               (* check why e' not needed?*)
               t1 = t'
             in
-            if List.for_all all_func elems then
-            (LIST, SListLit (t1, elements))
-            else raise
-                  (Failure
-                     ("illegal List literal " ^ typ_to_string t1 ^ " expected "
-                    ^ " in " ^ expr_to_string list))))
+            if List.for_all all_func elems then (LIST, SListLit (t1, elements))
+            else
+              raise
+                (Failure
+                   ("illegal List literal " ^ typ_to_string t1 ^ " expected "
+                  ^ " in " ^ expr_to_string list)))
     | TupleLit elements ->
         let fold_func elem =
           let t1, _ = check_expr (PrimLit elem) scope in
@@ -160,17 +174,20 @@ let check (functions, statements) =
         let fdecl = find_func fname in
         let param_length = List.length fdecl.formals in
         (* TODO: Param types for var args are not checked *)
-        if fdecl.is_vararg then 
-          (if List.length args < param_length then 
-            raise (Failure ("Function " ^ fdecl.fname ^ " requires at least " ^ (string_of_int param_length) ^ " arguments"))
-          else  
-            let rec first_n ls n = 
-              if n == 0 then
-                []
-              else 
-                (match ls with 
-                    []      -> raise (Failure "first_n list smaller than specified length")
-                  | v :: vs -> v :: (first_n vs (n - 1)))
+        if fdecl.is_vararg then
+          if List.length args < param_length then
+            raise
+              (Failure
+                 ("Function " ^ fdecl.fname ^ " requires at least "
+                ^ string_of_int param_length ^ " arguments"))
+          else
+            let rec first_n ls n =
+              if n == 0 then []
+              else
+                match ls with
+                | [] ->
+                    raise (Failure "first_n list smaller than specified length")
+                | v :: vs -> v :: first_n vs (n - 1)
             in
             let check_call (ft, _) e =
               let et, e' = check_expr e scope in
@@ -178,23 +195,24 @@ let check (functions, statements) =
             in
             (* TODO: messy code for checking and evaluating varargs, but this will do for now *)
             (* leaving this here just for type checking *)
-            let _ = List.map2 check_call fdecl.formals (first_n args param_length) in
+            let _ =
+              List.map2 check_call fdecl.formals (first_n args param_length)
+            in
             let eval_params e =
               let et, e' = check_expr e scope in
               (et, e')
             in
             let vargs = List.map eval_params args in
-            (fdecl.typ, SCall (fname, vargs)))
+            (fdecl.typ, SCall (fname, vargs))
+        else if List.length args != param_length then
+          raise (Failure "Arguments-Parameters MisMatch")
         else
-          (if List.length args != param_length then
-            raise (Failure "Arguments-Parameters MisMatch")
-          else
-            let check_call (ft, _) e =
-              let et, e' = check_expr e scope in
-              (check_assign ft et, e')
-            in
-            let args' = List.map2 check_call fdecl.formals args in
-            (fdecl.typ, SCall (fname, args')))
+          let check_call (ft, _) e =
+            let et, e' = check_expr e scope in
+            (check_assign ft et, e')
+          in
+          let args' = List.map2 check_call fdecl.formals args in
+          (fdecl.typ, SCall (fname, args'))
     | IfExpr (e1, e2, e3) as e -> (
         let t1, e1' = check_expr e1 scope
         and t2, e2' = check_expr e2 scope
@@ -217,20 +235,20 @@ let check (functions, statements) =
     match statement with
     | Block [] -> SBlock []
     | Block sl ->
-        let rec check_stmt_list statement_list block_scope =
+        let block_variable_table =
+          { identifiers = StringMap.empty; parent = Some !scope }
+        in
+        let block_scope = ref block_variable_table in
+        let rec check_stmt_list statement_list =
           match statement_list with
           | [ (Return _ as s) ] -> [ check_stmt s function_decl block_scope ]
           | Return _ :: _ -> raise (Failure "Nothing may follow a return")
-          | Block s :: ss -> check_stmt_list (s @ ss) block_scope
+          | Block s :: ss -> check_stmt_list (s @ ss)
           | s :: ss ->
-              check_stmt s function_decl block_scope
-              :: check_stmt_list ss block_scope
+              check_stmt s function_decl block_scope :: check_stmt_list ss
           | [] -> []
         in
-        let block_scope =
-          { identifiers = StringMap.empty; parent = Some !scope }
-        in
-        SBlock (check_stmt_list sl (ref block_scope))
+        SBlock (check_stmt_list sl)
     | Expr e -> SExpr (check_expr e scope)
     | If (p, b1, b2) ->
         let p' = check_bool_expr p scope
@@ -244,11 +262,27 @@ let check (functions, statements) =
     | Declare (t, id, e) ->
         let et', e' = check_expr e scope in
         let same_type = t = et' in
+        let empty_declaration = et' = NONE in
         if same_type then
           let _ = add_identifier id t scope in
           SDeclare (t, id, (et', e'))
-        else raise (Failure ("Invalid Declaration of identifier. Expected: " ^ typ_to_string t ^ " Got: " ^ typ_to_string et' ^ " in " ^ expr_to_string e) )
-        (* TODO: think about declaring lambda, table for READ, none *)
+        else if empty_declaration then
+          let (et', e') =
+            match t with
+            | INT -> (INT, SIntLit 0)
+            | FLOAT -> (FLOAT, SFloatLit 0.0)
+            | STRING -> (STRING, SStringLit "")
+            | BOOLEAN -> (BOOLEAN, SBoolLit false)
+            | _ -> raise (Failure ("The " ^ typ_to_string t ^ " doesn't support empty variable declaration." ))
+          in
+          let _ = add_identifier id t scope in
+          SDeclare (t, id, (et', e'))
+        else
+          raise
+            (Failure
+               ("Invalid Declaration of identifier. Expected: "
+              ^ typ_to_string t ^ " Got: " ^ typ_to_string et' ^ " in "
+              ^ expr_to_string e))
     | Return e ->
         let isfunction = function_decl.fname = "_" in
         if isfunction then
@@ -275,21 +309,27 @@ let check (functions, statements) =
         (fun scope (typ, name) -> StringMap.add name typ scope)
         StringMap.empty formals'
     in
-    let func_scope = { identifiers = formals''; parent = Some !global_scope } in
+    let function_variable_table =
+      { identifiers = formals''; parent = Some !global_scope }
+    in
+    let function_scope = ref function_variable_table in
     {
       styp = func.typ;
       sfname = func.fname;
       sformals = formals';
-      sbody =
-        (match check_stmt (Block func.body) func (ref func_scope) with
-        | SBlock sl -> sl
-        | _ -> raise (Failure "Internal Error: Block did not become block"));
+      sbody = List.map (fun st -> check_stmt st func function_scope) func.body;
     }
   in
   ( List.map check_function functions,
     List.map
       (fun st ->
         check_stmt st
-          { typ = NONE; fname = "_"; formals = []; body = []; is_vararg = false }
+          {
+            typ = NONE;
+            fname = "_";
+            formals = [];
+            body = [];
+            is_vararg = false;
+          }
           global_scope)
       statements )

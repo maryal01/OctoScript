@@ -19,6 +19,7 @@ let predefs =
    ("tup", "tup", A.NONE, (Fixed [A.TUPLE]))]
 
   
+   ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST]));]
 
 let predef_names = 
   List.map (fun (n,_,_,_)-> n) predefs

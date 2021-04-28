@@ -1,1 +1,1 @@
-illegal unary operator !int in !12
+Fatal error: exception Failure("illegal unary operator !int in !12")

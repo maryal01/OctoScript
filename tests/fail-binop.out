@@ -1,1 +1,1 @@
-illegal binary operator int + string in 1 + "cat"
+Fatal error: exception Failure("illegal binary operator int + string in 1 + "cat"")

@@ -1,1 +1,1 @@
-illegal List literal int expected in [1, "two"]
+Fatal error: exception Failure("illegal List literal int expected in [1, "two"]")

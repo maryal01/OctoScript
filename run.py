@@ -11,7 +11,6 @@ if len(sys.argv) < 2:
 libs = ' '.join(lib_files)
 
 for f in sys.argv[1:]:
-    print(f'[RUNNING {f}]')
 
     base = '.'.join(f.split('.')[:-1])
     os.system(f'./toplevel.native {f} > {base}.ll')

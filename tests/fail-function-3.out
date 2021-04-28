@@ -1,1 +1,1 @@
-unrecognized function failFunction
+Fatal error: exception Failure("unrecognized function failFunction")
