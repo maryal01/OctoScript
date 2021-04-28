@@ -315,10 +315,17 @@ let translate (functions, statements) =
             let _ = L.build_cond_br bool_val then_bb else_bb builder in
             (env, L.builder_at_end context merge_bb)
         | SReturn e -> 
+            let cast_complex (t, sx) = 
+              let v = expr builder env (t, sx) in
+                (match t with 
+                    A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                  | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                  | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                  | _ -> v) in 
             let _ = 
               (match fdecl.styp with
                   A.NONE -> L.build_ret_void builder 
-                | _ -> L.build_ret (expr builder env e) builder)
+                | _ -> L.build_ret (cast_complex e) builder)
             in (env, builder)
         | SBreak -> raise(Failure("break is not impleemented"))
         | SDeclare (t, n, e) -> 

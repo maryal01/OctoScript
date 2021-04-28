@@ -1,8 +1,9 @@
-list x = [1, 2];
-list y = [true, false];
-
-fn test-list (list l) -> none {
-    print(string_of_list(l));
+fn list-out () -> list {
+    return [1, 2];
 }
 
-test-list(x);
+fn list-in (list l) -> none {
+    print(string_of_list(l));
+}
+list l = list-out();
+list-in(l);
