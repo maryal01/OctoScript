@@ -233,9 +233,9 @@ let translate (functions, statements) =
               | A.Sub -> L.build_sub
               | A.Mul -> L.build_mul
               | A.Div -> L.build_sdiv
-              | A.Pow -> raise (Failure "pow for int is not impleemented")
+              | A.Pow -> raise (Failure "pow for int is not implemented")
               | A.Log ->
-                  raise (Failure "log for int is not impleemented")
+                  raise (Failure "log for int is not implemented")
                   (* TODO: no operator in LLVM so maybe make this an actual function call? *)
               | A.GT -> L.build_icmp L.Icmp.Sgt
               | A.GTE -> L.build_icmp L.Icmp.Sge
@@ -316,10 +316,10 @@ let translate (functions, statements) =
             let v = L.build_alloca (L.type_of listt) "tmp1" builder in
             let _ = L.build_store listt v builder in
             L.build_load (L.build_struct_gep v 1 "tmp2" builder) "tmp3" builder
-
+(* i = 5; list.get(i) --> get(list, i) i --> SVar L.const_int i32  3+i *)
           else if f = "get" then
             let value = List.hd (List.tl args) in
-            let idx = (expr builder env ((A.INT, SBinop((A.INT, SIntLit 3), A.Add, value)))) in 
+            let idx = (expr builder env value) in 
             let listt =
               match (List.hd args) with
               | (_, SVar s) ->
@@ -329,8 +329,9 @@ let translate (functions, statements) =
             in
             let v = L.build_alloca (L.type_of listt) "tmp1" builder in
             let _ = L.build_store listt v builder in
+            let inner_list = L.build_struct_gep v 3 "temp" builder in
             L.build_load
-              (L.build_gep v [| mk_int 0; idx|] "tmp2" builder)
+              (L.build_gep inner_list [| idx |] "tmp2" builder)
               "tmp3" builder
           else
             let llargs = List.map rexpr args in
