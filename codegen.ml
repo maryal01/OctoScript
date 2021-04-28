@@ -252,28 +252,27 @@ let translate (functions, statements) =
             let e2' = rexpr e2 in
             L.build_select cond' e1' e2' "tmp" builder 
         | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
-        | SCall (f, args) ->           
+        | SCall (f, args) -> 
+            let cast_complex (t, sx) = 
+              let v = rexpr (t, sx) in
+                (match t with 
+                    A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                  | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                  | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                  | _ -> v) in 
+            let llargs = List.map cast_complex args in           
             let userdef dom =
-              let llargs = List.map rexpr args in
               let (fdef, fdecl) = (try StringMap.find f dom with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
               let result = (match fdecl.styp with
                               A.NONE -> ""
                             | _ -> f ^ "_result") in
                 L.build_call fdef (Array.of_list llargs) result builder
             and predef f =
-              let cast_complex (t, sx) = 
-                let v = rexpr (t, sx) in
-                (match t with 
-                    A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
-                  | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-                  | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
-                  | _ -> v) in 
-              let pargs = List.map cast_complex args in 
               let (pdecl, rt) = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
               let result = (match rt  with
                               A.NONE -> ""
                             | _ -> f ^ "_result") in
-              L.build_call pdecl (Array.of_list pargs) result builder
+              L.build_call pdecl (Array.of_list llargs) result builder
             and is_lambda = StringMap.mem f env
             and is_predef = List.mem f P.predef_names 
             in if is_lambda then userdef lambda_decls else (if is_predef then predef f else userdef function_decls)

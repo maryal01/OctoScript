@@ -458,7 +458,7 @@ void convert2dtoTable(char*** data, ListType* typeNames, sizeStruct s)
     TableType* tt = (TableType *) malloc(sizeof(TableType));
     tt->len = s.col;
     tt->type = "L";
-    char* typeList = convertTypeList(typeNames, s.col);
+    int* typeList = convertTypeList(typeNames, s.col);
 
     ListType* lt = (ListType *) malloc(sizeof(ListType));
     tt->len = s.row;

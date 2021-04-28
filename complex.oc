@@ -1,3 +1,8 @@
-list l = [0, 0, 2, 0];
-read("write name here", l, false, ",");
+list x = [1, 2];
+list y = [true, false];
 
+fn test-list (list l) -> none {
+    print(string_of_list(l));
+}
+
+test-list(x);
