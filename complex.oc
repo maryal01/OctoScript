@@ -1,3 +1,4 @@
-list l = [0, 0, 2, 0];
-read("write name here", l, false, ",");
+list l = [0, 2, 2, 0];
+table t = read("/Users/sinan/Desktop/Book1.csv", l, false, ",");
+write(t, "/Users/sinan/Desktop/Book1out.csv", false, ",");
 

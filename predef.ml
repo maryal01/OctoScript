@@ -16,9 +16,7 @@ let predefs =
    ("get", "get", A.INT, (Fixed [A.TUPLE; A.INT]));
    ("size", "size", A.NONE, (Fixed [A.TUPLE]));
    ("read", "read", A.TABLE, (Fixed [A.STRING; A.LIST; A.BOOLEAN; A.STRING]));
-   ("tup", "tup", A.NONE, (Fixed [A.TUPLE]))]
-
-  
+   ("write", "write", A.NONE, (Fixed [A.TABLE; A.STRING; A.BOOLEAN; A.STRING]));
    ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST]));]
 
 let predef_names = 

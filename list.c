@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define BUF_SIZE 10
+#define BUF_SIZE 20
 
 typedef struct sizeStruct {
     int col;
@@ -31,6 +31,10 @@ typedef struct TupleType{
 } TupleType;
 
 TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *typeNames);
+ListType* createTable(char ***data,  int row, int col,  ListType* typeNames);
+void printTable(ListType* table, FILE* file, char* delimeter);
+void toString(void* val, int type, char* buf);
+int getTypeofTupleIndex(int index, TupleType* tt);
 
 void errorExit(const char* message)
 {
@@ -44,9 +48,10 @@ void setValue(void* data, void* value, int type)
         case 0: //int
         {
             *(int*)data = *(int*)value;
+            return;
         }
         case 1: //boolean
-            return ;
+            return;
             break;
         case 2: //float
             *(float*)data = *(float*)value;
@@ -65,8 +70,11 @@ void setValue(void* data, void* value, int type)
             return ;
             break;
         case 11: //tuple
-            return ;
-            break;
+        {
+            TupleType* tp = value;
+            *(TupleType**)data = tp;
+            return;
+        }
     
     }
 }
@@ -132,7 +140,7 @@ int stringToTyp(char* string)
 
 
 
-int* convertTypeList(ListType* typeNames, int len)
+int* convertTypeListToInts(ListType* typeNames, int len)
 {
     int *types = malloc(sizeof(int) * len);
     //char *data  = typeNames->data;
@@ -325,15 +333,21 @@ void readCsv(FILE *file, char ***data, int row, int col, char* delimeter){
 
 void* read(char* filename, void* typeNames, bool header, char* delimeter)
 {
+
     FILE *file;
 	file = fopen(filename, "r");
 
     sizeStruct s = getCsvSize(file, ",");
+
     fclose(file);
+
     file = fopen(filename, "r");
 
     ListType *tyname = typeNames;
+
+
     if(tyname->len != 1 && tyname->len != s.col) {
+        fprintf(stderr, "error");
         errorExit("Error in reading table. Csv file has unequal columns to type list given");
     }
 
@@ -342,41 +356,96 @@ void* read(char* filename, void* typeNames, bool header, char* delimeter)
 	for (int i = 0; i < s.row; i++){
 		data[i] = (char **)malloc(s.col * sizeof(char*));
 	}
-
+ 
     readCsv(file, data, s.row, s.col, delimeter);
 
-    // int **data;
-    // data = (int **) malloc(s.row * sizeof(int *));
-	// for (int i = 0; i < s.row; i++){
-	// 	data[i] = (int *)malloc(s.col * sizeof(int));
-	// }
 
+
+    ListType* table = createTable(data, s.row, s.col, typeNames);
+    printTable(table, stderr, delimeter);
+    return table;
     
+}
 
-    //readCsv(file, filename, s.row, s.col, delimeter);
+void write(void** table, char* filename, bool header, char* delimeter)
+{
 
-    // for (int i = 0; i < s.row; i++) {
-    //     for (int j = 0; j < s.col; j++) {
+    FILE *file;
+	file = fopen(filename, "w");
+    printTable(*table, file, delimeter);
+
+}
+
+void printTable(ListType* table, FILE* file, char* delimeter)
+{
+
+    for (int i = 0; i < table->len; i++) {
+        
+        TupleType* tup = *(TupleType**)getListElement(i, table);
+       
+        for (int j = 0; j < tup->len; j++ ) {
+            int type = getTypeofTupleIndex(j, tup);
+            void* data = getTupleElement(j, tup);
+
             
-    //         char* h = "hello";
-    //         //data[i][j] = malloc(8);
+            char buf[BUF_SIZE];
+            toString(data, type, buf);
 
-    //         data[i][j] = h;
-    //     }
-    // }
+            
+            fprintf(file, "%s", buf);
+            if (j + 1 < tup->len ) {
+                fprintf(file, "%s", delimeter);
+            }
+        }
+        
+        fprintf(file, "\n" );
+    }
+}
 
+void toString(void* val, int type, char* buf)
+{
+
+    switch(type) {
+        case 0: //int
+        {
+            int i = *(int*) val;
+            sprintf(buf, "%d", i);
+            break;
+        }
+
+        case 1: //boolean
+        {
+            bool b = *(bool *) val;
+            if (b == false) strcpy(buf, "false");
+            else strcpy(buf, "true");
+            break;
+        }
+        case 2: //float
+         {
+            float f = *(float*) val;
+            sprintf(buf, "%.2f", f);
+            break;
+        }
+        case 3: //string
+            strcpy(buf, val);
+            break;
+        case 4: //lambda // TODO
+            errorExit("cannot have a lambda here");
+            break;
+        case 10: //list
+            return; 
+            break;
+        case 11: //tuple
+            return ;
+            break;
     
-
-
-
-    TupleType* tt = createTupleFromStrings(data, 0, s.col, typeNames);
-    return tt;
-    
+    }
 }
 
 
 void* convertStringtoValue(char* string, int type)
 {
+    
     switch(type) {  
         case 0: //int
         {
@@ -412,7 +481,8 @@ void* convertStringtoValue(char* string, int type)
 
 TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *typeNames)
 {
-    
+
+
     size_t size = getTupleSize((int*)(void*)typeNames->data, col);
 
     TupleType* tup = malloc(size);
@@ -420,19 +490,28 @@ TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *type
     tup->len = col;
     
     void *datap = tup->data;
-   int* types = ((int*)(void*)typeNames->data);
+    int* types = ((int*)(void*)typeNames->data);
+
     for (int i = 0; i < tup->len; i++){
-        setValue(datap, offsetPointerNtimes(types, sizeof(int), i), 0);
+        setValue(datap, getListElement(i, typeNames), 0);
         datap = offsetPointerNtimes(datap, sizeof(int), 1);
     }
-    
+
     
     
     for (int i = 0; i < tup->len; i++) {
+        int type = getTypeofTupleIndex(i, tup);
+        
+        void* val = convertStringtoValue(data[row][i], type);
 
-        setValue(datap, convertStringtoValue(data[row][i], types[i]), types[i]);
+        setValue(datap, val, type);
+
         datap = offsetPointerNtimes(datap, getElementSizeFromType(types[i]), 1);
+                
     }
+
+
+
     return tup;
 }
 
@@ -440,58 +519,36 @@ TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *type
 
 
 
-ListType* createTable(int col, int row)
+ListType* createTable(char ***data,  int row, int col,  ListType* typeNames)
 {
     size_t size = getTableSize(col);
     ListType *table = malloc(size);
-    table->len = col;
+    table->len = row;
     table->self_type = 10;
     table->type = 11;
+    void* datap = table->data;
 
+    for (int i = 0; i < row; i++){
+        void* tup = createTupleFromStrings(data, i, col, typeNames);
+
+        setValue(datap, tup, 11);
+        
+        datap = offsetPointerNtimes(datap, sizeof(TupleType*), 1);
+
+    }
+    return table;
+
+}
+
+int getTypeofTupleIndex(int index, TupleType* tt)
+{
+    void* data = tt->data;
+    data = offsetPointerNtimes(data, sizeof(int), index);
+    return *(int *) data;
 }
 
 
 
-
-void convert2dtoTable(char*** data, ListType* typeNames, sizeStruct s)
-{
-    TableType* tt = (TableType *) malloc(sizeof(TableType));
-    tt->len = s.col;
-    tt->type = "L";
-    char* typeList = convertTypeList(typeNames, s.col);
-
-    ListType* lt = (ListType *) malloc(sizeof(ListType));
-    tt->len = s.row;
-    tt->type = "U";
-    // todo assign later tt->data = // 
-
-    for (int i = 0; i < s.row; i++) {
-        TupleType* tup = (TupleType *) malloc(sizeof(TupleType));
-        tup->len = s.row;
-        //tup->type = typeList;
-        for (int j = 0; j < s.col; j++) {
-            char sym = typeList[j];
-            switch(sym) {
-                case 'i': //int
-                    
-                    break;
-                case 'b': //boolean
-                    break;
-                case 'f': //float
-                    break;
-                case 's': //string
-                    break;
-                case 'T': //table
-                    break;
-                case 'U': //tuple
-                    break;
-                case 'L': //list
-                    break;
-            }
-        }
-    }
-
-} 
 
 void tup(TupleType* tt) {
 
