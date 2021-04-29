@@ -1,4 +1,4 @@
-int testWhile (int i) {
+fn testWhile (int i) -> int {
     int x;
     x = 1;
     while (i > 0) {
@@ -8,4 +8,4 @@ int testWhile (int i) {
     return x;
 }
 
-print(testWhile(10));
+print("%d", testWhile(10));

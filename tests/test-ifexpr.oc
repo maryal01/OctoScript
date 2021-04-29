@@ -1,0 +1,7 @@
+fn test-ifexpr (bool b) -> int {
+    int x = if (b) ? 1 : 2;
+    return x;
+}
+
+print("%d", test-ifexpr(true));
+print("%d", test-ifexpr(false));

@@ -1,4 +1,4 @@
-int test-assign(int i) {
+fn test-assign (int i) -> int {
     int x;
     int y = 1;
     int z = i;
@@ -6,4 +6,4 @@ int test-assign(int i) {
     return x;
 }
 
-print(test-assign(12));
+print("%d", test-assign(12));

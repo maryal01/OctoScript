@@ -1,4 +1,4 @@
-int test-if (int i, bool b) {
+fn test-if (int i, bool b) -> int {
     if (b) {
         if ( i < 5) {
             return 2;
@@ -12,6 +12,6 @@ int test-if (int i, bool b) {
     }
 }
 
-print(test-if(-10, true));
-print(test-if(10,  true));
-print(test-if(10, false));
+print("%d", test-if(-10, true));
+print("%d", test-if(10,  true));
+print("%d", test-if(10, false));

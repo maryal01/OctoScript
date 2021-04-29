@@ -1,0 +1,1 @@
+Fatal error: exception Failure("Invalid Declaration of identifier. Expected: int Got: string in "abc"")

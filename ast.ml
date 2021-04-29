@@ -25,9 +25,9 @@ type typ =
   | BOOLEAN
   | LAMBDA
   | NONE
-  | TABLE of typ list
-  | TUPLE of typ list
-  | LIST of typ
+  | TABLE of typ list option
+  | TUPLE of typ list option
+  | LIST of typ option
 
 type bind = typ * string
 
@@ -60,6 +60,7 @@ type func_decl = {
   fname : string;
   formals : bind list;
   body : stmnt list;
+  is_vararg: bool;
 }
 
 (*  need to keep func_decl separate from the statement list because don't want functions to be defined inside functions *)
@@ -96,6 +97,13 @@ let prim_to_string p =
 
 let rec typ_to_string t =
   let ts_to_string ts = List.fold_left (fun init t -> init ^ "," ^ (typ_to_string t)) "" ts in
+  let opt_ts_str = function 
+    | Some ts -> ts_to_string ts
+    | None -> "*"
+  and opt_t_str = function 
+    | Some t -> typ_to_string t
+    | None -> "*"
+  in
   match t with
   | INT -> "int"
   | FLOAT -> "float"
@@ -103,9 +111,9 @@ let rec typ_to_string t =
   | BOOLEAN -> "boolean"
   | LAMBDA -> "lambda"
   | NONE -> "void"
-  | TABLE ts -> "table<" ^ (ts_to_string ts) ^ ">"
-  | TUPLE ts -> "tuple<" ^ (ts_to_string ts) ^ ">"
-  | LIST t -> "list<" ^ typ_to_string t ^ ">" 
+  | TABLE ts -> "table<" ^ (opt_ts_str ts) ^ ">" 
+  | TUPLE ts -> "tuple<" ^ (opt_ts_str ts) ^ ">"
+  | LIST t -> "list<" ^ opt_t_str t ^ ">" 
 
 let bind_to_string (r, s) = typ_to_string r ^ " " ^ s
 
