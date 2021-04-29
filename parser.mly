@@ -2,7 +2,7 @@
 %{ open Ast %}
 
 %token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK 
-%token COMMA SEMI DOT COLON QUESTION
+%token COMMA SEMI DOT COLON COND
 %token PLUS MINUS TIMES DIVIDE POW LOG MOD ASSIGN 
 %token OP_NOT OP_EQ OP_NEQ OP_LT OP_LEQ OP_GT OP_GEQ OP_AND OP_OR
 %token FARROW LARROW FUNC
@@ -22,6 +22,8 @@
 
 %nonassoc NOELSE
 %nonassoc ELSE
+%nonassoc COLON
+%nonassoc COND
 %nonassoc TYP_TUPLE
 %nonassoc ARGS
 
@@ -124,19 +126,19 @@ expr:
   | expr POW    expr                          { Binop($1, Pow,   $3)   }
   | expr MOD    expr                          { Binop($1, Mod,   $3)   }
   | expr LOG    expr                          { Binop($1, Log,   $3)   }
-  | expr OP_EQ     expr                       { Binop($1, EQ,    $3)   }
-  | expr OP_NEQ    expr                       { Binop($1, NEQ,   $3)   }
-  | expr OP_LT     expr                       { Binop($1, LT,    $3)   }
-  | expr OP_LEQ    expr                       { Binop($1, LTE,   $3)   }
-  | expr OP_GT     expr                       { Binop($1, GT,    $3)   }
-  | expr OP_GEQ    expr                       { Binop($1, GTE,   $3)   }
-  | expr OP_AND    expr                       { Binop($1, AND,   $3)   }
-  | expr OP_OR     expr                       { Binop($1, OR,    $3)   }
+  | expr OP_EQ  expr                          { Binop($1, EQ,    $3)   }
+  | expr OP_NEQ expr                          { Binop($1, NEQ,   $3)   }
+  | expr OP_LT  expr                          { Binop($1, LT,    $3)   }
+  | expr OP_LEQ expr                          { Binop($1, LTE,   $3)   }
+  | expr OP_GT  expr                          { Binop($1, GT,    $3)   }
+  | expr OP_GEQ expr                          { Binop($1, GTE,   $3)   }
+  | expr OP_AND expr                          { Binop($1, AND,   $3)   }
+  | expr OP_OR  expr                          { Binop($1, OR,    $3)   }
   | MINUS expr %prec OP_NOT                   { Unop(NEG, $2)          }
   | OP_NOT expr                               { Unop(NOT, $2)          }
   | ID LPAREN  args_opt RPAREN                { Call($1, $3)           }
-  // | IF LPAREN expr RPAREN  expr %prec NOELSE  { IfExpr($3, $5, Noexpr) }
-  // | IF LPAREN expr RPAREN  expr  ELSE  expr   { IfExpr($3, $5, $7)     }
+  | IF LPAREN expr RPAREN COND expr %prec NOELSE { IfExpr($3, $6, Noexpr) }
+  | IF LPAREN expr RPAREN COND expr COLON expr   { IfExpr($3, $6, $8)     }
   | expr DOT ID LPAREN  args_opt RPAREN       { Apply($1, $3, $5)      }
   | LBRACK  array  RBRACK                     { ListLit(List.rev $2)   } 
   | LPAREN  array  RPAREN                     { TupleLit(List.rev $2)  }

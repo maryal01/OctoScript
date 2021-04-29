@@ -1,0 +1,9 @@
+fn list-out () -> list {
+    return [1, 2];
+}
+
+fn list-in (list l) -> none {
+    print(string_of_list(l));
+}
+list l = list-out();
+list-in(l);

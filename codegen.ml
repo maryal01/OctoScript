@@ -161,204 +161,162 @@ let translate (functions, statements) =
 
     (* Construct code for an expression; return its value *)
     (* NOTE: expr is guaranteed to not modify the env *)
-    let rec expr builder env ((t, e) : sexpr) =
+    let rec expr builder env ((_, e) : sexpr) = 
       let rexpr = expr builder env in
       let global_str s n = L.build_global_stringptr s n builder in
-      let mk_int i = L.const_int i32_t i in
+      let mk_int i = L.const_int i32_t i in 
       (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
-      let lval_of_prim p =
-        match p with
-        | A.Int i -> mk_int i
-        | A.Float f -> L.const_float float_t f
-        | A.String s -> global_str s "string"
-        | A.Boolean b -> L.const_int i1_t (if b then 1 else 0)
-      and type_sym t =
-        match t with
-        | A.INT -> mk_int 0
-        | A.BOOLEAN -> mk_int 1
-        | A.FLOAT -> mk_int 2
-        | A.STRING -> mk_int 3
-        | A.LAMBDA -> mk_int 4
-        | A.LIST -> mk_int 10
-        | A.TUPLE -> mk_int 11
-        | A.TABLE ->
-            raise (Failure "TABLE should be represented as a LIST of TUPLES")
-        | A.NONE ->
-            raise (Failure "NONE type cannot be an element of a complex type")
-      in
-      match e with
-      | SIntLit i -> lval_of_prim (A.Int i)
-      | SFloatLit f -> lval_of_prim (A.Float f)
-      | SStringLit s -> lval_of_prim (A.String s)
-      | SBoolLit b -> lval_of_prim (A.Boolean b)
-      | SListLit (t, ps) ->
-          let len = mk_int (List.length ps) in
-          let content =
-            type_sym A.LIST :: len :: type_sym t :: List.map lval_of_prim ps
-          in
-          let value = L.const_struct context (Array.of_list content) in
-          value
-      | STupleLit (ts, ps) ->
-          let len = mk_int (List.length ps) in
+      let lval_of_prim p = 
+        (match p with 
+            A.Int     i -> mk_int i
+          | A.Float   f -> L.const_float float_t f
+          | A.String  s -> global_str s "string"
+          | A.Boolean b -> L.const_int i1_t (if b then 1 else 0))
+      and type_sym t = 
+        (match t with 
+            A.INT     -> mk_int 0
+          | A.BOOLEAN -> mk_int 1
+          | A.FLOAT   -> mk_int 2
+          | A.STRING  -> mk_int 3
+          | A.LAMBDA  -> mk_int 4
+          | A.LIST    -> mk_int 10
+          | A.TUPLE   -> mk_int 11
+          | A.TABLE   -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
+          | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
+      and mallocate llval = 
+          let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
+          let _ = L.build_store llval v builder
+          in v
+      in (match e with 
+        SIntLit i     -> lval_of_prim (A.Int i)
+      | SFloatLit f   -> lval_of_prim (A.Float f)
+      | SStringLit s  -> lval_of_prim (A.String s)
+      | SBoolLit b    -> lval_of_prim (A.Boolean b)
+      | SListLit (t, ps) -> 
+          let len = L.const_int i32_t (List.length ps) in
+          let content =  (type_sym A.LIST) :: (len :: ((type_sym t) :: List.map lval_of_prim ps)) in
+          let value = L.const_struct context (Array.of_list content)  
+          in mallocate value
+      | STupleLit (ts, ps) -> 
+          let len = L.const_int i32_t (List.length ps) in
           let types = List.map type_sym ts in
-          let content =
-            type_sym A.TUPLE :: len :: (types @ List.map lval_of_prim ps)
+          let content = (type_sym A.TUPLE) :: (len :: (types @ (List.map lval_of_prim ps))) in
+          let value = L.const_struct context (Array.of_list content) 
+          in mallocate value
+      | STableLit (ts, pss) -> 
+          let num_rows = L.const_int i32_t (List.length pss) in
+          let row_data = List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss in
+          let content = [(type_sym A.LIST); num_rows; type_sym A.TUPLE] @ (row_data) in
+          let value = L.const_struct context (Array.of_list content)
+          in mallocate value
+      | SBinop (e1, op, e2) -> 
+          let (t, _) = e1
+            and e1' = rexpr e1
+            and e2' = rexpr e2
+            and raise_typerr op t = raise (Failure ("Internal error: " ^ op ^ " with " ^ t ^ " operands not allowed"))
           in
-          L.const_struct context (Array.of_list content)
-      | STableLit (ts, pss) ->
-          let num_rows = mk_int (List.length pss) in
-          let row_data =
-            List.map (fun row -> rexpr (A.TUPLE, STupleLit (ts, row))) pss
-          in
-          let content =
-            [ type_sym A.LIST; num_rows; type_sym A.TUPLE ] @ row_data
-          in
-          L.const_struct context (Array.of_list content)
-      | SBinop (e1, op, e2) ->
-          let t, _ = e1
-          and e1' = rexpr e1
-          and e2' = rexpr e2
-          and raise_typerr op t =
-            raise
-              (Failure
-                 ("Internal error: " ^ op ^ " with " ^ t
-                ^ " operands not allowed"))
-          in
-          (match t with
-          | A.INT -> (
-              match op with
-              | A.AND -> raise_typerr "AND" "int"
-              | A.OR -> raise_typerr "OR" "int"
-              | A.Add -> L.build_add
-              | A.Sub -> L.build_sub
-              | A.Mul -> L.build_mul
-              | A.Div -> L.build_sdiv
-              | A.Pow -> raise (Failure "pow for int is not implemented")
-              | A.Log ->
-                  raise (Failure "log for int is not implemented")
-                  (* TODO: no operator in LLVM so maybe make this an actual function call? *)
-              | A.GT -> L.build_icmp L.Icmp.Sgt
-              | A.GTE -> L.build_icmp L.Icmp.Sge
-              | A.LT -> L.build_icmp L.Icmp.Slt
-              | A.LTE -> L.build_icmp L.Icmp.Sle
-              | A.EQ -> L.build_icmp L.Icmp.Eq
-              | A.NEQ -> L.build_icmp L.Icmp.Ne
-              | A.Mod -> L.build_srem)
-          | A.FLOAT -> (
-              match op with
-              | A.AND -> raise_typerr "AND" "float"
-              | A.OR -> raise_typerr "OR" "float"
-              | A.Add -> L.build_fadd
-              | A.Sub -> L.build_fsub
-              | A.Mul -> L.build_fmul
-              | A.Div -> L.build_fdiv
-              | A.Pow -> raise (Failure "pow for float is not impleemented")
-              | A.Log ->
-                  raise (Failure "log for float is not impleemented")
-                  (* TODO: no operator in LLVM so maybe make this an actual function call? *)
-              | A.GT -> L.build_fcmp L.Fcmp.Ogt
-              | A.GTE -> L.build_fcmp L.Fcmp.Oge
-              | A.LT -> L.build_fcmp L.Fcmp.Olt
-              | A.LTE -> L.build_fcmp L.Fcmp.Ole
-              | A.EQ -> L.build_fcmp L.Fcmp.Oeq
-              | A.NEQ -> L.build_fcmp L.Fcmp.One
-              | A.Mod -> L.build_frem)
-          | A.BOOLEAN -> (
-              match op with
-              | A.AND -> L.build_and
-              | A.OR -> L.build_or
-              | A.EQ -> L.build_icmp L.Icmp.Eq
-              | A.NEQ -> L.build_icmp L.Icmp.Ne
-              | _ -> raise_typerr "ARITHMETIC OP" "bool")
-          | _ -> raise_typerr "BINOP" "non-int/float/bool")
-            e1' e2' "tmp" builder
-      | SUnop (op, e) ->
-          let t, _ = e in
+          (match t with 
+              A.INT -> 
+              (match op with
+                  A.AND -> raise_typerr "AND" "int"
+                | A.OR ->  raise_typerr "OR" "int"
+                | A.Add -> L.build_add
+                | A.Sub -> L.build_sub
+                | A.Mul -> L.build_mul
+                | A.Div -> L.build_sdiv
+                | A.Pow -> raise(Failure("pow for int is not impleemented"))
+                | A.Log -> raise(Failure("log for int is not impleemented")) (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                | A.GT -> L.build_icmp L.Icmp.Sgt
+                | A.GTE -> L.build_icmp L.Icmp.Sge
+                | A.LT -> L.build_icmp L.Icmp.Slt
+                | A.LTE -> L.build_icmp L.Icmp.Sle
+                | A.EQ -> L.build_icmp L.Icmp.Eq
+                | A.NEQ -> L.build_icmp L.Icmp.Ne
+                | A.Mod -> L.build_srem)
+            | A.FLOAT ->                  
+                (match op with
+                  A.AND -> raise_typerr "AND" "float"
+                | A.OR ->  raise_typerr "OR" "float"
+                | A.Add -> L.build_fadd
+                | A.Sub -> L.build_fsub
+                | A.Mul -> L.build_fmul
+                | A.Div -> L.build_fdiv
+                | A.Pow -> raise(Failure("pow for float is not impleemented"))
+                | A.Log -> raise(Failure("log for float is not impleemented")) (* TODO: no operator in LLVM so maybe make this an actual function call? *)
+                | A.GT -> L.build_fcmp L.Fcmp.Ogt
+                | A.GTE -> L.build_fcmp L.Fcmp.Oge
+                | A.LT -> L.build_fcmp L.Fcmp.Olt
+                | A.LTE -> L.build_fcmp L.Fcmp.Ole
+                | A.EQ -> L.build_fcmp L.Fcmp.Oeq
+                | A.NEQ -> L.build_fcmp L.Fcmp.One
+                | A.Mod -> L.build_frem)
+            | A.BOOLEAN -> 
+              (match op with
+                  A.AND -> L.build_and
+                | A.OR ->  L.build_or
+                | A.EQ -> L.build_icmp L.Icmp.Eq
+                | A.NEQ -> L.build_icmp L.Icmp.Ne
+                | _ -> raise_typerr "ARITHMETIC OP" "bool")
+            | _ -> raise_typerr "BINOP" "non-int/float/bool"
+        ) e1' e2' "tmp" builder
+      | SUnop(op, e) -> 
+          let (t, _) = e in
           let e' = rexpr e in
-          (match op with
-          | A.NOT when t = A.BOOLEAN -> L.build_not
-          | A.NEG when t = A.FLOAT -> L.build_fneg
-          | A.NEG when t = A.INT -> L.build_neg
-          | _ -> raise (Failure "Internal Error: Not a unary operator"))
-            e' "tmp" builder
+          (match op with 
+              A.NOT when t = A.BOOLEAN -> L.build_not
+            | A.NEG when t = A.FLOAT -> L.build_fneg
+            | A.NEG when t = A.INT -> L.build_neg
+            | _ -> raise (Failure "Internal Error: Not a unary operator")
+          ) e' "tmp" builder
       (* additional logic required here to cast complex types into pointers *)
-      | SVar s -> (
-          let v = lookup s env in
-          match t with
-          | A.INT -> L.build_load v s builder
-          | A.FLOAT -> L.build_load v s builder
-          | A.STRING -> L.build_load v s builder
-          | A.BOOLEAN -> L.build_load v s builder
-          | A.LAMBDA -> L.build_load v s builder
-          | A.NONE -> raise (Failure "Cannot have var of None type")
-          | A.TABLE ->
-              L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
-          | A.TUPLE ->
-              L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-          | A.LIST ->
-              L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder)
-      | SIfExpr (cond, e1, e2) ->
+      | SVar s -> L.build_load (lookup s env) s builder
+      | SIfExpr (cond, e1, e2) -> 
           let cond' = rexpr cond in
           let e1' = rexpr e1 in
           let e2' = rexpr e2 in
-          L.build_select cond' e1' e2' "tmp" builder
+          L.build_select cond' e1' e2' "tmp" builder 
       | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
-      | SCall (f, args) ->
+      | SCall (f, args) -> 
+          let cast_complex (t, sx) = 
+            let v = rexpr (t, sx) in
+              (match t with 
+                  A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                | _ -> v) 
+          in 
           if f = "length" then
-            (*  L.const_struct context [| type_sym A.LIST; len; type_sym t; data |] *)
-            let listt =
-              match (List.hd args) with
-              | (_, SVar s) ->
-                  let v = lookup s env in
-                  L.build_load v s builder
-              | _ -> expr builder env (List.hd args)
-            in
-            let v = L.build_alloca (L.type_of listt) "tmp1" builder in
-            let _ = L.build_store listt v builder in
-            L.build_load (L.build_struct_gep v 1 "tmp2" builder) "tmp3" builder
-(* i = 5; list.get(i) --> get(list, i) i --> SVar L.const_int i32  3+i *)
+            let listt = rexpr (List.hd args) 
+            in L.build_load (L.build_struct_gep listt 1 "tmp2" builder) "tmp3" builder
           else if f = "get" then
             let value = List.hd (List.tl args) in
             let idx = (expr builder env value) in 
-            let listt =
-              match (List.hd args) with
-              | (_, SVar s) ->
-                  let v = lookup s env in
-                  L.build_load v s builder
-              | _ -> expr builder env (List.hd args)
+            let listt = rexpr (List.hd args)
             in
-            let v = L.build_alloca (L.type_of listt) "tmp1" builder in
-            let _ = L.build_store listt v builder in
-            let inner_list = L.build_struct_gep v 3 "temp" builder in
+            let inner_list = L.build_struct_gep listt 3 "temp" builder in
             L.build_load
               (L.build_gep inner_list [| idx |] "tmp2" builder)
               "tmp3" builder
           else
-            let llargs = List.map rexpr args in
-            let userdef dom =
-              let fdef, fdecl =
-                try StringMap.find f dom
-                with Not_found ->
-                  raise (Failure (f ^ " is not a declared function"))
-              in
-              let result =
-                match fdecl.styp with A.NONE -> "" | _ -> f ^ "_result"
-              in
+          let llargs = List.map cast_complex args in           
+          let userdef dom =
+            let (fdef, fdecl) = (try StringMap.find f dom with Not_found -> raise (Failure (f ^ " is not a declared function"))) in
+            let result = (match fdecl.styp with
+                            A.NONE -> ""
+                          | _ -> f ^ "_result") in
               L.build_call fdef (Array.of_list llargs) result builder
-            and predef f =
-              let pdecl, rt =
-                try StringMap.find f predef_decls
-                with Not_found ->
-                  raise (Failure (f ^ " is not a recognized built-in function"))
-              in
-              let result = match rt with A.NONE -> "" | _ -> f ^ "_result" in
-              L.build_call pdecl (Array.of_list llargs) result builder
-            and is_lambda = StringMap.mem f env
-            and is_predef = List.mem f P.predef_names in
-            if is_lambda then userdef lambda_decls
-            else if is_predef then predef f
-            else userdef function_decls
-      | SNoExp -> L.const_null void_t
+          and predef f =
+            let (pdecl, rt) = (try StringMap.find f predef_decls with Not_found -> raise (Failure (f ^ " is not a recognized built-in function"))) in
+            let result = (match rt  with
+                            A.NONE -> ""
+                          | _ -> f ^ "_result") in
+            L.build_call pdecl (Array.of_list llargs) result builder
+          and is_lambda = StringMap.mem f env
+          and is_predef = List.mem f P.predef_names in
+          if is_lambda then userdef lambda_decls
+          else if is_predef then predef f
+          else userdef function_decls
+      | SNoExp -> L.const_null void_t)
       (* Actually not quite sure? *)
     in
 
@@ -367,23 +325,18 @@ let translate (functions, statements) =
       | Some _ -> ()
       | None -> ignore (instr builder)
     in
-
     (* return a builder env tuple *)
     let rec stmt builder env = function
-      | SBlock sl ->
-          let _, b =
-            List.fold_left (fun (e, b) s -> stmt b e s) (env, builder) sl
-          in
-          (env, b)
-      | SWhile (cond, s) ->
+        SBlock sl -> 
+          let (_, b) = List.fold_left (fun (e, b) s -> stmt b e s) (env, builder) sl
+          in (env, b)
+      | SWhile (cond, s) -> 
           (* some work for scoping *)
           let pred_bb = L.append_block context "while_cond" the_function in
-          let _ = L.build_br pred_bb builder in
+            let _ = L.build_br pred_bb builder in
           let body_bb = L.append_block context "while_body" the_function in
-          let _, while_builder =
-            stmt (L.builder_at_end context body_bb) env s
-          in
-          let () = add_terminal while_builder (L.build_br pred_bb) in
+            let (_, while_builder) = stmt (L.builder_at_end context body_bb) env s in
+            let () = add_terminal while_builder (L.build_br pred_bb) in
           let pred_builder = L.builder_at_end context pred_bb in
           let bool_val = expr pred_builder env cond in
           let merge_bb = L.append_block context "merge" the_function in
@@ -392,40 +345,40 @@ let translate (functions, statements) =
       | SIf (cond, s1, s2) ->
           let bool_val = expr builder env cond in
           let merge_bb = L.append_block context "merge" the_function in
-          let branch_instr = L.build_br merge_bb in
+            let branch_instr = L.build_br merge_bb in
           let then_bb = L.append_block context "then" the_function in
-          let _, then_builder =
-            stmt (L.builder_at_end context then_bb) env s1
-          in
-          let () = add_terminal then_builder branch_instr in
+            let (_, then_builder) = stmt (L.builder_at_end context then_bb) env s1 in
+            let () = add_terminal then_builder branch_instr in
           let else_bb = L.append_block context "else" the_function in
-          let _, else_builder =
-            stmt (L.builder_at_end context else_bb) env s2
-          in
-          let () = add_terminal else_builder branch_instr in
+            let (_, else_builder) = stmt (L.builder_at_end context else_bb) env s2 in
+            let () = add_terminal else_builder branch_instr in
           let _ = L.build_cond_br bool_val then_bb else_bb builder in
           (env, L.builder_at_end context merge_bb)
-      | SReturn e ->
-          let _ =
-            match fdecl.styp with
-            | A.NONE -> L.build_ret_void builder
-            | _ -> L.build_ret (expr builder env e) builder
-          in
-          (env, builder)
-      | SBreak -> raise (Failure "break is not implemented")
-      | SDeclare (t, n, e) ->
+      | SReturn e -> 
+          let cast_complex (t, sx) = 
+            let v = expr builder env (t, sx) in
+              (match t with 
+                  A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                | _ -> v) in 
+          let _ = 
+            (match fdecl.styp with
+                A.NONE -> L.build_ret_void builder 
+              | _ -> L.build_ret (cast_complex e) builder)
+          in (env, builder)
+      | SBreak -> raise(Failure("break is not impleemented"))
+      | SDeclare (t, n, e) -> 
           let e' = expr builder env e in
           let v = L.build_alloca (L.type_of e') n builder in
           let env' = StringMap.add n (t, v) env in
-          let _ = L.build_store e' v builder in
-          (env', builder)
+          let _ = L.build_store e' v builder
+          in (env', builder)
       | SAssign (n, e) ->
           let e' = expr builder env e in
-          let _ = L.build_store e' (lookup n env) builder in
-          (env, builder)
-      | SExpr e ->
-          let _ = expr builder env e in
-          (env, builder)
+          let _ = L.build_store e' (lookup n env) builder 
+          in (env, builder) 
+      | SExpr e -> let _ = expr builder env e in (env, builder) 
     in
 
     let _, builder = stmt builder formal_env (SBlock fdecl.sbody) in
