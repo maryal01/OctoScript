@@ -1,4 +1,4 @@
-all : toplevel.native test.o
+all : toplevel.native test.o prebuilt.o
 
 tests: toplevel.native prebuilt.o
 
@@ -14,5 +14,7 @@ toplevel.native :
 test : test.c
 	cc -o test -DBUILD_TEST test.c
 
+prebuilt : prebuilt.c
+	cc -o test -DBUILD_TEST prebuilt.c
 
 

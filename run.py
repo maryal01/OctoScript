@@ -2,7 +2,7 @@
 
 import os, sys
 
-lib_files = ['prebuilt.o']
+lib_files = ['prebuilt.o', 'test.o']
 
 if len(sys.argv) < 2:
     print('No .oc file supplied')
