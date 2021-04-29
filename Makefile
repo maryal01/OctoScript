@@ -1,6 +1,6 @@
 all : toplevel.native test.o
 
-tests: toplevel.native test.o list.o
+tests: toplevel.native prebuilt.o
 
 clean: 
 	ocamlbuild -clean
@@ -14,6 +14,5 @@ toplevel.native :
 test : test.c
 	cc -o test -DBUILD_TEST test.c
 
-list : list.c
-	cc -o list -DBUILD_TEST list.c
+
 
