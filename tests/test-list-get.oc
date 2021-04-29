@@ -1,0 +1,7 @@
+list l = [10,20,30,40];
+int i = 0;
+while(i < l.length()){
+    int elem = l.get(i);
+    print("(%d, %d), ", i, elem);
+    i = i + 1;
+}

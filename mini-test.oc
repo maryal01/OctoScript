@@ -1,6 +1,9 @@
-fn new_function(int y) -> int {
-int x;
-x = 0;
-int z = x;
-return x;
+list listt = [10,20,30,40];
+int length = listt.length();
+int i = 0;
+while(i < length){
+    int elem = listt.get(i);
+    print("( %d, %d), ", i, elem);
+
+    i = i + 1;
 }
