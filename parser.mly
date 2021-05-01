@@ -77,6 +77,10 @@ stmnt_list:
   | stmnt_list statement { $2 :: $1 }
 
 
+typ_list:
+    typ                { [$1] }
+  | typ COMMA typ_list { $1 :: $3 }
+
 typ:
     TYP_INT    { INT     }
   | TYP_BOOL   { BOOLEAN }
@@ -84,9 +88,9 @@ typ:
   | TYP_STRING { STRING  }
   | TYP_LAMBDA { LAMBDA  }
   | TYP_NONE   { NONE    }
-  | TYP_TABLE  { TABLE   }
-  | TYP_TUPLE  { TUPLE   }
-  | TYP_LIST   { LIST    }
+  | TYP_TABLE OP_LT typ_list OP_GT { TABLE(Some $3)   }
+  | TYP_TUPLE OP_LT typ_list OP_GT { TUPLE(Some $3)   }
+  | TYP_LIST OP_LT typ OP_GT { LIST(Some $3)    }
 
 primitives:
     ILIT                    { Int($1)      }

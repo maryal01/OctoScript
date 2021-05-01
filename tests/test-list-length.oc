@@ -1,5 +1,5 @@
 fn test-length () -> int {
-  list l = [10,20,30,40];
+  list<int> l = [10,20,30,40];
   return l.length();
 }
 

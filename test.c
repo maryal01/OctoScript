@@ -91,3 +91,7 @@ void test(void *data){
     printf("Data in list: self_type %d, length %d, type %d, first value %d\n",
             lp->self_type, lp->len, lp->type, *((int *)lp->data));
 }
+
+void *test_return_same(void *data){
+    return data;
+}

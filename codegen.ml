@@ -7,25 +7,25 @@ module StringMap = Map.Make (String)
 (* TODO: Test creating and evocation of lambdas, especially passed to a C predef function *)
 (* TODO: Implement built in functions within ocaml; get, len, type conversions? *)
 
-let translate (functions, statements) =
-  let context = L.global_context () in
-  let i32_t = L.i32_type context
-  and i8_t = L.i8_type context (* char *)
-  and i1_t = L.i1_type context (* bool *)
-  and float_t = L.double_type context
-  and void_t = L.void_type context
+let translate (functions, statements) = 
+  let context    = L.global_context () in
+  let i32_t      = L.i32_type    context
+  and i8_t       = L.i8_type     context  (* char *)
+  and i1_t       = L.i1_type     context  (* bool *)
+  and float_t    = L.double_type context
+  and void_t     = L.void_type   context
   and the_module = L.create_module context "OctoScript" in
 
   let ltype_of_typ = function
-    | A.INT -> i32_t
-    | A.BOOLEAN -> i1_t
-    | A.FLOAT -> float_t
-    | A.NONE -> void_t
-    | A.STRING -> L.pointer_type i8_t
-    | A.LAMBDA -> L.pointer_type i8_t
-    | A.TABLE -> L.pointer_type i8_t
-    | A.TUPLE -> L.pointer_type i8_t
-    | A.LIST -> L.pointer_type i8_t
+    A.INT     -> i32_t
+  | A.BOOLEAN -> i1_t
+  | A.FLOAT   -> float_t
+  | A.NONE    -> void_t
+  | A.STRING  -> L.pointer_type i8_t
+  | A.LAMBDA  -> L.pointer_type i8_t
+  | A.TABLE _ -> L.pointer_type i8_t
+  | A.TUPLE _ -> L.pointer_type i8_t
+  | A.LIST  _ -> L.pointer_type i8_t
   in
 
   let program =
@@ -43,9 +43,7 @@ let translate (functions, statements) =
             (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))
     in
     let predef_decl m (on, cn, rt, ps) =
-      if on = "length" then m
-      else
-        StringMap.add on
+      StringMap.add on
           (L.declare_function cn (predef_type rt ps) the_module, rt)
           m
     in
@@ -154,8 +152,8 @@ let translate (functions, statements) =
     in
 
     (* Complex type memeory layout:
-        List  : int length, char type, data...
-        Tuple : int length, char type[lenght], data...
+        List  : int length, int type_id, data...
+        Tuple : int length, int type_ids[lenght], data...
         Table : Same as a list containing tuples
     *)
 
@@ -179,9 +177,9 @@ let translate (functions, statements) =
           | A.FLOAT   -> mk_int 2
           | A.STRING  -> mk_int 3
           | A.LAMBDA  -> mk_int 4
-          | A.LIST    -> mk_int 10
-          | A.TUPLE   -> mk_int 11
-          | A.TABLE   -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
+          | A.LIST _  -> mk_int 10
+          | A.TUPLE _ -> mk_int 11
+          | A.TABLE _ -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
           | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
       and mallocate llval = 
           let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
@@ -194,26 +192,26 @@ let translate (functions, statements) =
       | SBoolLit b    -> lval_of_prim (A.Boolean b)
       | SListLit (t, ps) -> 
           let len = L.const_int i32_t (List.length ps) in
-          let content =  (type_sym A.LIST) :: (len :: ((type_sym t) :: List.map lval_of_prim ps)) in
+          let content =  (type_sym (A.LIST None)) :: len :: (type_sym t) :: (List.map lval_of_prim ps) in
           let value = L.const_struct context (Array.of_list content)  
           in mallocate value
       | STupleLit (ts, ps) -> 
           let len = L.const_int i32_t (List.length ps) in
           let types = List.map type_sym ts in
-          let content = (type_sym A.TUPLE) :: (len :: (types @ (List.map lval_of_prim ps))) in
+          let content = (type_sym (A.TUPLE None)) :: len :: (types @ (List.map lval_of_prim ps)) in
           let value = L.const_struct context (Array.of_list content) 
           in mallocate value
-      | STableLit (ts, pss) -> 
+      | STableLit (ts, pss) ->  
           let num_rows = L.const_int i32_t (List.length pss) in
-          let row_data = List.map (fun row -> rexpr (A.TUPLE, (STupleLit (ts, row)))) pss in
-          let content = [(type_sym A.LIST); num_rows; type_sym A.TUPLE] @ (row_data) in
+          let row_data = List.map (fun row -> rexpr (A.TUPLE (Some ts), (STupleLit (ts, row)))) pss in
+          let content = (type_sym (A.TABLE None)) :: num_rows :: (type_sym (A.TUPLE None)) :: (row_data) in
           let value = L.const_struct context (Array.of_list content)
           in mallocate value
       | SBinop (e1, op, e2) -> 
           let (t, _) = e1
             and e1' = rexpr e1
             and e2' = rexpr e2
-            and raise_typerr op t = raise (Failure ("Internal error: " ^ op ^ " with " ^ t ^ " operands not allowed"))
+            and raise_typerr op t = raise (Failure ("Internal Error: " ^ op ^ " with " ^ t ^ " operands not allowed"))
           in
           (match t with 
               A.INT -> 
@@ -280,23 +278,24 @@ let translate (functions, statements) =
           let cast_complex (t, sx) = 
             let v = rexpr (t, sx) in
               (match t with 
-                  A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
-                | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-                | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                  A.LIST _ -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                | A.TUPLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                | A.TABLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
                 | _ -> v) 
           in 
+          (* TODO: match f with builtin_names in predef and then move the logic elsewhere? *)
           if f = "length" then
             let listt = rexpr (List.hd args) 
-            in L.build_load (L.build_struct_gep listt 1 "tmp2" builder) "tmp3" builder
+            in L.build_load (L.build_struct_gep listt 1 "tmp" builder) "tmp" builder
           else if f = "get" then
             let value = List.hd (List.tl args) in
             let idx = (expr builder env value) in 
             let listt = rexpr (List.hd args)
             in
-            let inner_list = L.build_struct_gep listt 3 "temp" builder in
+            let inner_list = L.build_struct_gep listt 3 "tmp_data" builder in
             L.build_load
-              (L.build_gep inner_list [| idx |] "tmp2" builder)
-              "tmp3" builder
+              (L.build_gep inner_list [| idx |] "tmp" builder)
+              "tmp" builder
           else
           let llargs = List.map cast_complex args in           
           let userdef dom =
@@ -319,7 +318,6 @@ let translate (functions, statements) =
       | SNoExp -> L.const_null void_t)
       (* Actually not quite sure? *)
     in
-
     let add_terminal builder instr =
       match L.block_terminator (L.insertion_block builder) with
       | Some _ -> ()
@@ -358,9 +356,9 @@ let translate (functions, statements) =
           let cast_complex (t, sx) = 
             let v = expr builder env (t, sx) in
               (match t with 
-                  A.LIST -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
-                | A.TUPLE -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-                | A.TABLE -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+                  A.LIST _ -> L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+                | A.TUPLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+                | A.TABLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
                 | _ -> v) in 
           let _ = 
             (match fdecl.styp with

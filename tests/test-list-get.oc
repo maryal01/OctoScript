@@ -1,7 +1,31 @@
-list l = [10,20,30,40];
+list<int> l = [10,20,30,40];
 int i = 0;
 while(i < l.length()){
     int elem = l.get(i);
+    print("(%d, %d), ", i, elem);
+    i = i + 1;
+}
+
+list<float> f = [3.14, 6.28, 2419.948, 84.000011, 0.0];
+i = 0;
+while(i < f.length()){
+    float elem = f.get(i);
+    print("(%d, %f), ", i, elem);
+    i = i + 1;
+}
+
+list<string> s = ["Sphinx", "of", "black", "quartz", "judge", "my", "vow"];
+i = 0;
+while(i < s.length()){
+    string elem = s.get(i);
+    print("(%d, %s), ", i, elem);
+    i = i + 1;
+}
+
+list<bool> b = [true, false, true, true];
+i = 0;
+while(i < b.length()){
+    bool elem = b.get(i);
     print("(%d, %d), ", i, elem);
     i = i + 1;
 }

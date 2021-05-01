@@ -17,6 +17,7 @@ type binaryOp =
 
 type unaryOp = NOT | NEG
 type prim = Int of int | String of string | Float of float | Boolean of bool
+
 type typ =
   | INT
   | FLOAT
@@ -24,9 +25,9 @@ type typ =
   | BOOLEAN
   | LAMBDA
   | NONE
-  | TABLE
-  | TUPLE
-  | LIST
+  | TABLE of typ list option
+  | TUPLE of typ list option
+  | LIST of typ option
 
 type bind = typ * string
 
@@ -94,7 +95,15 @@ let prim_to_string p =
   | Float f -> string_of_float f
   | Boolean b -> string_of_bool b
 
-let typ_to_string t =
+let rec typ_to_string t =
+  let ts_to_string ts = List.fold_left (fun init t -> init ^ "," ^ (typ_to_string t)) "" ts in
+  let opt_ts_str = function 
+    | Some ts -> ts_to_string ts
+    | None -> "*"
+  and opt_t_str = function 
+    | Some t -> typ_to_string t
+    | None -> "*"
+  in
   match t with
   | INT -> "int"
   | FLOAT -> "float"
@@ -102,9 +111,9 @@ let typ_to_string t =
   | BOOLEAN -> "boolean"
   | LAMBDA -> "lambda"
   | NONE -> "void"
-  | TABLE -> "table"
-  | TUPLE -> "tuple"
-  | LIST -> "list"
+  | TABLE ts -> "table<" ^ (opt_ts_str ts) ^ ">" 
+  | TUPLE ts -> "tuple<" ^ (opt_ts_str ts) ^ ">"
+  | LIST t -> "list<" ^ opt_t_str t ^ ">" 
 
 let bind_to_string (r, s) = typ_to_string r ^ " " ^ s
 

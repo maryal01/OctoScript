@@ -1,1 +1,1 @@
-list x = [1, "two"];
+list<int> x = [1, "two"];

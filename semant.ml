@@ -50,7 +50,14 @@ let check (functions, statements) =
     | _ -> StringMap.add n fd map
   in
   let check_assign lvaluet rvaluet =
-    if lvaluet = rvaluet then lvaluet
+    let rtype_is_generic = 
+      (match (rvaluet, lvaluet) with
+        | (LIST _, LIST None)  -> true
+        | (TUPLE _, TUPLE None) -> true
+        | (TABLE _, TABLE None) -> true 
+        | _ -> false)
+    in
+    if (lvaluet = rvaluet || rtype_is_generic) then rvaluet
     else
       raise
         (Failure
@@ -143,10 +150,10 @@ let check (functions, statements) =
         (* let _, formal_names = List.split args in *)
         (* let unbound = extract_unbound formal_names e StringSet.empty in  *)
         (t1, SLambda (lambda_name (), args, (t1, e1)))
-    | ListLit elements as list -> (
-        match elements with
-        | [] -> (NONE, SListLit (NONE, elements))
-        | elem :: elems ->
+    | ListLit elements as list -> 
+        (match elements with
+        | [] -> (LIST None, SListLit (NONE, elements))
+        | elem :: elems -> (
             let ex = PrimLit elem in
             let t1, _ = check_expr ex scope in
             (* check why e' not needed?*)
@@ -155,12 +162,12 @@ let check (functions, statements) =
               (* check why e' not needed?*)
               t1 = t'
             in
-            if List.for_all all_func elems then (LIST, SListLit (t1, elements))
+            if List.for_all all_func elems then (LIST (Some t1), SListLit (t1, elements))
             else
               raise
                 (Failure
                    ("illegal List literal " ^ typ_to_string t1 ^ " expected "
-                  ^ " in " ^ expr_to_string list)))
+                  ^ " in " ^ expr_to_string list))))
     | TupleLit elements ->
         let fold_func elem =
           let t1, _ = check_expr (PrimLit elem) scope in
@@ -168,10 +175,38 @@ let check (functions, statements) =
           t1
         in
         let typ_list = List.map fold_func elements in
-        (TUPLE, STupleLit (typ_list, elements))
-    | TableLit _ -> (TUPLE, STupleLit ([], []))
+        (TUPLE (Some typ_list), STupleLit (typ_list, elements))
+    (* | TableLit _ -> (TUPLE, STupleLit ([], []))  *)
+    | TableLit _ -> raise (Failure "table literals not currently implemented") (* TODO: This seems unfinished*)
     | Apply (obj, fname, args) -> 
-      check_expr (Call (fname, obj :: args)) scope
+        let builtin_rtype params = 
+          let argtypes = List.map (fun (typ, _) -> typ) params in
+          let (_, rt, _) = List.find (fun (n,_,_) -> fname = n) P.builtins in
+          (match rt with
+            P.Static t -> t
+          | P.Relative i -> 
+              let t = List.nth argtypes i
+              in t
+          | P.ListElem i ->
+              let t = List.nth argtypes i
+              in (match t with LIST (Some et) -> et | _ -> raise (Failure ("ListElem relative type on something not a List " ^ typ_to_string t)))
+          | P.TupleElem (i, j) -> 
+              let t = List.nth argtypes i
+              in (match t with TUPLE (Some ets) -> List.nth ets j | _ -> raise (Failure "TupleElem relative type on something not a Tuple"))
+          | P.TableElem (i, j) ->
+              let t = List.nth argtypes i
+              in (match t with TABLE (Some ets) -> List.nth ets j | _ -> raise (Failure "TableElem relative type on something not a Table")))
+        in 
+        let builtin_formals fname = let (_, _, ps) = List.find (fun (n,_,_) -> fname = n) P.builtins in ps
+        in
+        if List.mem fname P.builtin_names then
+          let check_call ft e =
+            let et, e' = check_expr e scope in
+            (check_assign ft et, e')
+          in let args' = List.map2 check_call (builtin_formals fname) (obj :: args) 
+          in (builtin_rtype args', SCall (fname, args'))
+        else
+          check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
         let fdecl = find_func fname in
         let param_length = List.length fdecl.formals in

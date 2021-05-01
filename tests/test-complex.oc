@@ -1,7 +1,7 @@
 fn test-complex () -> int {
-    tuple x = (1, 2, 3);
-    tuple y = (true, "cat", 3.14);
-    list  z = ["a", "b", "c"];
+    tuple<int, int, int> x = (1, 2, 3);
+    tuple<bool, string, float> y = (true, "cat", 3.14);
+    list<string> z = ["a", "b", "c"];
     return 0;
 }
 
