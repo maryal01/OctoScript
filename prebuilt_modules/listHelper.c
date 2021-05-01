@@ -42,8 +42,9 @@ void setValue(void* data, void* value, int type)
             return;
         }
         case BOOL_TYPE: //boolean
+            *(bool*)data = *(bool*)value;
             return;
-            break;
+            
         case FLOAT_TYPE: //float
             *(float*)data = *(float*)value;
             return ;
@@ -235,6 +236,7 @@ void valToString(void* val, int type, char* buf)
         case FLOAT_TYPE: //float
          {
             float f = *(float*) val;
+            fprintf(stderr, "f is %.2f", f);
             sprintf(buf, "%.2f", f);
             break;
         }

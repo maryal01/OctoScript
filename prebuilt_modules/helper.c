@@ -15,7 +15,7 @@ void* offsetPointer(void* data, int type);
 
 void errorExit(const char* message)
 {
-    fprintf(stderr, "%s\n", message);
+    fprintf(stderr, "%s\nThe program may continue to run after an error was detected, and can cause undefined behaviour.\n", message);
     exit(1);
 }
 
@@ -69,6 +69,46 @@ void* offsetPointerNtimes(void* data, int type, int n)
 void* offsetPointer(void* data, int type)
 {
     return offsetPointerNtimes(data, type, 1);
+}
+
+void* makePointerOutOfValue(int type, va_list args) // TODO
+{
+
+    size_t s = sizeofType(type);
+    switch(type) {
+        case INT_TYPE: //int
+        {
+            int i = va_arg(args, int);
+            int* ip = malloc(s);
+            *ip = i;
+            return ip;
+        }
+            
+        case BOOL_TYPE: 
+        {
+            bool b = va_arg(args, bool);
+            bool* bp = malloc(s);
+            *bp = b;
+            return bp;
+        }
+        case FLOAT_TYPE: //float
+        {
+            float f = va_arg(args, float);
+            float* fp = malloc(s);
+            *fp = f;
+            return fp;
+        }
+        // case STRING_TYPE: //string
+        //     return sizeof(char*);
+        // case LAMBDA_TYPE: //lambda
+        //     errorExit("cannot have a lambda here");
+        // case LIST_TYPE: //list
+        //     return sizeof(void*);
+        // case TUPLE_TYPE: //tuple
+        //     return sizeof(void*);    
+    }
+    void* v = NULL;
+    return v;
 }
 
 #endif

@@ -26,22 +26,34 @@ type predef_func = string * string * A.typ * params
 let predefs = 
    [
       ("print", "printf", A.INT, (Var [A.STRING]));
-      ("test", "test", A.NONE, (Fixed [A.LIST None]));
+      (* ("test", "test", A.NONE, (Fixed [A.LIST None])); *)
       ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None]));
-      (* ("length", "length", A.INT, (Fixed [A.LIST None]));
-      ("get", "get", A.INT, (Fixed [A.LIST None; A.INT])); *)
-      (* ("get", "get", A.INT, (Fixed [A.TUPLE; A.INT])); *)
+      
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
+      
       ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST None; A.BOOLEAN; A.STRING]));
       ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.BOOLEAN; A.STRING]));
+      
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
+      ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE]));
+
       ("toLower", "toLower", A.STRING, (Fixed [A.STRING]));
       ("toUpper", "toUpper", A.STRING, (Fixed [A.STRING]));
       ("concat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
       ("substring", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
       ("strlen", "length", A.INT, (Fixed [A.STRING]));
+      ("append", "append", A.LIST, (Var [A.LIST]));
+      ("insert", "insert", A.LIST, (Var [A.LIST]));
+      ("concat", "concatLists", A.LIST, (Fixed [A.LIST; A.LIST]));
+      ("set", "set", A.LIST, (Var [A.LIST; A.INT]));
+      ("countRows", "countRows", A.INT, (Fixed [A.TABLE]));
+      ("countCols", "countCols", A.INT, (Fixed [A.TABLE]));
+      ("copyTuple", "copyTuple", A.TUPLE, (Fixed [A.TUPLE]));
    ]
-   
+
+   ("tupleSet", "tupleSet", A.TUPLE, (Var [A.TUPLE; A.INT]))]
+
+
 let predef_names = 
   List.map (fun (n,_,_,_)-> n) predefs
 
