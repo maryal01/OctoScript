@@ -12,8 +12,8 @@ type predef_func = string * string * A.typ * params
 
 let predefs = 
   [("print", "printf", A.INT, (Var [A.STRING]));
-   ("test", "test", A.NONE, (Fixed [A.LIST]));
-   ("get", "get", A.INT, (Fixed [A.TUPLE; A.INT]));
+   (* ("test", "test", A.NONE, (Fixed [A.LIST])); *)
+   ("get", "get", A.INT, (Fixed [A.LIST; A.INT]));
    ("size", "size", A.NONE, (Fixed [A.TUPLE]));
    ("read", "read", A.TABLE, (Fixed [A.STRING; A.LIST; A.BOOLEAN; A.STRING]));
    ("write", "write", A.NONE, (Fixed [A.TABLE; A.STRING; A.BOOLEAN; A.STRING]));
@@ -23,7 +23,7 @@ let predefs =
    ("toUpper", "toUpper", A.STRING, (Fixed [A.STRING]));
    ("concat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
    ("substring", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
-   ("length", "length", A.INT, (Fixed [A.STRING]));
+   ("length", "length", A.INT, (Fixed [A.LIST]));
    ("append", "append", A.LIST, (Var [A.LIST]));
    ("insert", "insert", A.LIST, (Var [A.LIST]));
    ("concat", "concatLists", A.LIST, (Fixed [A.LIST; A.LIST]));
