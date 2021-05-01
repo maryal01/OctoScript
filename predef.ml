@@ -6,7 +6,18 @@ module Set = Set.Make
 (* Fixed or Var indicates normal parameters or varargs *)
 type params = Fixed of A.typ list | Var of A.typ list
 
-(* type rttype = Static of A.typ | Relative of int | ListElem of int | TupleElem of int * int | TableElem of int * int *)
+
+
+(* non-Static types will have their types checked by how the function is called *)
+type rttype = Static of A.typ | Relative of int | ListElem of int | TupleElem of int * int | TableElem of int * int
+
+type builtin_func = string * rttype * A.typ list
+let builtins = 
+   [
+      ("length", Static A.INT, [A.LIST None]);
+      ("get", ListElem 0, [A.LIST None; A.INT]);
+   ]
+
 
 (* OctoScript name, C name, return type, parameter list *)
 type predef_func = string * string * A.typ * params
@@ -17,8 +28,8 @@ let predefs =
       ("print", "printf", A.INT, (Var [A.STRING]));
       ("test", "test", A.NONE, (Fixed [A.LIST None]));
       ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None]));
-      ("length", "length", A.INT, (Fixed [A.LIST None]));
-      ("get", "get", A.INT, (Fixed [A.LIST None; A.INT]));
+      (* ("length", "length", A.INT, (Fixed [A.LIST None]));
+      ("get", "get", A.INT, (Fixed [A.LIST None; A.INT])); *)
       (* ("get", "get", A.INT, (Fixed [A.TUPLE; A.INT])); *)
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
       ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST None; A.BOOLEAN; A.STRING]));
@@ -33,3 +44,6 @@ let predefs =
    
 let predef_names = 
   List.map (fun (n,_,_,_)-> n) predefs
+
+let builtin_names = 
+  List.map (fun (n,_,_)-> n) builtins

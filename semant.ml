@@ -57,7 +57,7 @@ let check (functions, statements) =
         | (TABLE _, TABLE None) -> true 
         | _ -> false)
     in
-    if (lvaluet = rvaluet || rtype_is_generic) then lvaluet
+    if (lvaluet = rvaluet || rtype_is_generic) then rvaluet
     else
       raise
         (Failure
@@ -178,7 +178,35 @@ let check (functions, statements) =
         (TUPLE (Some typ_list), STupleLit (typ_list, elements))
     (* | TableLit _ -> (TUPLE, STupleLit ([], []))  *)
     | TableLit _ -> raise (Failure "table literals not currently implemented") (* TODO: This seems unfinished*)
-    | Apply (obj, fname, args) -> check_expr (Call (fname, obj :: args)) scope
+    | Apply (obj, fname, args) -> 
+        let builtin_rtype params = 
+          let argtypes = List.map (fun (typ, _) -> typ) params in
+          let (_, rt, _) = List.find (fun (n,_,_) -> fname = n) P.builtins in
+          (match rt with
+            P.Static t -> t
+          | P.Relative i -> 
+              let t = List.nth argtypes i
+              in t
+          | P.ListElem i ->
+              let t = List.nth argtypes i
+              in (match t with LIST (Some et) -> et | _ -> raise (Failure ("ListElem relative type on something not a List " ^ typ_to_string t)))
+          | P.TupleElem (i, j) -> 
+              let t = List.nth argtypes i
+              in (match t with TUPLE (Some ets) -> List.nth ets j | _ -> raise (Failure "TupleElem relative type on something not a Tuple"))
+          | P.TableElem (i, j) ->
+              let t = List.nth argtypes i
+              in (match t with TABLE (Some ets) -> List.nth ets j | _ -> raise (Failure "TableElem relative type on something not a Table")))
+        in 
+        let builtin_formals fname = let (_, _, ps) = List.find (fun (n,_,_) -> fname = n) P.builtins in ps
+        in
+        if List.mem fname P.builtin_names then
+          let check_call ft e =
+            let et, e' = check_expr e scope in
+            (check_assign ft et, e')
+          in let args' = List.map2 check_call (builtin_formals fname) (obj :: args) 
+          in (builtin_rtype args', SCall (fname, args'))
+        else
+          check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
         let fdecl = find_func fname in
         let param_length = List.length fdecl.formals in

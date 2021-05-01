@@ -43,9 +43,7 @@ let translate (functions, statements) =
             (Array.of_list (List.map (fun p -> ltype_of_typ p) ps))
     in
     let predef_decl m (on, cn, rt, ps) =
-      if on = "length" then m
-      else
-        StringMap.add on
+      StringMap.add on
           (L.declare_function cn (predef_type rt ps) the_module, rt)
           m
     in
@@ -161,7 +159,7 @@ let translate (functions, statements) =
 
     (* Construct code for an expression; return its value *)
     (* NOTE: expr is guaranteed to not modify the env *)
-    let rec expr builder env ((_, e) : sexpr) = 
+    let rec expr builder env ((etype, e) : sexpr) = 
       let rexpr = expr builder env in
       let global_str s n = L.build_global_stringptr s n builder in
       let mk_int i = L.const_int i32_t i in 
@@ -285,18 +283,19 @@ let translate (functions, statements) =
                 | A.TABLE _ -> L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
                 | _ -> v) 
           in 
+          (* TODO: match f with builtin_names in predef and then move the logic elsewhere? *)
           if f = "length" then
             let listt = rexpr (List.hd args) 
-            in L.build_load (L.build_struct_gep listt 1 "tmp2" builder) "tmp3" builder
+            in L.build_load (L.build_struct_gep listt 1 "tmp" builder) "tmp" builder
           else if f = "get" then
             let value = List.hd (List.tl args) in
             let idx = (expr builder env value) in 
             let listt = rexpr (List.hd args)
             in
-            let inner_list = L.build_struct_gep listt 3 "temp" builder in
+            let inner_list = L.build_struct_gep listt 3 "tmp_data" builder in
             L.build_load
-              (L.build_gep inner_list [| idx |] "tmp2" builder)
-              "tmp3" builder
+              (L.build_gep inner_list [| idx |] "tmp" builder)
+              "tmp" builder
           else
           let llargs = List.map cast_complex args in           
           let userdef dom =

@@ -1,1 +1,1 @@
-list<int> l = test_return_same([1, 2, 3]);
+list<int> l = [1, 2, 3];
