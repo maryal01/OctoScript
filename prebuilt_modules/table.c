@@ -51,4 +51,27 @@ void write(void* table, char* filename, bool header, char* delimeter)
 
 }
 
+int countRows(ListType* table)
+{
+    return table->len;
+}
+
+int countCols(ListType* table)
+{
+    TupleType** t = getListElement(table, 0);
+    return (*t)->len;
+}
+
+// TupleType* size(ListType* table)
+// {
+//     int row = countRows(table);
+//     int col = countCols(table);
+    
+// }
+
+bool empty(ListType* table){
+    return countRows(table) == 0;
+}
+
+
 #endif

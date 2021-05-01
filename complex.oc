@@ -1,2 +1,13 @@
+tuple tup = (1, false);
+tuple tup2 = tupleSet(tup, 0, 5);
+print(string_of_tuple(tup2));
 
-
+table t = read("/Users/sinan/Desktop/Book1.csv", [0, 2, 2, 0], false, ",");
+int i = t.countRows();
+if (i != 3) {
+    print("error");
+}
+int p = t.countCols();
+if (p != 4) {
+    print("error");
+}

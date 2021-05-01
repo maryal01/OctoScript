@@ -5,6 +5,10 @@
 
 #include "dataTypes.c"
 
+
+TupleType* createTuple(int types[], int len);
+
+
 // returns the tuple element at index
 void* getTupleElement(TupleType* tt, int index);
 
@@ -62,6 +66,21 @@ size_t getTupleDataSize(int* types, int len)
 size_t getTupleSize(int* types, int len)
 {
     return getTupleDataOffsetSize(len) + getTupleDataSize(types, len);
+}
+
+TupleType* createTuple(int types[], int len)
+{
+    size_t size = getTupleSize(types, len);
+    TupleType* new = malloc(size);
+    new->self_type = 11;
+    new->len = len;
+    
+    for (int i = 0; i < new->len; i++){
+        setTypeofTupleIndex(new, i, types[i]);
+    }
+
+    return new;
+    
 }
 
 TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *typeNames)
