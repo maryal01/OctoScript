@@ -66,12 +66,12 @@ let check (functions, statements) =
       | Some parent -> find_identifier name (ref parent)
       | None ->
           raise
-            (Failure ("The identifier " ^ name ^ " is not already defined. ")))
+            (Failure ("The identifier " ^ name ^ " is not defined. ")))
   in
   let add_identifier name typ (scope : symbol_table ref) =
     try
       let _ = StringMap.find name !scope.identifiers in
-      raise (Failure (" The identifier" ^ name ^ "has been already defined"))
+      raise (Failure (" The identifier " ^ name ^ " has been already defined"))
     with Not_found ->
       scope :=
         {
@@ -82,7 +82,8 @@ let check (functions, statements) =
   let function_decls = List.fold_left add_func built_in_decls functions in
   let find_func s =
     try StringMap.find s function_decls
-    with Not_found -> raise (Failure ("unrecognized function " ^ s))
+    with Not_found -> 
+      raise (Failure ("unrecognized function " ^ s))
   in
   let lambda_name =
     let counter = ref 0 in
@@ -169,7 +170,8 @@ let check (functions, statements) =
         let typ_list = List.map fold_func elements in
         (TUPLE, STupleLit (typ_list, elements))
     | TableLit _ -> (TUPLE, STupleLit ([], []))
-    | Apply (obj, fname, args) -> check_expr (Call (fname, obj :: args)) scope
+    | Apply (obj, fname, args) -> 
+      check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
         let fdecl = find_func fname in
         let param_length = List.length fdecl.formals in
@@ -233,7 +235,6 @@ let check (functions, statements) =
   in
   let rec check_stmt statement function_decl scope =
     match statement with
-    | Block [] -> SBlock []
     | Block sl ->
         let block_variable_table =
           { identifiers = StringMap.empty; parent = Some !scope }
@@ -241,11 +242,13 @@ let check (functions, statements) =
         let block_scope = ref block_variable_table in
         let rec check_stmt_list statement_list =
           match statement_list with
-          | [ (Return _ as s) ] -> [ check_stmt s function_decl block_scope ]
+          | [ Return _ as s ] -> [ check_stmt s function_decl block_scope ]
           | Return _ :: _ -> raise (Failure "Nothing may follow a return")
           | Block s :: ss -> check_stmt_list (s @ ss)
-          | s :: ss ->
-              check_stmt s function_decl block_scope :: check_stmt_list ss
+          | s :: ss -> 
+            let st = check_stmt s function_decl block_scope in 
+            let st_list = check_stmt_list ss in
+            st::st_list 
           | [] -> []
         in
         SBlock (check_stmt_list sl)
@@ -317,7 +320,10 @@ let check (functions, statements) =
       styp = func.typ;
       sfname = func.fname;
       sformals = formals';
-      sbody = List.map (fun st -> check_stmt st func function_scope) func.body;
+      sbody = 
+      (match check_stmt (Block func.body) func function_scope with
+        | SBlock sl -> sl
+        | _ -> raise (Failure "Internal Error: Block did not become block"));
     }
   in
   ( List.map check_function functions,

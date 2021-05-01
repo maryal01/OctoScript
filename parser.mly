@@ -104,6 +104,7 @@ statement:
     expr SEMI                                                                     { Expr $1                 }
   | RETURN expr_opt SEMI                                                          { Return $2               }
   | LBRACE stmnt_list RBRACE                                                      { Block (List.rev $2)     } 
+
   | IF LPAREN expr RPAREN statement %prec NOELSE                                  { If($3, $5, Block([]))   }
   | IF LPAREN expr RPAREN statement ELSE statement                                { If($3, $5, $7)         }
   | WHILE LPAREN expr RPAREN statement                                            { While($3, $5)           }

@@ -1,0 +1,6 @@
+fn test-length () -> int {
+  list l = [10,20,30,40];
+  return l.length();
+}
+
+print("%d", test-length());
