@@ -159,7 +159,7 @@ let translate (functions, statements) =
 
     (* Construct code for an expression; return its value *)
     (* NOTE: expr is guaranteed to not modify the env *)
-    let rec expr builder env ((etype, e) : sexpr) = 
+    let rec expr builder env ((_, e) : sexpr) = 
       let rexpr = expr builder env in
       let global_str s n = L.build_global_stringptr s n builder in
       let mk_int i = L.const_int i32_t i in 

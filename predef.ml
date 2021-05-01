@@ -35,23 +35,24 @@ let predefs =
       ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.BOOLEAN; A.STRING]));
       
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
-      ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE]));
+      ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE None]));
 
       ("toLower", "toLower", A.STRING, (Fixed [A.STRING]));
       ("toUpper", "toUpper", A.STRING, (Fixed [A.STRING]));
       ("concat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
       ("substring", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
       ("strlen", "length", A.INT, (Fixed [A.STRING]));
-      ("append", "append", A.LIST, (Var [A.LIST]));
-      ("insert", "insert", A.LIST, (Var [A.LIST]));
-      ("concat", "concatLists", A.LIST, (Fixed [A.LIST; A.LIST]));
-      ("set", "set", A.LIST, (Var [A.LIST; A.INT]));
-      ("countRows", "countRows", A.INT, (Fixed [A.TABLE]));
-      ("countCols", "countCols", A.INT, (Fixed [A.TABLE]));
-      ("copyTuple", "copyTuple", A.TUPLE, (Fixed [A.TUPLE]));
+      ("append", "append", A.LIST None, (Var [A.LIST None]));
+      ("insert", "insert", A.LIST None, (Var [A.LIST None]));
+      ("concat", "concatLists", A.LIST None, (Fixed [A.LIST None; A.LIST None]));
+      ("set", "set", A.LIST None, (Var [A.LIST None; A.INT]));
+      ("countRows", "countRows", A.INT, (Fixed [A.TABLE None]));
+      ("countCols", "countCols", A.INT, (Fixed [A.TABLE None]));
+      ("copyTuple", "copyTuple", A.TUPLE None, (Fixed [A.TUPLE None]));
+
+      ("tupleSet", "tupleSet", A.TUPLE None, (Var [A.TUPLE None; A.INT]));
    ]
 
-   ("tupleSet", "tupleSet", A.TUPLE, (Var [A.TUPLE; A.INT]))]
 
 
 let predef_names = 
