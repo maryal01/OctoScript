@@ -73,7 +73,7 @@ let check (functions, statements) =
       | Some parent -> find_identifier name (ref parent)
       | None ->
           raise
-            (Failure ("The identifier " ^ name ^ " is not defined. ")))
+            (Failure ("The identifier " ^ name ^ " is not defined")))
   in
   let add_identifier name typ (scope : symbol_table ref) =
     try

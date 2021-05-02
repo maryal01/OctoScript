@@ -1,0 +1,5 @@
+lambda<int> iadd = fn (int i, int j) => {i + j};
+print("%d, ", iadd(5, 15));
+
+lambda<float> fadd = fn (float i, float j) => {i + j};
+print("%f", fadd(41.9841, 1381.2438));
