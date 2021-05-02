@@ -145,11 +145,20 @@ let check (functions, statements) =
                   ^ expr_to_string e))
         in
         (ty, SBinop ((t1, e1'), op, (t2, e2')))
-    | Lambda (args, e) ->
-        let t1, e1 = check_expr e scope in
-        (* let _, formal_names = List.split args in *)
-        (* let unbound = extract_unbound formal_names e StringSet.empty in  *)
-        (t1, SLambda (lambda_name (), args, (t1, e1)))
+    | Lambda (binds, body) ->
+        (* Code adapted from check_function down below *)
+        let formals' = check_binds binds in
+        let formals'' =
+          List.fold_left
+            (fun scope (typ, name) -> StringMap.add name typ scope)
+            StringMap.empty formals'
+        in
+        let variable_table =
+          { identifiers = formals''; parent = Some !global_scope }
+        in
+        let lambda_scope = ref variable_table in
+        let t1, e1 = check_expr body lambda_scope
+        in (t1, SLambda (lambda_name (), binds, (t1, e1)))
     | ListLit elements as list -> 
         (match elements with
         | [] -> (LIST None, SListLit (NONE, elements))

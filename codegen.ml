@@ -126,7 +126,8 @@ let translate (functions, statements) =
   let build_function_body fdecl =
     let the_function, _ =
       try StringMap.find fdecl.sfname function_decls
-      with Not_found -> raise (Failure "build body func")
+      with Not_found -> 
+        (try StringMap.find fdecl.sfname lambda_decls with Not_found -> raise (Failure "build body func"))
     in
     let builder = L.builder_at_end context (L.entry_block the_function) in
 
@@ -386,5 +387,7 @@ let translate (functions, statements) =
       | A.FLOAT -> L.build_ret (L.const_float float_t 0.0)
       | t -> L.build_ret (L.const_int (ltype_of_typ t) 0))
   in
-  List.iter build_function_body program;
+  let lambda_functions = List.map (fun (_, (_, fd)) -> fd) (StringMap.bindings lambda_decls)
+  in
+  List.iter build_function_body (program @ lambda_functions);
   the_module
