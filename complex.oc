@@ -1,1 +1,2 @@
-fn (int x) => {x};
+lambda<int> l = fn () => {5};
+l();

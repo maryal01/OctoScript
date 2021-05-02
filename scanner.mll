@@ -56,6 +56,7 @@ rule token = parse
 | "table"  { TYP_TABLE  }
 | "list"   { TYP_LIST   }
 | "tuple"  { TYP_TUPLE  }
+| "lambda" { TYP_LAMBDA }
 | "fn"     { FUNC       }
 
 | "true"   { BLIT(true)  }

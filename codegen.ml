@@ -22,7 +22,7 @@ let translate (functions, statements) =
   | A.FLOAT   -> float_t
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t
-  | A.LAMBDA  -> L.pointer_type i8_t
+  | A.LAMBDA _ -> L.pointer_type i8_t
   | A.TABLE _ -> L.pointer_type i8_t
   | A.TUPLE _ -> L.pointer_type i8_t
   | A.LIST  _ -> L.pointer_type i8_t
@@ -160,7 +160,7 @@ let translate (functions, statements) =
 
     (* Construct code for an expression; return its value *)
     (* NOTE: expr is guaranteed to not modify the env *)
-    let rec expr builder env ((_, e) : sexpr) = 
+    let rec expr builder env ((etype, e) : sexpr) = 
       let rexpr = expr builder env in
       let global_str s n = L.build_global_stringptr s n builder in
       let mk_int i = L.const_int i32_t i in 
@@ -177,7 +177,7 @@ let translate (functions, statements) =
           | A.BOOLEAN -> mk_int 1
           | A.FLOAT   -> mk_int 2
           | A.STRING  -> mk_int 3
-          | A.LAMBDA  -> mk_int 4
+          | A.LAMBDA _-> mk_int 4
           | A.LIST _  -> mk_int 10
           | A.TUPLE _ -> mk_int 11
           | A.TABLE _ -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
@@ -274,7 +274,7 @@ let translate (functions, statements) =
           let e1' = rexpr e1 in
           let e2' = rexpr e2 in
           L.build_select cond' e1' e2' "tmp" builder 
-      | SLambda (n, _, _) -> expr builder env (A.LAMBDA, SStringLit n)
+      | SLambda (n, _, _) -> expr builder env (etype, SStringLit n)
       | SCall (f, args) -> 
           let cast_complex (t, sx) = 
             let v = rexpr (t, sx) in

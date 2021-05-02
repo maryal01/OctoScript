@@ -158,7 +158,7 @@ let check (functions, statements) =
         in
         let lambda_scope = ref variable_table in
         let t1, e1 = check_expr body lambda_scope
-        in (t1, SLambda (lambda_name (), binds, (t1, e1)))
+        in (LAMBDA t1, SLambda (lambda_name (), binds, (t1, e1)))
     | ListLit elements as list -> 
         (match elements with
         | [] -> (LIST None, SListLit (NONE, elements))

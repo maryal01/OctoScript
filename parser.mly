@@ -86,7 +86,7 @@ typ:
   | TYP_BOOL   { BOOLEAN }
   | TYP_FLOAT  { FLOAT   }
   | TYP_STRING { STRING  }
-  | TYP_LAMBDA { LAMBDA  }
+  | TYP_LAMBDA OP_LT typ OP_GT { LAMBDA($3) }
   | TYP_NONE   { NONE    }
   | TYP_TABLE OP_LT typ_list OP_GT { TABLE(Some $3)   }
   | TYP_TUPLE OP_LT typ_list OP_GT { TUPLE(Some $3)   }
