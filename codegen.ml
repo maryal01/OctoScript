@@ -83,6 +83,7 @@ let translate (functions, statements) =
       | SLambda (s, bs, e) -> (s, bs, e) :: ls
       | SVar _ -> ls
       | SCall (_, ps) -> List.fold_right ext_sx ps ls
+      | SLamCall _ -> ls
       | SNoExp -> ls
     in
     let rec ext_stmt s ls =
@@ -275,6 +276,7 @@ let translate (functions, statements) =
           let e2' = rexpr e2 in
           L.build_select cond' e1' e2' "tmp" builder 
       | SLambda (n, _, _) -> expr builder env (etype, SStringLit n)
+      | SLamCall (n, _) -> raise (Failure ("Lambda call to " ^ n ^ " not implemented"))
       | SCall (f, args) -> 
           let cast_complex (t, sx) = 
             let v = rexpr (t, sx) in

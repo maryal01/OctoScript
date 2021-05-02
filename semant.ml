@@ -87,11 +87,7 @@ let check (functions, statements) =
         }
   in
   let function_decls = List.fold_left add_func built_in_decls functions in
-  let find_func s =
-    try StringMap.find s function_decls
-    with Not_found -> 
-      raise (Failure ("unrecognized function " ^ s))
-  in
+  let find_func s = StringMap.find_opt s function_decls in
   let lambda_name =
     let counter = ref 0 in
     let next_id () =
@@ -217,48 +213,55 @@ let check (functions, statements) =
         else
           check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
-        let fdecl = find_func fname in
-        let param_length = List.length fdecl.formals in
-        (* TODO: Param types for var args are not checked *)
-        if fdecl.is_vararg then
-          if List.length args < param_length then
-            raise
-              (Failure
-                 ("Function " ^ fdecl.fname ^ " requires at least "
-                ^ string_of_int param_length ^ " arguments"))
-          else
-            let rec first_n ls n =
-              if n == 0 then []
+        let fdecl_opt = find_func fname
+        in (match fdecl_opt with 
+          | None ->
+              let ltype = find_identifier fname scope in
+              (* TODO: no dynamic signature generation for lambdas *)
+              let args' = List.map (fun a -> check_expr a scope) args
+              in (match ltype with LAMBDA rt -> (rt, SLamCall (fname, args')) | _ -> raise (Failure (fname ^ " is not a function or a variable lambda")))
+          | Some fdecl ->
+              let param_length = List.length fdecl.formals in
+              (* TODO: Param types for var args are not checked *)
+              if fdecl.is_vararg then
+                if List.length args < param_length then
+                  raise
+                    (Failure
+                      ("Function " ^ fdecl.fname ^ " requires at least "
+                      ^ string_of_int param_length ^ " arguments"))
+                else
+                  let rec first_n ls n =
+                    if n == 0 then []
+                    else
+                      match ls with
+                      | [] ->
+                          raise (Failure "first_n list smaller than specified length")
+                      | v :: vs -> v :: first_n vs (n - 1)
+                  in
+                  let check_call (ft, _) e =
+                    let et, e' = check_expr e scope in
+                    (check_assign ft et, e')
+                  in
+                  (* TODO: messy code for checking and evaluating varargs, but this will do for now *)
+                  (* leaving this here just for type checking *)
+                  let _ =
+                    List.map2 check_call fdecl.formals (first_n args param_length)
+                  in
+                  let eval_params e =
+                    let et, e' = check_expr e scope in
+                    (et, e')
+                  in
+                  let vargs = List.map eval_params args in
+                  (fdecl.typ, SCall (fname, vargs))
+              else if List.length args != param_length then
+                raise (Failure "Arguments-Parameters MisMatch")
               else
-                match ls with
-                | [] ->
-                    raise (Failure "first_n list smaller than specified length")
-                | v :: vs -> v :: first_n vs (n - 1)
-            in
-            let check_call (ft, _) e =
-              let et, e' = check_expr e scope in
-              (check_assign ft et, e')
-            in
-            (* TODO: messy code for checking and evaluating varargs, but this will do for now *)
-            (* leaving this here just for type checking *)
-            let _ =
-              List.map2 check_call fdecl.formals (first_n args param_length)
-            in
-            let eval_params e =
-              let et, e' = check_expr e scope in
-              (et, e')
-            in
-            let vargs = List.map eval_params args in
-            (fdecl.typ, SCall (fname, vargs))
-        else if List.length args != param_length then
-          raise (Failure "Arguments-Parameters MisMatch")
-        else
-          let check_call (ft, _) e =
-            let et, e' = check_expr e scope in
-            (check_assign ft et, e')
-          in
-          let args' = List.map2 check_call fdecl.formals args in
-          (fdecl.typ, SCall (fname, args'))
+                let check_call (ft, _) e =
+                  let et, e' = check_expr e scope in
+                  (check_assign ft et, e')
+                in
+                let args' = List.map2 check_call fdecl.formals args in
+                (fdecl.typ, SCall (fname, args')))
     | IfExpr (e1, e2, e3) as e -> (
         let t1, e1' = check_expr e1 scope
         and t2, e2' = check_expr e2 scope

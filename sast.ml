@@ -16,6 +16,7 @@ and sx =
   | SLambda of string * bind list * sexpr
   | SVar of string
   | SCall of string * sexpr list
+  | SLamCall of string * sexpr list
   | SNoExp
 
 type sstmt =
@@ -92,6 +93,7 @@ let rec sexpr_to_string (ty, sx) =
     | SLambda (_, bl, sx) ->
         "(" ^ blist_to_string bl ^ ") => " ^ "{ " ^ sexpr_to_string sx ^ " }"
     | SVar s -> "Variable " ^ s
+    | SLamCall (s, sxl) -> s ^ "(" ^ sexprlist_to_string sxl ^ ")"
     | SCall (s, sxl) -> s ^ "(" ^ sexprlist_to_string sxl ^ ")"
     | SNoExp -> "SNoExpr"
   in
