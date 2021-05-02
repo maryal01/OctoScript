@@ -109,7 +109,7 @@ let translate (functions, statements) =
     let lam_func =
       List.map
         (fun (n, bs, (t, e)) ->
-          { styp = t; sfname = n; sformals = bs; sbody = [ SExpr (t, e) ] })
+          { styp = t; sfname = n; sformals = bs; sbody = [SReturn (t, e)] })
         extracted_lambdas
     in
     let lambda_decl m fdecl =
@@ -274,9 +274,16 @@ let translate (functions, statements) =
           let cond' = rexpr cond in
           let e1' = rexpr e1 in
           let e2' = rexpr e2 in
-          L.build_select cond' e1' e2' "tmp" builder 
-      | SLambda (n, _, _) -> expr builder env (etype, SStringLit n)
-      | SLamCall (n, _) -> raise (Failure ("Lambda call to " ^ n ^ " not implemented"))
+          L.build_select cond' e1' e2' "tmp" builder
+      (* lambdas are extracted and declared on a seperate pass before this already
+         so here we just have to return the declared function *)
+      | SLambda (n, _, _) -> 
+          let llval, _ = StringMap.find n lambda_decls in llval
+      | SLamCall (n, args) ->
+          let llval = rexpr (etype, SVar n) in
+          let llargs = List.map (fun x -> rexpr x) args in
+          let result = (match etype with A.NONE -> "" | _ -> "lambda_result") in
+            L.build_call llval (Array.of_list llargs) result builder
       | SCall (f, args) -> 
           let cast_complex (t, sx) = 
             let v = rexpr (t, sx) in
@@ -313,10 +320,10 @@ let translate (functions, statements) =
                             A.NONE -> ""
                           | _ -> f ^ "_result") in
             L.build_call pdecl (Array.of_list llargs) result builder
-          and is_lambda = StringMap.mem f env
+          (* and is_lambda = StringMap.mem f env *)
           and is_predef = List.mem f P.predef_names in
-          if is_lambda then userdef lambda_decls
-          else if is_predef then predef f
+          (* if is_lambda then userdef lambda_decls else *)
+          if is_predef then predef f
           else userdef function_decls
       | SNoExp -> L.const_null void_t)
       (* Actually not quite sure? *)

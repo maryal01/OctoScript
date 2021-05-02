@@ -1,2 +1,2 @@
-lambda<int> l = fn () => {5};
-l();
+lambda<string> l = fn () => {"hello world"};
+print("%s", l());
