@@ -334,34 +334,34 @@ let translate (functions, statements) =
       | None -> ignore (instr builder)
     in
     (* return a builder env tuple *)
-    let rec stmt builder env = function
+    let rec stmt builder env iters = function
         SBlock sl -> 
-          let (_, b) = List.fold_left (fun (e, b) s -> stmt b e s) (env, builder) sl
-          in (env, b)
+          let (_, b, _) = List.fold_left (fun (e, b, i) s -> stmt b e i s) (env, builder, iters) sl
+          in (env, b, iters)
       | SWhile (cond, s) -> 
           (* some work for scoping *)
+          let merge_bb = L.append_block context "merge" the_function in
           let pred_bb = L.append_block context "while_cond" the_function in
             let _ = L.build_br pred_bb builder in
           let body_bb = L.append_block context "while_body" the_function in
-            let (_, while_builder) = stmt (L.builder_at_end context body_bb) env s in
+            let (_, while_builder, _) = stmt (L.builder_at_end context body_bb) env (merge_bb :: iters) s in
             let () = add_terminal while_builder (L.build_br pred_bb) in
           let pred_builder = L.builder_at_end context pred_bb in
           let bool_val = expr pred_builder env cond in
-          let merge_bb = L.append_block context "merge" the_function in
           let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
-          (env, L.builder_at_end context merge_bb)
+          (env, L.builder_at_end context merge_bb, iters)
       | SIf (cond, s1, s2) ->
           let bool_val = expr builder env cond in
           let merge_bb = L.append_block context "merge" the_function in
             let branch_instr = L.build_br merge_bb in
           let then_bb = L.append_block context "then" the_function in
-            let (_, then_builder) = stmt (L.builder_at_end context then_bb) env s1 in
+            let (_, then_builder, _) = stmt (L.builder_at_end context then_bb) env iters s1 in
             let () = add_terminal then_builder branch_instr in
           let else_bb = L.append_block context "else" the_function in
-            let (_, else_builder) = stmt (L.builder_at_end context else_bb) env s2 in
+            let (_, else_builder, _) = stmt (L.builder_at_end context else_bb) env iters s2 in
             let () = add_terminal else_builder branch_instr in
           let _ = L.build_cond_br bool_val then_bb else_bb builder in
-          (env, L.builder_at_end context merge_bb)
+          (env, L.builder_at_end context merge_bb, iters)
       | SReturn e -> 
           let cast_complex (t, sx) = 
             let v = expr builder env (t, sx) in
@@ -374,22 +374,27 @@ let translate (functions, statements) =
             (match fdecl.styp with
                 A.NONE -> L.build_ret_void builder 
               | _ -> L.build_ret (cast_complex e) builder)
-          in (env, builder)
-      | SBreak -> raise(Failure("break is not impleemented"))
+          in (env, builder, iters)
+      | SBreak ->
+          (match iters with
+          | [] -> raise (Failure "Cannot call break outside of iterative loop")
+          | i :: is ->
+            let _ = L.build_br i builder in
+            (env, builder, is))
       | SDeclare (t, n, e) -> 
           let e' = expr builder env e in
           let v = L.build_alloca (L.type_of e') n builder in
           let env' = StringMap.add n (t, v) env in
           let _ = L.build_store e' v builder
-          in (env', builder)
+          in (env', builder, iters)
       | SAssign (n, e) ->
           let e' = expr builder env e in
           let _ = L.build_store e' (lookup n env) builder 
-          in (env, builder) 
-      | SExpr e -> let _ = expr builder env e in (env, builder) 
+          in (env, builder, iters) 
+      | SExpr e -> let _ = expr builder env e in (env, builder, iters) 
     in
 
-    let _, builder = stmt builder formal_env (SBlock fdecl.sbody) in
+    let _, builder, _  = stmt builder formal_env [] (SBlock fdecl.sbody) in
     add_terminal builder
       (match fdecl.styp with
       | A.NONE -> L.build_ret_void
