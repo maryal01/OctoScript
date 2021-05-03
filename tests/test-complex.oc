@@ -1,8 +1,0 @@
-fn test-complex () -> int {
-    tuple<int, int, int> x = (1, 2, 3);
-    tuple<bool, string, float> y = (true, "cat", 3.14);
-    list<string> z = ["a", "b", "c"];
-    return 0;
-}
-
-print("%d",test-complex());
