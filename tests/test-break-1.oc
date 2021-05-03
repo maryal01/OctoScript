@@ -1,0 +1,10 @@
+fn test-break () -> int {
+    int i = 0;
+    while (i < 100) {
+        i = i + 1;
+        break;
+    }
+    return i;
+}
+
+print("%d", test-break());
