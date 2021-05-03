@@ -86,14 +86,14 @@ void* makePointerOutOfValue(int type, va_list args) // TODO
             
         case BOOL_TYPE: 
         {
-            bool b = va_arg(args, bool);
+            bool b = va_arg(args, int);
             bool* bp = malloc(s);
             *bp = b;
             return bp;
         }
         case FLOAT_TYPE: //float
         {
-            float f = va_arg(args, float);
+            float f = va_arg(args, double);
             float* fp = malloc(s);
             *fp = f;
             return fp;

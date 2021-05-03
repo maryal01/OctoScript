@@ -37,14 +37,16 @@ let predefs =
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
       ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE None]));
 
+      (* Standard C String library functions *)
       ("toLower", "toLower", A.STRING, (Fixed [A.STRING]));
       ("toUpper", "toUpper", A.STRING, (Fixed [A.STRING]));
       ("concat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
       ("substring", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
       ("strlen", "length", A.INT, (Fixed [A.STRING]));
+      
       ("append", "append", A.LIST None, (Var [A.LIST None]));
       ("insert", "insert", A.LIST None, (Var [A.LIST None]));
-      ("concat", "concatLists", A.LIST None, (Fixed [A.LIST None; A.LIST None]));
+      (* ("concat", "concatLists", A.LIST None, (Fixed [A.LIST None; A.LIST None])); *)
       ("set", "set", A.LIST None, (Var [A.LIST None; A.INT]));
       ("countRows", "countRows", A.INT, (Fixed [A.TABLE None]));
       ("countCols", "countCols", A.INT, (Fixed [A.TABLE None]));
