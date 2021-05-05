@@ -312,8 +312,14 @@ let check (functions, statements) =
     | Declare (t, id, e) ->
         let et', e' = check_expr e scope in
         let same_type = t = et' in
+        let flex_typing =
+         (* TODO: This should be fine with lists but might cause a problem with none list types
+            Prefer to have this out at the last version, or an overhaul to predef *)
+        (match et' with 
+          LIST None -> (match t with LIST _ -> true | _ -> false) 
+          | _ -> false) in
         let empty_declaration = et' = NONE in
-        if same_type then
+        if (same_type || flex_typing) then
           let _ = add_identifier id t scope in
           SDeclare (t, id, (et', e'))
         else if empty_declaration then
