@@ -1,4 +1,4 @@
-list listt = [10,20,30,40];
+list<int> listt = [10, 15, 17, 30];
 int length = listt.length();
 int i = 0;
 while(i < length){
@@ -7,3 +7,23 @@ while(i < length){
 
     i = i + 1;
 }
+
+/*
+[10,20,30,40].add(70);
+ 
+[| list ; 4 ; int ; 10 ; 20 ; 30; 40 |]
+
+L.const_int i32 4
+
+[10, 20, 30, 40, 70]
+
+
+add(listt, value):
+    int i = 0;
+    new_listt<int> = []
+    while(i < listt.length()){
+        int val = listt[i] -->  
+        new_list.add(val); //statement 
+    }
+    new_list.add(value)
+*/
