@@ -1,0 +1,52 @@
+doing at with tuples
+doing add with lists
+
+
+list = [| LIST ; len ; int ; 1 ; 5 ;6; 7 |]
+inner_list = L.build_struct_gep listt 3 "tmp_data" builder in
+
+create struct type num_elem_list
+create struct type of 
+{
+  self_type
+  length
+  i32 * --> llvalue of type array of integers (malloc'd)
+  i64 * --> llvalue of type array (malloc'd)
+} tuples
+
+create struct type of 
+{
+  self_type
+  length
+  element_type
+  i32_t * --> llvalue of type array (malloc'd)
+} lists
+
+
+
+types = L.build_struct_gep info 2 "tmp_data" builder in --> i32 pointer
+values = L.build_struct_gep info 3 "tmp_data" builder in --> void pointer
+
+idx -> 4
+val_ptr = (L.build_gep values [| idx |] "tmp" builder) 
+type = L.load (L.build_gep types [| idx |] "tmp" builder) "tmp" builder
+
+if F.cmp type INT_TYPE // write compile type if statements
+L.build_load (L.build_bitcast val_ptr (L.pointer_type i8_t) "var_list_tmp" builder) "tmp" builder
+else if F.cmp type 
+
+"tmp" builder
+types 
+gep info->elem_type
+
+
+fn hello(list<int> l) {
+  l.at(0)
+  table.getRow(...)
+}
+inside the function: 
+cast inner_list to num_elem_list using the elem_type
+return list_pointer
+then done
+------------------------------------------------------
+talk about what i saaid

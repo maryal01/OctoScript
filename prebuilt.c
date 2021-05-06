@@ -1,6 +1,6 @@
 #ifndef PREBUILT_C
 #define PREBUILT_C
-
+#include <stdio.h>
 
 
 #define INT_TYPE 0
@@ -23,28 +23,44 @@
 #include "prebuilt_modules/ioHelper.c"
 #include "prebuilt_modules/string.c"
 
+typedef struct list_item{
+    int self_type;
+    int length;
+    int elem_type;
+    int* data;
+} list_item;
 
-char *string_of_list(void *data){
-    ListType *lp = data;
-
-    char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
-    strcpy(list_buf, "[");
-
-    for(int i = 0; i < lp->len; i++){
-        size_t offset = sizeofType(lp->type) * i;
-        
-        char int_buf[BUF_SIZE];
-        void *data = getListElement(lp, i);
-        valToString(data, lp->type, int_buf);
-    
-        strcat(list_buf, int_buf);
-        if(i + 1 != lp->len){
-            strcat(list_buf, ", ");
-
-        }
+char *string_of_list(list_item *data){
+    if (data->data == NULL ){
+        printf("The data is null");
+    } else{
+        printf("The data is: %d ", 5);
     }
-    strcat(list_buf, "]");
-    return list_buf;
+    printf("Hello %d, %d",data->length, data->elem_type);
+    char * a = malloc((size_t)2);
+    a[0] = 's';
+    a[1] = 0;
+    return a;
+    // ListType *lp = data;
+
+    // char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
+    // strcpy(list_buf, "[");
+
+    // for(int i = 0; i < lp->len; i++){
+    //     size_t offset = sizeofType(lp->type) * i;
+        
+    //     char int_buf[BUF_SIZE];
+    //     void *data = getListElement(lp, i);
+    //     valToString(data, lp->type, int_buf);
+    
+    //     strcat(list_buf, int_buf);
+    //     if(i + 1 != lp->len){
+    //         strcat(list_buf, ", ");
+
+    //     }
+    // }
+    // strcat(list_buf, "]");
+    // return list_buf;
 }
 
 char* string_of_tuple(TupleType* tup)

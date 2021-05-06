@@ -12,10 +12,18 @@ let translate (functions, statements) =
   let i32_t = L.i32_type context
   and i8_t = L.i8_type context (* char *)
   and i1_t = L.i1_type context (* bool *)
+  and i64_t = L.i64_type context
   and float_t = L.double_type context
   and void_t = L.void_type context
   and the_module = L.create_module context "OctoScript" in
-
+  let list_struct_type = L.named_struct_type context "list_struct" in
+  let list_struct_ptr = L.pointer_type list_struct_type in
+  let _ =
+    L.struct_set_body list_struct_type
+      [| i32_t; i32_t; i32_t; L.pointer_type i32_t |]
+      true
+    (* what should be the pointer type here? *)
+  in
   let ltype_of_typ = function
     | A.INT -> i32_t
     | A.BOOLEAN -> i1_t
@@ -25,9 +33,8 @@ let translate (functions, statements) =
     | A.LAMBDA _ -> L.pointer_type i8_t
     | A.TABLE _ -> L.pointer_type i8_t
     | A.TUPLE _ -> L.pointer_type i8_t
-    | A.LIST _ -> L.pointer_type i8_t
+    | A.LIST _ -> list_struct_ptr
   in
-
   let program =
     { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements }
     :: functions
@@ -49,7 +56,6 @@ let translate (functions, statements) =
     in
     List.fold_left predef_decl StringMap.empty P.predefs
   in
-
   let function_decls : (L.llvalue * sfunc_decl) StringMap.t =
     let function_decl m fdecl =
       let name = fdecl.sfname
@@ -198,12 +204,35 @@ let translate (functions, statements) =
       | SBoolLit b -> lval_of_prim (A.Boolean b)
       | SListLit (t, ps) ->
           let len = L.const_int i32_t (List.length ps) in
+          let data = L.build_array_malloc i32_t len "aarr_malloc" builder in
+          let struct_value = L.build_malloc list_struct_type "alc_tmp" builder in
           let content =
-            type_sym (A.LIST None)
-            :: len :: type_sym t :: List.map lval_of_prim ps
+           [
+              type_sym (A.LIST None);
+              len;
+              type_sym t;
+              data;
+            ]
           in
-          let value = L.const_struct context (Array.of_list content) in
-          mallocate value
+          let rec build_list lis data i =
+            match lis with
+            | [] -> ()
+            | x :: xs ->
+                let box = L.build_gep data [| mk_int i |] "item" builder in
+                let _ = L.build_store (lval_of_prim x) box builder in
+                build_list xs data (i + 1)
+          in
+          let _ = build_list ps data 0 in
+          let rec build_struct lis structt i =
+            match lis with
+            | [] -> ()
+            | x :: xs ->
+                let box = L.build_struct_gep structt i "item" builder in
+                let _ = L.build_store x box builder in
+                build_struct xs structt (i + 1)
+          in
+          let _ = build_struct content struct_value 0 in 
+          struct_value
       | STupleLit (ts, ps) ->
           let len = L.const_int i32_t (List.length ps) in
           let types = List.map type_sym ts in
@@ -359,18 +388,18 @@ let translate (functions, statements) =
           let value = L.const_struct context (Array.of_list new_content) in
           mallocate value
       | SCall (f, args) ->
-          let cast_complex (t, sx) =
-            let v = rexpr (t, sx) in
-            match t with
-            | A.LIST _ ->
-                L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
-            | A.TUPLE _ ->
-                L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
-            | A.TABLE _ ->
-                L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
-            | _ -> v
-          in
-          let llargs = List.map cast_complex args in
+          (* let cast_complex (t, sx) =
+               let v = rexpr (t, sx) in
+               match t with
+               | A.LIST _ ->
+                   L.build_bitcast v (L.pointer_type i8_t) "var_list_tmp" builder
+               | A.TUPLE _ ->
+                   L.build_bitcast v (L.pointer_type i8_t) "var_tuple_tmp" builder
+               | A.TABLE _ ->
+                   L.build_bitcast v (L.pointer_type i8_t) "var_table_tmp" builder
+               | _ -> v
+             in *)
+          let llargs = List.map rexpr args in
           let userdef dom =
             let fdef, fdecl =
               try StringMap.find f dom
@@ -423,6 +452,7 @@ let translate (functions, statements) =
           let pred_builder = L.builder_at_end context pred_bb in
           let bool_val = expr pred_builder env cond in
           let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+
           (env, L.builder_at_end context merge_bb, iters)
       | SIf (cond, s1, s2) ->
           let bool_val = expr builder env cond in

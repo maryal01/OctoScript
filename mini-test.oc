@@ -1,29 +1,106 @@
+1. first make sure the struct type is good?
+2. does i64 typecaasting works?
+3. build_load vs build_store
+4. build_array_malloca and indexing it using gep
+5. the code without while loop sanity cheeck
+6. the code with the while loop in llvm
+7.memcpy??
+
 list<int> listt = [10, 15, 17, 30];
 int length = listt.length();
 int i = 0;
 while(i < length){
     int elem = listt.get(i);
     print("( %d, %d), ", i, elem);
-
     i = i + 1;
 }
 
 /*
 [10,20,30,40].add(70);
- 
+ x
 [| list ; 4 ; int ; 10 ; 20 ; 30; 40 |]
 
 L.const_int i32 4
+and mallocate llval =
+        let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
+        let _ = L.build_store llval v builder in
+
 
 [10, 20, 30, 40, 70]
+val build_array_malloc : lltype -> llvalue -> string -> llbuilder -> llvalue
+build_array_malloc ty val name b creates an array malloc instruction at the position 
+specified by the instruction builder b. See the method llvm::CallInst::CreateArrayMalloc.
 
+L.build_load --> this gets the value from the pointer to an address
+L.build_store --> this stores in that space and returns the value stored ??
+L.build_alloca --> creates a space in stack and returns a pointer to that address
+l.build_malloca --> creates a space in heap and returns a pointer to that address
+build_gep p indices name b creates a %name = getelementptr %p, indices...
 
 add(listt, value):
-    int i = 0;
-    new_listt<int> = []
-    while(i < listt.length()){
-        int val = listt[i] -->  
-        new_list.add(val); //statement 
-    }
-    new_list.add(value)
+    int i = 0; // iterator statement
+    init_ptr = build_array_malloc L.i64_t (L.build_add length (mk_int 1)) "tmp" builder 
+    let _ = L.memcpy init_ptr inner_list length 1
+    let last_box = L.build_gep init_ptr [| length |] "" in
+    let _ = L.build_store value last_box in 
+    ptr = L.build_gep lisstt [| mk_int 3 |] "" in
+    let _ = L.build_store init_ptr ptr in
+    ptr = L.build_gep lisstt [| mk_int 3 |] "" in
+    let _ = L.build_store init_ptr ptr in
+    let final_list = L.const_struct context [| (mk_int 10); length; (mk_int 0) ; init_ptr |]
+
+//think about capacity? 
+
+
+---------------
+stmnt --> builder env s
+
+let add_function = L.define_function .... 
+< code to come here before the while loop >
+<!--
+    int i = 0; // iterator statement
+    let v = L.build_alloca (L.const_int i32_t) "alc_tmp" builder in
+    let _ = L.store (L.build_add length (mk_int 1))  v in
+    init_ptr = build_array_malloc L.i64_t (L.build_add length (mk_int 1)) "tmp" builder 
+-->
+
+let merge_bb = L.append_block context "merge" add_function in
+let pred_bb = L.append_block context "while_cond" add_function in
+let _ = L.build_br pred_bb builder in
+let body_bb = L.append_block context "while_body" add_function in
+
+<loop body>
+<!--
+    let i = L.build_load i_address
+    int val = listt[i] //geting the element  
+    let box = L.build_gep init_ptr [| i |] "" in
+    let val2 = L.build_store val box in  
+    let _ = L.build_store (L.build_add i (mk_int 1)) i_address
+-->
+
+let while_builder = (L.builder_at_end context body_bb) 
+
+in
+let () = add_terminal while_builder (L.build_br pred_bb) in
+let pred_builder = L.builder_at_end context pred_bb in
+let bool_val =  (F.cmp shit) in
+let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ask richard:
+what does l.build_store return? same as val that we just stored?
+can we use build_struct_gep in arrays? How do we use indexing in arrays?
+Do we have to cast anything if everything is just 64 bits/same size? Do we need to change how get works?

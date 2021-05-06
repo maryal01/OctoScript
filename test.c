@@ -60,26 +60,34 @@ void toString(int type, void *data, char *buf){
         // actual table type under the hood
     }
 }
+typedef struct list_item{
+    int self_type;
+    int length;
+    int elem_type;
+    int* data;
+} list_item;
 
-char *string_of_list(void *data){
-    ListType *lp = data;
 
-    char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
-    strcpy(list_buf, "[");
+char *string_of_list(list_item *data){
+    // char *list_buf = calloc(BUF_SIZE * data->length, sizeof(char));
+    // strcpy(list_buf, "[");
 
-    for(int i = 0; i < lp->len; i++){
-        size_t offset = size_of_type(lp->type) * i;
+    // for(int i = 0; i < data->length; i++){
+    //     size_t offset = size_of_type(data->elem_type) * i;
         
-        char int_buf[BUF_SIZE];
-        toString(lp->type, lp->data + offset, int_buf);
-        strcat(list_buf, int_buf);
-        if(i + 1 != lp->len){
-            strcat(list_buf, ", ");
+    //     char int_buf[BUF_SIZE];
+    //     toString(data->elem_type, data->data + offset, int_buf);
+    //     strcat(list_buf, int_buf);
+    //     if(i + 1 != data->length){
+    //         strcat(list_buf, ", ");
 
-        }
-    }
-    strcat(list_buf, "]");
-    return list_buf;
+    //     }
+    // }
+    // strcat(list_buf, "]");
+    char * a = malloc((size_t)2);
+    a[0] = 's';
+    a[1] = 0;
+    return a;
 }
 
 void test(void *data){
