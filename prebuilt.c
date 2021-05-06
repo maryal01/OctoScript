@@ -34,7 +34,7 @@ char *string_of_list(list_item *data){
     if (data->data == NULL ){
         printf("The data is null");
     } else{
-        printf("The data is: %d ", 5);
+        printf("The data is: %d ", data->data);
     }
     printf("Hello %d, %d",data->length, data->elem_type);
     char * a = malloc((size_t)2);
