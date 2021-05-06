@@ -78,7 +78,8 @@ stmnt_list:
 
 
 typ_list:
-    typ                { [$1] }
+                        {[]}
+  |  typ                { [$1] }
   | typ COMMA typ_list { $1 :: $3 }
 
 typ:
@@ -86,7 +87,7 @@ typ:
   | TYP_BOOL   { BOOLEAN }
   | TYP_FLOAT  { FLOAT   }
   | TYP_STRING { STRING  }
-  | TYP_LAMBDA OP_LT typ OP_GT { LAMBDA($3) }
+  | TYP_LAMBDA OP_LT typ_list LARROW typ OP_GT { LAMBDA($3, $5) }
   | TYP_NONE   { NONE    }
   | TYP_TABLE OP_LT typ_list OP_GT { TABLE(Some $3)   }
   | TYP_TUPLE OP_LT typ_list OP_GT { TUPLE(Some $3)   }

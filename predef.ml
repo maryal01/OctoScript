@@ -26,8 +26,9 @@ type predef_func = string * string * A.typ * params
 let predefs = 
    [
       ("print", "printf", A.INT, (Var [A.STRING]));
-      (* ("test", "test", A.NONE, (Fixed [A.LIST None])); *)
-      ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None]));
+      
+      ("test", "test", A.NONE, (Fixed [A.LAMBDA ([], A.INT)]));
+      (* ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None])); *)
       
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
       

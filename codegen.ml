@@ -8,6 +8,7 @@ module StringMap = Map.Make (String)
 (* TODO: Implement built in functions within ocaml; get, len, type conversions? *)
 
 let translate (functions, statements) = 
+  let _ = L.enable_pretty_stacktrace in
   let context    = L.global_context () in
   let i32_t      = L.i32_type    context
   and i8_t       = L.i8_type     context  (* char *)
@@ -16,17 +17,19 @@ let translate (functions, statements) =
   and void_t     = L.void_type   context
   and the_module = L.create_module context "OctoScript" in
 
-  let ltype_of_typ = function
+  let rec ltype_of_typ = function
     A.INT     -> i32_t
   | A.BOOLEAN -> i1_t
   | A.FLOAT   -> float_t
   | A.NONE    -> void_t
   | A.STRING  -> L.pointer_type i8_t
-  | A.LAMBDA _ -> L.pointer_type i8_t
+  (* | A.LAMBDA _  -> L.pointer_type i8_t *)
+  | A.LAMBDA (pts, rt) -> L.pointer_type (L.function_type (ltype_of_typ rt) (Array.of_list (List.map ltype_of_typ pts)))
   | A.TABLE _ -> L.pointer_type i8_t
   | A.TUPLE _ -> L.pointer_type i8_t
   | A.LIST  _ -> L.pointer_type i8_t
   in
+
 
   let program =
     { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements }
@@ -57,6 +60,7 @@ let translate (functions, statements) =
         Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) fdecl.sformals)
       in
       let ftype = L.function_type (ltype_of_typ fdecl.styp) formal_types in
+      (* let _ = L.dump_type ftype in *)
       StringMap.add name (L.define_function name ftype the_module, fdecl) m
     in
     List.fold_left function_decl StringMap.empty program
@@ -80,7 +84,7 @@ let translate (functions, statements) =
           let ls' = ext_sx cond ls in
           let ls'' = ext_sx e1 ls' in
           ext_sx e2 ls''
-      | SLambda (s, bs, e) -> (s, bs, e) :: ls
+      | SLambda (s, bs, e) -> ext_sx e ((s, bs, e) :: ls)
       | SVar _ -> ls
       | SCall (_, ps) -> List.fold_right ext_sx ps ls
       | SLamCall _ -> ls
@@ -170,7 +174,7 @@ let translate (functions, statements) =
         (match p with 
             A.Int     i -> mk_int i
           | A.Float   f -> L.const_float float_t f
-          | A.String  s -> global_str s "string"
+          | A.String  s -> global_str (Scanf.unescaped s) "string"
           | A.Boolean b -> L.const_int i1_t (if b then 1 else 0))
       and type_sym t = 
         (match t with 
@@ -182,7 +186,7 @@ let translate (functions, statements) =
           | A.LIST _  -> mk_int 10
           | A.TUPLE _ -> mk_int 11
           | A.TABLE _ -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
-          | A.NONE    -> raise (Failure "NONE type cannot be an element of a complex type"))
+          | A.NONE    -> mk_int 100)
       and mallocate llval = 
           let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
           let _ = L.build_store llval v builder
@@ -294,7 +298,7 @@ let translate (functions, statements) =
                 | _ -> v) 
           in 
           (* TODO: match f with builtin_names in predef and then move the logic elsewhere? *)
-          if f = "length" then
+          if f = "length" then 
             let listt = rexpr (List.hd args) 
             in L.build_load (L.build_struct_gep listt 1 "tmp" builder) "tmp" builder
           else if f = "get" then

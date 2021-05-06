@@ -50,19 +50,25 @@ let check (functions, statements) =
     | _ -> StringMap.add n fd map
   in
   let check_assign lvaluet rvaluet =
-    let rtype_is_generic = 
+    let type_is_generic = 
       (match (rvaluet, lvaluet) with
-        | (LIST _, LIST None)  -> true
-        | (TUPLE _, TUPLE None) -> true
-        | (TABLE _, TABLE None) -> true 
-        | _ -> false)
+        | (LIST _, LIST None)  -> Some rvaluet
+        | (TUPLE _, TUPLE None) -> Some rvaluet
+        | (TABLE _, TABLE None) -> Some rvaluet
+        | (LIST None, LIST _)  -> Some lvaluet
+        | (TUPLE None, TUPLE _) -> Some lvaluet
+        | (TABLE None, TABLE _) -> Some lvaluet
+        | _ -> None)
     in
-    if (lvaluet = rvaluet || rtype_is_generic) then rvaluet
-    else
-      raise
-        (Failure
-           ("Invalid assignment from " ^ typ_to_string rvaluet ^ " to "
-          ^ typ_to_string lvaluet))
+    if lvaluet = rvaluet then rvaluet
+    else 
+      if Option.is_some type_is_generic
+      then Option.get type_is_generic
+      else
+        raise
+          (Failure
+            ("Invalid assignment from " ^ typ_to_string rvaluet ^ " to "
+            ^ typ_to_string lvaluet))
   in
   let variable_table = { identifiers = StringMap.empty; parent = None } in
   let global_scope = ref variable_table in
@@ -149,12 +155,13 @@ let check (functions, statements) =
             (fun scope (typ, name) -> StringMap.add name typ scope)
             StringMap.empty formals'
         in
+        let arg_types = List.map (fun (t, _) -> t) binds in
         let variable_table =
           { identifiers = formals''; parent = Some !global_scope }
         in
         let lambda_scope = ref variable_table in
         let t1, e1 = check_expr body lambda_scope
-        in (LAMBDA t1, SLambda (lambda_name (), binds, (t1, e1)))
+        in (LAMBDA (arg_types, t1), SLambda (lambda_name (), binds, (t1, e1)))
     | ListLit elements as list -> 
         (match elements with
         | [] -> (LIST None, SListLit (NONE, elements))
@@ -219,7 +226,7 @@ let check (functions, statements) =
               let ltype = find_identifier fname scope in
               (* TODO: no dynamic signature generation for lambdas *)
               let args' = List.map (fun a -> check_expr a scope) args
-              in (match ltype with LAMBDA rt -> (rt, SLamCall (fname, args')) | _ -> raise (Failure (fname ^ " is not a function or a variable lambda")))
+              in (match ltype with LAMBDA (_, rt) -> (rt, SLamCall (fname, args')) | _ -> raise (Failure (fname ^ " is not a function or a variable lambda")))
           | Some fdecl ->
               let param_length = List.length fdecl.formals in
               (* TODO: Param types for var args are not checked *)

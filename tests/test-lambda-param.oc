@@ -1,0 +1,11 @@
+fn call_lambda (lambda<int, int => int> l, int i, int j) -> none {
+    int res = l(i, j);
+    print("%d", res);
+}
+
+
+
+lambda<int, int => int> iadd = fn (int i, int j) => {i + j};
+call_lambda(iadd, 10, 50);
+
+

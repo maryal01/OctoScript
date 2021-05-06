@@ -24,7 +24,7 @@ type typ =
   | STRING
   | BOOLEAN
   | NONE
-  | LAMBDA of typ
+  | LAMBDA of typ list * typ
   | TABLE of typ list option
   | TUPLE of typ list option
   | LIST of typ option
@@ -109,7 +109,7 @@ let rec typ_to_string t =
   | FLOAT -> "float"
   | STRING -> "string"
   | BOOLEAN -> "boolean"
-  | LAMBDA t -> "lambda<" ^ (typ_to_string t) ^ ">"
+  | LAMBDA (ts, p) -> "lambda<" ^ (ts_to_string ts) ^ " -> " ^ (typ_to_string p) ^ ">"
   | NONE -> "void"
   | TABLE ts -> "table<" ^ (opt_ts_str ts) ^ ">" 
   | TUPLE ts -> "tuple<" ^ (opt_ts_str ts) ^ ">"
