@@ -13,7 +13,7 @@ let translate (functions, statements) =
   let i32_t      = L.i32_type    context
   and i8_t       = L.i8_type     context  (* char *)
   and i1_t       = L.i1_type     context  (* bool *)
-  and float_t    = L.double_type context
+  and float_t    = L.float_type context
   and void_t     = L.void_type   context
   and the_module = L.create_module context "OctoScript" in
 
@@ -167,8 +167,8 @@ let translate (functions, statements) =
     (* NOTE: expr is guaranteed to not modify the env *)
     let rec expr builder env ((etype, e) : sexpr) =
       let rexpr = expr builder env in
-      let global_str s n = L.build_global_stringptr s n builder in
-      let mk_int i = L.const_int i32_t i in
+      let global_str s n = L.build_global_string s n builder in
+      let mk_int i = L.const_int i32_t i in 
       (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
       let lval_of_prim p = 
         (match p with 

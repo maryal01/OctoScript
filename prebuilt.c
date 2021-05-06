@@ -24,28 +24,7 @@
 #include "prebuilt_modules/string.c"
 
 
-char *string_of_list(void *data){
-    ListType *lp = data;
 
-    char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
-    strcpy(list_buf, "[");
-
-    for(int i = 0; i < lp->len; i++){
-        size_t offset = sizeofType(lp->type) * i;
-        
-        char int_buf[BUF_SIZE];
-        void *data = getListElement(lp, i);
-        valToString(data, lp->type, int_buf);
-    
-        strcat(list_buf, int_buf);
-        if(i + 1 != lp->len){
-            strcat(list_buf, ", ");
-
-        }
-    }
-    strcat(list_buf, "]");
-    return list_buf;
-}
 
 char* string_of_tuple(TupleType* tup)
 {

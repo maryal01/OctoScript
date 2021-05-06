@@ -46,7 +46,11 @@ void setValue(void* data, void* value, int type)
             return;
             
         case FLOAT_TYPE: //float
+            {
+
             *(float*)data = *(float*)value;
+
+            }
             return ;
             break;
         case STRING_TYPE: //string
@@ -86,19 +90,20 @@ int* convertTypeListToInts(ListType* typeNames, int len)
     
     char *datap = typeNames->data;
 
-    // if (typeNames->len == 1) {
-    //     for (int i = 0; i < len; i++) {
-    //         types[i] = stringToTyp(typeNames->data[0]);
+    
+    if (typeNames->len == 1) {
+        for (int i = 0; i < len; i++) {
+            types[i] = stringToTyp(getListElement(typeNames, i));
             
-    //     }
-    // } else {
-    //     fprintf(stderr, "Now here\n");
-    //     for (int i = 0; i < len; i++) {
+        }
+    } else {
+        for (int i = 0; i < len; i++) {
 
-    //         types[i] = stringToTyp(typeNames->data[0]);
-    //         printf("types i = %d",types[i]);
-    //     }
-    // }
+            types[i] = stringToTyp(getListElement(typeNames, i));
+            printf("types i = %d",types[i]);
+        }
+    }
+    return types;
 }
 
 size_t getListDataOffsetSize()
