@@ -91,7 +91,7 @@ let translate (functions, statements) =
       let rec expr builder ((_, e) : sexpr) = (match e with 
           SIntLit i -> L.const_int i32_t i
         | SFloatLit f -> L.const_float float_t f
-        | SStringLit s -> L.build_global_stringptr s "string" builder
+        | SStringLit s -> L.build_global_string s "string" builder
         | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
         | SListLit (_, _) -> raise(Failure("list lit is not impleemented"))
         | STupleLit (_, _) -> raise(Failure("tuple lit is not impleemented"))

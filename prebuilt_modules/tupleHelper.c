@@ -86,7 +86,7 @@ TupleType* createTuple(int types[], int len)
 TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *typeNames)
 {
 
-
+    
     size_t size = getTupleSize((int*)(void*)typeNames->data, col);
 
     TupleType* tup = malloc(size);

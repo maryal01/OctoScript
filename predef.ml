@@ -33,7 +33,7 @@ let predefs =
       
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
       
-      ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST None; A.BOOLEAN; A.STRING]));
+      ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST (Some A.STRING); A.BOOLEAN; A.STRING]));
       ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.BOOLEAN; A.STRING]));
       
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
