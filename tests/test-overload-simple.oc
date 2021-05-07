@@ -1,0 +1,20 @@
+fn overload printout(int i) -> none {
+    print("%d", i);
+}
+
+fn overload printout(string s) -> none {
+    print("%s", s);
+}
+
+printout(42);
+printout("hello world");
+
+fn overload foo(int i) -> int {
+    return i;
+}
+
+fn overload foo(string s) -> string {
+    return s;
+}
+
+print("%d %s", foo(42), foo("overloading is fun"));

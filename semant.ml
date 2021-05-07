@@ -34,20 +34,45 @@ let check (functions, statements) =
           formals = List.map (fun t -> (t, "p")) (formal_types ps);
           body = [];
           is_vararg = is_var ps;
+          is_overload = false; 
         }
         map
     in
     List.fold_left add_bind StringMap.empty P.predefs
   in
-  let add_func map fd =
-    let built_in_err = "function " ^ fd.fname ^ " may not be defined"
-    and dup_err = "duplicate function " ^ fd.fname
-    and make_err er = raise (Failure er)
-    and n = fd.fname in
+  let overload_name =
+    let counter = ref 0 in
+    let next_id () =
+      counter := !counter + 1;
+      !counter
+    in fun () -> "_overload_" ^ string_of_int (next_id ()) 
+  in
+  (* overload_map maps overloaded name to original name *)
+  let add_func (map, overload_map) fd =
+    let built_in_err = "function " ^ fd.fname ^ " may not be defined" in
+    let is_overload = fd.is_overload in
+    let n = fd.fname in
+    let add_ov_map_entry _ =
+      let ov_name = fd.fname ^ (overload_name ()) in
+      let ov_decl = { typ=fd.typ; fname=ov_name; formals=fd.formals; body=fd.body; is_vararg=fd.is_vararg; is_overload=fd.is_overload;} in
+      if StringMap.mem n overload_map
+      then 
+        (* TODO: All this code just to check for duplicate types? 😞😞 *)
+        let existing_decls = StringMap.find n overload_map in
+        let current_argtype = List.map (fun (t, _) -> t) ov_decl.formals in
+        let existing_argtypes = List.map (fun d -> (List.map (fun (t, _) -> t) d.formals)) existing_decls in
+        let _ = List.map (fun x -> if x = current_argtype then (raise (Failure ("Overloaded function " ^ n ^ " with same signature declared twice"))) else ()) existing_argtypes
+        in StringMap.add n (ov_decl :: existing_decls) overload_map
+      else StringMap.add n (ov_decl :: []) overload_map
+    in
+    let make_err er = raise (Failure er)
+    and dup_err = "duplicate function " ^ n in
+    if is_overload then (map, add_ov_map_entry ())
+    else
     match fd with
-    | _ when StringMap.mem n built_in_decls -> make_err built_in_err
-    | _ when StringMap.mem n map -> make_err dup_err
-    | _ -> StringMap.add n fd map
+      | _ when StringMap.mem n built_in_decls -> make_err built_in_err
+      | _ when StringMap.mem n map -> make_err dup_err
+      | _ -> (StringMap.add n fd map, overload_map)
   in
   let check_assign lvaluet rvaluet =
     let type_is_generic = 
@@ -92,8 +117,20 @@ let check (functions, statements) =
           parent = !scope.parent;
         }
   in
-  let function_decls = List.fold_left add_func built_in_decls functions in
-  let find_func s = StringMap.find_opt s function_decls in
+  let function_decls, overload_decls = List.fold_left add_func (built_in_decls, StringMap.empty) functions in
+  (* find_func takes in a function's name and parameter types
+     parameter types are only used if function is overloaded *)
+  let find_func s arg_types = 
+    let fun_decl_opt = StringMap.find_opt s function_decls in
+    let overld_decls = StringMap.find_opt s overload_decls in
+    (* let check_ts_equal is_eq t1 t2 = is_eq && (t1 = t2) in
+    let match_args decl = List.fold_left2 check_ts_equal true arg_types (List.map (fun (t, _) -> t) decl.formals) in  *)
+    let match_args decl = arg_types = (List.map (fun (t, _) -> t) decl.formals) in
+    if Option.is_some fun_decl_opt then fun_decl_opt
+    else if Option.is_some overld_decls
+    then Some (try (List.find match_args (Option.get overld_decls)) with Not_found -> raise (Failure ("Calling of overloaded function " ^ s ^ " doesn't match existing signatures.")))
+    else None 
+  in
   let lambda_name =
     let counter = ref 0 in
     let next_id () =
@@ -220,11 +257,12 @@ let check (functions, statements) =
         else
           check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->
-        let fdecl_opt = find_func fname
+        (* TODO: arg_types is definitely performing a redundant operation (evaling param expressions)  *)
+        let arg_types = List.map (fun a -> let t, _ = check_expr a scope in t) args in
+        let fdecl_opt = find_func fname arg_types
         in (match fdecl_opt with 
           | None ->
               let ltype = find_identifier fname scope in
-              (* TODO: no dynamic signature generation for lambdas *)
               let args' = List.map (fun a -> check_expr a scope) args
               in (match ltype with LAMBDA (_, rt) -> (rt, SLamCall (fname, args')) | _ -> raise (Failure (fname ^ " is not a function or a variable lambda")))
           | Some fdecl ->
@@ -366,7 +404,8 @@ let check (functions, statements) =
     | Break -> SBreak
   in
   let check_function func =
-    let formals' = check_binds func.formals in
+    let decl = Option.get (find_func func.fname (List.map (fun (t, _) -> t) func.formals)) in
+    let formals' = check_binds decl.formals in
     let formals'' =
       List.fold_left
         (fun scope (typ, name) -> StringMap.add name typ scope)
@@ -375,13 +414,15 @@ let check (functions, statements) =
     let function_variable_table =
       { identifiers = formals''; parent = Some !global_scope }
     in
-    let function_scope = ref function_variable_table in
+    let function_scope = ref function_variable_table
+    in
     {
-      styp = func.typ;
-      sfname = func.fname;
+      styp = decl.typ;
+      sfname = decl.fname;
+      ov_orig_name = if decl.is_overload then Some func.fname else None;
       sformals = formals';
       sbody = 
-      (match check_stmt (Block func.body) func function_scope with
+      (match check_stmt (Block decl.body) func function_scope with
         | SBlock sl -> sl
         | _ -> raise (Failure "Internal Error: Block did not become block"));
     }
@@ -396,6 +437,7 @@ let check (functions, statements) =
             formals = [];
             body = [];
             is_vararg = false;
+            is_overload = false;
           }
           global_scope)
       statements )

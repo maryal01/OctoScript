@@ -1,0 +1,18 @@
+fn overload simulated_get(list<int> l) -> int {
+    return 0;
+}
+
+fn overload simulated_get(list<bool> b) -> bool {
+    return true;
+}
+
+fn overload simulated_get(list<float> f) -> float {
+    return 9831.0;
+}
+
+fn overload simulated_get(list<string> s) -> string {
+    return "hello";
+}
+
+
+print("%d %d %f %s", simulated_get([42]), simulated_get([false]), simulated_get([1.0]), simulated_get(["s"]));

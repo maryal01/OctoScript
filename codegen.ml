@@ -31,7 +31,7 @@ let translate (functions, statements) =
 
 
   let program =
-    { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements }
+    { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements; ov_orig_name = None }
     :: functions
   in
   let predef_decls : (L.llvalue * A.typ) StringMap.t =
@@ -63,6 +63,18 @@ let translate (functions, statements) =
       StringMap.add name (L.define_function name ftype the_module, fdecl) m
     in
     List.fold_left function_decl StringMap.empty program
+  in
+
+   (* String map mapping from written name -> decl list of overloaded function *)
+  let overload_decls =
+    let add_decl k v m = 
+      if StringMap.mem k m then (StringMap.add k (v :: (StringMap.find k m)) m)
+      else StringMap.add k (v :: []) m
+    in  
+    let map_ov m decl = (match decl.ov_orig_name with
+       Some n -> add_decl n decl m
+     | None -> m)
+    in List.fold_left map_ov StringMap.empty program
   in
 
   let extract_lambda ls fdecl =
@@ -112,7 +124,7 @@ let translate (functions, statements) =
     let lam_func =
       List.map
         (fun (n, bs, (t, e)) ->
-          { styp = t; sfname = n; sformals = bs; sbody = [ SReturn (t, e) ] })
+          { styp = t; sfname = n; sformals = bs; sbody = [ SReturn (t, e) ] ; ov_orig_name = None })
         extracted_lambdas
     in
     let lambda_decl m fdecl =
@@ -372,10 +384,15 @@ let translate (functions, statements) =
           in
           let llargs = List.map cast_complex args in
           let userdef dom =
+            let argtypes = List.map (fun (t, _) -> t) args in
+            let match_args decls = 
+              List.find (fun decl -> (List.map (fun (t, _) -> t) decl.sformals) = argtypes) decls
+            in
             let fdef, fdecl =
               try StringMap.find f dom
               with Not_found ->
-                raise (Failure (f ^ " is not a declared function"))
+              try StringMap.find (match_args (StringMap.find f overload_decls)).sfname dom
+              with Not_found -> raise (Failure (f ^ " is not a declared function"))
             in
             let result =
               match fdecl.styp with A.NONE -> "" | _ -> f ^ "_result"

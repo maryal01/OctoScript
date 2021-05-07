@@ -61,6 +61,7 @@ type func_decl = {
   formals : bind list;
   body : stmnt list;
   is_vararg: bool;
+  is_overload: bool;
 }
 
 (*  need to keep func_decl separate from the statement list because don't want functions to be defined inside functions *)

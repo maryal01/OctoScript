@@ -58,6 +58,7 @@ rule token = parse
 | "tuple"  { TYP_TUPLE  }
 | "lambda" { TYP_LAMBDA }
 | "fn"     { FUNC       }
+| "overload" { OVERLOAD }
 
 | "true"   { BLIT(true)  }
 | "false"  { BLIT(false) }

@@ -34,6 +34,7 @@ type sfunc_decl = {
   sfname : string;
   sformals : bind list;
   sbody : sstmt list;
+  ov_orig_name : string option;
 }
 
 type sprogram = sfunc_decl list * sstmt list

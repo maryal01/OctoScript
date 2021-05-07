@@ -5,7 +5,7 @@
 %token COMMA SEMI DOT COLON COND
 %token PLUS MINUS TIMES DIVIDE POW LOG MOD ASSIGN 
 %token OP_NOT OP_EQ OP_NEQ OP_LT OP_LEQ OP_GT OP_GEQ OP_AND OP_OR
-%token FARROW LARROW FUNC
+%token FARROW LARROW FUNC OVERLOAD
 %token RETURN IF ELSE WHILE BREAK
 %token TYP_INT TYP_BOOL TYP_FLOAT TYP_NONE TYP_STRING TYP_LAMBDA 
 %token TYP_TABLE TYP_LIST TYP_TUPLE
@@ -67,10 +67,13 @@ args_list:
     expr                    { [$1] }
   | args_list COMMA expr    { $3 :: $1 }
 
+has_ovld:
+    /* nothing */ { false }
+  | OVERLOAD      { true  }
 
 fdecl: 
-  FUNC ID LPAREN formals_opt RPAREN FARROW typ  LBRACE stmnt_list RBRACE  
-    { { typ = $7; fname = $2; formals = $4; body = List.rev $9; is_vararg = false } } 
+  FUNC has_ovld ID LPAREN formals_opt RPAREN FARROW typ  LBRACE stmnt_list RBRACE  
+    { { typ = $8; fname = $3; formals = $5; body = List.rev $10; is_vararg = false; is_overload = $2 } } 
 
 stmnt_list:
     /* nothing */  { [] }

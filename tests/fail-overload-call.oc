@@ -1,0 +1,9 @@
+fn overload printout(int i) -> none {
+    print("%d", i);
+}
+
+fn overload printout(string s) -> none {
+    print("%s", s);
+}
+
+printout(false);
