@@ -14,9 +14,15 @@ type rttype = Static of A.typ | Relative of int | ListElem of int | TupleElem of
 type builtin_func = string * rttype * A.typ list
 let builtins = 
    [
-      ("length", Static A.INT, [A.LIST None]);
-      ("get", ListElem 0, [A.LIST None; A.INT]);
-      ("add", Static (A.LIST  (Some A.INT) ), [A.LIST None; A.INT])
+      ("tuple_length", Static A.INT, [A.TUPLE None]);
+      ("list_length", Static A.INT, [A.LIST None]);
+      ("list_length", Static A.INT, [A.LIST None]);
+      ("table_size", Static A.INT, [A.LIST None]);
+      ("list_get", ListElem 0, [A.LIST None; A.INT]);
+      ("tuple_get", TupleElem (0, 0), [A.TUPLE None; A.INT]);
+      ("table_get", TableElem (0, 0), [A.TABLE None; A.INT; A.INT]);
+      ("table_get_row", Static (A.TUPLE None), [A.TABLE None; A.INT]);
+      ("table_get_col", Static (A.LIST None), [A.TABLE None; A.INT]);
    ]
 
 
@@ -26,6 +32,7 @@ type predef_func = string * string * A.typ * params
 (* Complex types with element type None won't have thier element types checked *)
 let predefs = 
    [
+      ("length", "length_tuple", A.INT, Fixed [A.TUPLE None]);
       ("print", "printf", A.INT, (Var [A.STRING]));
       
       ("test", "test", A.NONE, (Fixed [A.LAMBDA ([], A.INT)]));
@@ -33,7 +40,7 @@ let predefs =
       
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
       
-      ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST (Some A.STRING); A.BOOLEAN; A.STRING]));
+      ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST None; A.BOOLEAN; A.STRING]));
       ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.BOOLEAN; A.STRING]));
       
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
