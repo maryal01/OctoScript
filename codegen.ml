@@ -323,14 +323,17 @@ let translate (functions, statements) =
           L.build_call llval (Array.of_list llargs) result builder
       | SCall ("length", args) ->
           let listt = rexpr (List.hd args) in
-          L.build_load (L.build_struct_gep listt 1 "tmp" builder) "tmp" builder
+          let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t |])) "tmp_l_cast" builder in 
+          L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
       | SCall ("get", args) ->
           let idx = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
-          let inner_list = L.build_struct_gep listt 3 "tmp_data" builder in
+          let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; (ltype_of_typ etype) |])) "tmp_l_cast" builder in 
+          let inner_list = L.build_struct_gep cast 3 "tmp_data" builder in
+          let cast_inner =  L.build_bitcast inner_list (L.pointer_type (ltype_of_typ etype)) "tmp_l_cast" builder in 
           L.build_load
-            (L.build_gep inner_list [| idx |] "tmp" builder)
-            "tmp" builder
+            (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
+            "tmp_get_load" builder
       | SCall ("add", args) ->
           let value = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
