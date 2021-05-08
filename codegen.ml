@@ -31,7 +31,7 @@ let translate (functions, statements) =
 
 
   let program =
-    { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements }
+    { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements; ov_orig_name = None }
     :: functions
   in
   let predef_decls : (L.llvalue * A.typ) StringMap.t =
@@ -128,7 +128,7 @@ let translate (functions, statements) =
     let lam_func =
       List.map
         (fun (n, bs, (t, e)) ->
-          { styp = t; sfname = n; sformals = bs; sbody = [ SReturn (t, e) ] })
+          { styp = t; sfname = n; sformals = bs; sbody = [ SReturn (t, e) ]; ov_orig_name = None })
         extracted_lambdas
     in
     let lambda_decl m fdecl =
@@ -325,7 +325,7 @@ let translate (functions, statements) =
           let llargs = List.map (fun x -> rexpr x) args in
           let result = match etype with A.NONE -> "" | _ -> "lambda_result" in
           L.build_call llval (Array.of_list llargs) result builder
-      | SCall ("list-length", args) ->
+      | SCall ("list_length", args) ->
           let listt = rexpr (List.hd args) in
           let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t |])) "tmp_l_cast" builder in 
           L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
@@ -482,10 +482,15 @@ let translate (functions, statements) =
           in
           let llargs = List.map cast_complex args in
           let userdef dom =
+            let argtypes = List.map (fun (t, _) -> t) args in
+            let match_args decls = 
+              List.find (fun decl -> (List.map (fun (t, _) -> t) decl.sformals) = argtypes) decls
+            in
             let fdef, fdecl =
               try StringMap.find f dom
               with Not_found ->
-                raise (Failure (f ^ " is not a declared function"))
+              try StringMap.find (match_args (StringMap.find f overload_decls)).sfname dom
+              with Not_found -> raise (Failure (f ^ " is not a declared function"))
             in
             let result =
               match fdecl.styp with A.NONE -> "" | _ -> f ^ "_result"
