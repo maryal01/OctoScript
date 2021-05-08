@@ -1,0 +1,21 @@
+fn int_fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
+    int i = 0;
+    int res = acc;
+    while(i < li.list_length()){
+        res = f(res, li.list_get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+list<int> nums = [10, 11, 12, 13, 14, 15];
+lambda<int, int => int> add = fn (int acc, int elem) => {acc + elem};
+
+int sum = int_fold_left(add, 0, nums);
+
+
+lambda<int, int => int> add_even = fn (int acc, int elem) => {if (elem % 2 == 0) ? elem + acc : acc};
+
+int sum_even = int_fold_left(add_even, 0, nums);
+
+print("list sum: %d, even sum: %d", sum, sum_even); /* prints: list sum: 75, even sum: 36 */
