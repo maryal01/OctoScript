@@ -363,7 +363,7 @@ let translate (functions, statements) =
           let source_length = L.build_load (L.build_struct_gep casted_struct 1 "tmp" builder) "tmp" builder in
           let new_length = L.build_add source_length (mk_int 1) "tmp_new_len" builder in
           let new_size = L.build_mul new_length (lval_of_type_size elem_t) "tmp_new_size" builder in
-          let struct_size = L.build_add (mk_int 24) new_size "tmp_struct_size" builder in 
+          let struct_size = L.build_add (mk_int 12) new_size "tmp_struct_size" builder in 
           let struct_malloc = L.build_array_malloc i8_t struct_size "new_struct_malloc" builder in  
           
           let new_casted_struct =  L.build_bitcast struct_malloc (L.pointer_type list_struct_type ) "tmp_l_cast" builder in 
