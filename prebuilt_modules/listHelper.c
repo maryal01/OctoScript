@@ -17,6 +17,11 @@
 // returns the size of fields of list until its data
 size_t getListDataOffsetSize();
 
+void print_list(void *data);
+
+
+void printVal(void* val, int type);
+
 // returns the size of data of list
 size_t getListDataSize(int type, int len);
 
@@ -48,7 +53,7 @@ void setValue(void* data, void* value, int type)
         case FLOAT_TYPE: //float
             {
 
-            *(float*)data = *(float*)value;
+            *(double*)data = *(double*)value;
 
             }
             return ;
@@ -81,11 +86,12 @@ void setValue(void* data, void* value, int type)
 
 
 
-// TODO here
-int* convertTypeListToInts(ListType* typeNames, int len)
+int* convertTypeListToInts(ListType* typeNames)
 {
+    int len = typeNames->len;
     int *types = malloc(sizeof(int) * len);
     //char *data  = typeNames->data;
+
     
     
     char *datap = typeNames->data;
@@ -100,8 +106,9 @@ int* convertTypeListToInts(ListType* typeNames, int len)
         for (int i = 0; i < len; i++) {
 
             types[i] = stringToTyp(getListElement(typeNames, i));
-            printf("types i = %d",types[i]);
+
         }
+
     }
     return types;
 }
@@ -115,8 +122,9 @@ size_t getListDataOffsetSize()
 size_t getListDataSize(int type, int len)
 {
     size_t total = 0;
-    total = sizeofType(type);
-    return total * len;
+    total = sizeofType(type) * len;
+    //if (type == STRING_TYPE) total += sizeofType(INT_TYPE);
+    return total;
 }
 
 
@@ -134,17 +142,21 @@ void* getListElement(ListType* lt, int index)
     if (index >= lt->len) errorExit("index greater than length");
 
     void* data = lt->data;
+    // if (lt->type == STRING_TYPE) {
+    //     data = offsetPointer(data, INT_TYPE);
+    // }
     return offsetPointerNtimes(data, lt->type, index);
     
 }
 
-void setListElement(ListType* lt, int index, void* val)
-{
-    if (index >= lt->len) errorExit("index greater than length");
+// void setListElement(ListType* lt, int index, void* val)
+// {
+//     if (index >= lt->len) errorExit("index greater than length");
 
-    void* data = lt->data;
-    data = offsetPointerNtimes(data, lt->type, index);
-}
+//     void* data = lt->data;
+//     data = offsetPointerNtimes(data, lt->type, index);
+
+// }
 
 
 
@@ -218,6 +230,49 @@ void readCsv(FILE *file, char ***data, int row, int col, char* delimeter){
 
 
 
+void printVal(void* val, int type)
+{
+
+    switch(type) {
+        case INT_TYPE: //int
+        {
+            int i = *(int*) val;
+            fprintf(stderr,"%d", i);
+            break;
+        }
+
+        case BOOL_TYPE: //boolean
+        {
+            bool b = *(bool *) val;
+            if (b == false) fprintf(stderr, "false");
+            else fprintf(stderr, "true");
+            break;
+        }
+        case FLOAT_TYPE: //float
+         {
+            double f = *(double*) val;
+            fprintf(stderr, "%.2f", f);
+            break;
+        }
+        case STRING_TYPE: //string
+        {
+            char* str = *(char**) val;
+            fprintf(stderr, "%s", str);
+            break;
+        }
+        case LAMBDA_TYPE: //lambda // TODO
+            errorExit("cannot have a lambda here");
+            break;
+        case LIST_TYPE: //list
+            return; 
+            break;
+        case TUPLE_TYPE: //tuple
+            return ;
+            break;
+    
+    }
+}
+
 
 
 void valToString(void* val, int type, char* buf)
@@ -240,14 +295,16 @@ void valToString(void* val, int type, char* buf)
         }
         case FLOAT_TYPE: //float
          {
-            float f = *(float*) val;
-            fprintf(stderr, "f is %.2f", f);
+            double f = *(double*) val;
             sprintf(buf, "%.2f", f);
             break;
         }
         case STRING_TYPE: //string
-            strcpy(buf, val);
+        {
+            char* str = *(char**) val;
+            strcpy(buf, str);
             break;
+        }
         case LAMBDA_TYPE: //lambda // TODO
             errorExit("cannot have a lambda here");
             break;
@@ -287,13 +344,18 @@ void* convertStringtoValue(char* string, int type)
         }
         case FLOAT_TYPE: //float
         {
-            float* fp = malloc(sizeof(float));
+            double* fp = malloc(sizeof(double));
             *fp = strtof(string, NULL);
             
             return fp;
         }
         case STRING_TYPE: //string
-            return string;
+        {
+            
+            char** sp = malloc(sizeof(char*));  
+            *sp = string;
+            return sp;
+        }
     }
     errorExit("Table type is not a primitive");
     void*sup;
@@ -401,4 +463,21 @@ void* convertStringtoValue(char* string, int type)
 
 // // list_name.copy()
 
+void print_list(void *data){
+    ListType *lp = data;
+
+    fprintf(stderr,"[");
+
+    for(int i = 0; i < lp->len; i++){
+        
+        void* val = getListElement(lp, i);
+        printVal(val, lp->type);
+
+        if(i + 1 != lp->len){
+            fprintf(stderr, ", ");
+
+        }
+    }
+    fprintf(stderr, "]\n");
+}
 #endif

@@ -16,16 +16,6 @@ char *string_of_list(void *data){
 
     char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
     
-    // printf("string is\n");
-    
-    // printf("%d\n", lp->data[0]);
-    // printf("%d\n", lp->data[1]);
-    // printf("%d\n", lp->data[2]);
-    // printf("%d\n", lp->data[3]);
-    // printf("%d\n", lp->data[4]);
-    // printf("%d\n", lp->data[5]);
-    // printf("%d\n", lp->data[6]);
-    // printf("%d\n", lp->data[7]);
     strcpy(list_buf, "[");
 
     for(int i = 0; i < lp->len; i++){
@@ -35,9 +25,7 @@ char *string_of_list(void *data){
         void *data = getListElement(lp, i);
         char* string = data;
 
-        // printf("string is\n");
-    
-        // printf("string is %s\n", string);
+
         
         valToString(data, lp->type, int_buf);
     
@@ -51,26 +39,12 @@ char *string_of_list(void *data){
     return list_buf;
 }
 ListType* copyList(ListType* lt);
-// void append(ListType* lt, ...)
-// {
-//     va_list args;
-//     va_start(args, lt);
 
-//     int type = lt->type;
-//     switch
-//     int i = va_arg(args, int);
-    
-//     fprintf(stderr, "hell\n");
 
-//     fprintf(stderr,"val = %d\n", i);
-   
-
-// }
 
 ListType* set(ListType* lt, int index, ...)
-{
-    // printf("\nstring is %s", string_of_list(lt));
-    
+{   
+   
     if (index >= lt->len) errorExit("index too large in set");
     
     va_list args;

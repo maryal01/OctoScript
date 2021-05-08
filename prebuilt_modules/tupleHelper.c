@@ -7,6 +7,8 @@
 
 
 TupleType* createTuple(int types[], int len);
+void printTuple(TupleType* tt);
+bool hasPadding(int* types, int len, int index);
 
 
 // returns the tuple element at index
@@ -23,7 +25,7 @@ size_t getTupleSize(int* types, int len);
 
 // creates a tuple from the index row of the table
 // tuple has size col and types as given in typenames
-TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *typeNames);
+TupleType* createTupleFromStrings(char*** data, int row, int col, int *types);
 
 // returns the type of tuple at index 
 int getTypeofTupleIndex(TupleType* tt, int index);
@@ -35,18 +37,52 @@ void* getTupleElement(TupleType* tt, int index)
 {
     
     if (index >= tt->len) errorExit("index greater than length");
-
+    //fprintf(stderr, "\n\nstart\n");
+        
     void* data = tt->data;
-
     data = offsetPointerNtimes(data, INT_TYPE, tt->len);
-
     for (int i = 0; i < index; i++) {
         
-        data = offsetPointer(data, tt->data[i]);
+        int type = getTypeofTupleIndex(tt, i);
+
+        data = offsetPointer(data, type);
+
+        //fprintf(stderr, "type = %d, next type = %d    \n", type, getTypeofTupleIndex(tt, i + 1));
+            
+        if ((i + 1 != tt->len) && getTypeofTupleIndex(tt, i + 1) == STRING_TYPE) {
+            
+            //fprintf(stderr, "has padding %d    \n", hasPadding(tt, index));
+            if (hasPadding((int*)(void*)tt->data, tt->len,i + 1)) {
+                data = offsetPointer(data, INT_TYPE);
+            }
+            
+
+
+        }
+        
 
     }
     return data;
     
+}
+
+bool hasPadding(int* types, int len, int index) 
+{
+    size_t s = getTupleDataOffsetSize(len);
+    //fprintf(stderr, "offset  %d=  \n", s);
+        
+    for (int i = 0; i < index; i++) {
+        int type = types[i];
+        s += sizeofType(type);
+        if (type == STRING_TYPE) {
+            if (hasPadding(types, len, i)) {
+                s += sizeofType(INT_TYPE);
+            }
+        }
+    }
+    //fprintf(stderr, "total  %d=  \n", s);
+    if (s % sizeofType(STRING_TYPE) == 0) return false;
+    return true;
 }
 
 size_t getTupleDataOffsetSize(int len)
@@ -59,6 +95,11 @@ size_t getTupleDataSize(int* types, int len)
     size_t total = 0;
     for (int i = 0; i < len; i++) {
         total += sizeofType(types[i]);
+        if (i != len - 1 && types[i + 1] == STRING_TYPE) {
+            if (hasPadding(types, len, i)) {
+                total += sizeofType(INT_TYPE);
+            }
+        }
     }
     return total;
     
@@ -83,36 +124,50 @@ TupleType* createTuple(int types[], int len)
     
 }
 
-TupleType* createTupleFromStrings(char*** data, int row, int col, ListType *typeNames)
+TupleType* createTupleFromStrings(char*** data, int row, int col, int *types)
 {
 
     
-    size_t size = getTupleSize((int*)(void*)typeNames->data, col);
+ 
+    size_t size = getTupleSize(types, col);
 
     TupleType* tup = malloc(size);
-    tup->self_type = 11;
+    tup->self_type = TUPLE_TYPE;
     tup->len = col;
     
     void *datap = tup->data;
-    int* types = ((int*)(void*)typeNames->data);
 
     for (int i = 0; i < tup->len; i++){
-        setValue(datap, getListElement(typeNames, i), INT_TYPE);
-        datap = offsetPointer(datap, INT_TYPE);
+
+        setTypeofTupleIndex(tup, i, types[i]);
+
+
     }
+
+
+
 
     
     
+
     for (int i = 0; i < tup->len; i++) {
+        datap = getTupleElement(tup, i);
         int type = getTypeofTupleIndex(tup, i);
         
         void* val = convertStringtoValue(data[row][i], type);
-
+        
         setValue(datap, val, type);
 
-        datap = offsetPointer(datap, types[i]);
+
                 
     }
+        for (int i = 0; i < tup->len; i++){
+
+        
+    }
+
+    
+    printTuple(tup);
 
 
 
@@ -134,6 +189,19 @@ void setTypeofTupleIndex(TupleType* tt, int index, int val)
     void* data = tt->data;
     data = offsetPointerNtimes(data, INT_TYPE, index);
     *(int*)data = val;
+}
+
+void printTuple(TupleType* tt)
+{
+    
+    fprintf(stderr, "(");
+    for (int i = 0; i < tt->len; i++) {
+        int type = getTypeofTupleIndex(tt, i);
+        void* val = getTupleElement(tt, i);
+        printVal(val, type);
+        if (i != tt->len - 1) fprintf(stderr, ", ");
+    }
+    fprintf(stderr, ")");
 }
 
 
