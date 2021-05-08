@@ -1,0 +1,3 @@
+fn stdlib_test(string s) -> none {
+    print(s);
+}
