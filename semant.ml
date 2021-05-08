@@ -228,10 +228,9 @@ let check (functions, statements) =
     (* | TableLit _ -> (TUPLE, STupleLit ([], []))  *)
     | TableLit _ -> raise (Failure "table literals not currently implemented") (* TODO: This seems unfinished*)
     | Apply (obj, fname, args) -> 
-        let builtin_rtype params = 
-          let argtypes = List.map (fun (typ, _) -> typ) params in
-          let (_, rt, _) = List.find (fun (n,_,_) -> fname = n) P.builtins in
-          (match rt with
+        (* Resolves a rttype to ast typ in the context of the current calling argument types *)
+        let resolve_rttype rttyp argtypes = 
+          (match rttyp with
             P.Static t -> t
           | P.Relative i -> 
               let t = List.nth argtypes i
@@ -245,15 +244,15 @@ let check (functions, statements) =
           | P.TableElem (i, j) ->
               let t = List.nth argtypes i
               in (match t with TABLE (Some ets) -> List.nth ets j | _ -> raise (Failure "TableElem relative type on something not a Table")))
-        in 
-        let builtin_formals fname = let (_, _, ps) = List.find (fun (n,_,_) -> fname = n) P.builtins in ps
         in
         if List.mem fname P.builtin_names then
-          let check_call ft e =
-            let et, e' = check_expr e scope in
-            (check_assign ft et, e')
-          in let args' = List.map2 check_call (builtin_formals fname) (obj :: args) 
-          in (builtin_rtype args', SCall (fname, args'))
+          (* Evaluating the parameters first to get their type, then use that to check if it matches with declared rttypes *)
+          let args_styp, args_sx = List.split (List.map (fun x -> check_expr x scope) (obj :: args)) in
+          let (_, return_rttype, param_rttypes) = List.find (fun (n,_,_) -> fname = n) P.builtins in
+          let decl_types = List.map (fun x -> resolve_rttype x args_styp) param_rttypes in
+          let check_asgn = List.map (fun (ft, et) -> check_assign ft et) (List.combine decl_types args_styp) in
+          let args' = List.combine check_asgn args_sx in 
+          (resolve_rttype return_rttype args_styp, SCall (fname, args'))
         else
           check_expr (Call (fname, obj :: args)) scope
     | Call (fname, args) ->

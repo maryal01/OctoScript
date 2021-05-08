@@ -11,18 +11,20 @@ type params = Fixed of A.typ list | Var of A.typ list
 (* non-Static types will have their types checked by how the function is called *)
 type rttype = Static of A.typ | Relative of int | ListElem of int | TupleElem of int * int | TableElem of int * int
 
-type builtin_func = string * rttype * A.typ list
+type builtin_func = string * rttype * rttype list
 let builtins = 
    [
-      ("tuple_length", Static A.INT, [A.TUPLE None]);
-      ("list_length", Static A.INT, [A.LIST None]);
-      ("list_length", Static A.INT, [A.LIST None]);
-      ("table_size", Static A.INT, [A.LIST None]);
-      ("list_get", ListElem 0, [A.LIST None; A.INT]);
-      ("tuple_get", TupleElem (0, 0), [A.TUPLE None; A.INT]);
-      ("table_get", TableElem (0, 0), [A.TABLE None; A.INT; A.INT]);
-      ("table_get_row", Static (A.TUPLE None), [A.TABLE None; A.INT]);
-      ("table_get_col", Static (A.LIST None), [A.TABLE None; A.INT]);
+      ("list_length", Static A.INT, [Static (A.LIST None)]);
+      ("list_get", ListElem 0, [Static (A.LIST None); Static A.INT]);
+      ("list_add", Relative 0, [Static (A.LIST None); ListElem 0]);
+
+      ("tuple_length", Static A.INT, [Static (A.TUPLE None)]);
+      ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
+      
+      ("table_get", TableElem (0, 0), [Static (A.TABLE None); Static A.INT; Static A.INT]);
+      ("table_size", Static A.INT, [Static (A.LIST None)]);
+      ("table_get_row", Static (A.TUPLE None), [Static (A.TABLE None); Static A.INT]);
+      ("table_get_col", Static (A.LIST None), [Static (A.TABLE None); Static A.INT]);
    ]
 
 

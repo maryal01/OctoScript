@@ -65,6 +65,22 @@ let translate (functions, statements) =
     List.fold_left function_decl StringMap.empty program
   in
 
+   (* String map mapping from written name -> decl list of overloaded function *)
+  let overload_decls =
+    let add_decl k v m = 
+      if StringMap.mem k m then (StringMap.add k (v :: (StringMap.find k m)) m)
+      else StringMap.add k (v :: []) m
+    in  
+    let map_ov m decl = (match decl.ov_orig_name with
+       Some n -> add_decl n decl m
+     | None -> m)
+    in List.fold_left map_ov StringMap.empty program
+  in
+  let add_terminal builder instr =
+      match L.block_terminator (L.insertion_block builder) with
+      | Some _ -> ()
+      | None -> ignore (instr builder)
+  in
   let extract_lambda ls fdecl =
     let rec ext_sx (_, e) ls =
       match e with
@@ -309,7 +325,10 @@ let translate (functions, statements) =
           let llargs = List.map (fun x -> rexpr x) args in
           let result = match etype with A.NONE -> "" | _ -> "lambda_result" in
           L.build_call llval (Array.of_list llargs) result builder
-      | SCall ("list_length", args) 
+      | SCall ("list-length", args) ->
+          let listt = rexpr (List.hd args) in
+          let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t |])) "tmp_l_cast" builder in 
+          L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
       | SCall ("tuple_length", args) ->
           let complex = rexpr (List.hd args) in
           L.build_load (L.build_struct_gep complex 1 "tmp" builder) "tmp" builder
@@ -328,11 +347,81 @@ let translate (functions, statements) =
         let value = L.const_struct context (Array.of_list content) in
         mallocate value
       | SCall ("list_get", args) ->
-          let id1 = rexpr (List.hd (List.tl args)) in
+          let idx = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
-          let inner_list = L.build_struct_gep listt 3 "tmp_data" builder in
+          let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; (ltype_of_typ etype) |])) "tmp_l_cast" builder in 
+          let inner_list = L.build_struct_gep cast 3 "tmp_data" builder in
+          let cast_inner =  L.build_bitcast inner_list (L.pointer_type (ltype_of_typ etype)) "tmp_l_data_cast" builder in 
           L.build_load
-            (L.build_gep inner_list [| id1 |] "tmp" builder) "tmp" builder
+            (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
+            "tmp_get_load" builder
+      | SCall ("list_add", args) ->    
+          let lval_of_type_size = function 
+            A.INT     -> mk_int 4
+          | A.BOOLEAN -> mk_int 1
+          | A.FLOAT   -> mk_int 8
+          | A.NONE    -> raise (Failure "None type shouldnt be called here")
+          | A.STRING  -> mk_int 8
+          | A.LAMBDA _ -> mk_int 8
+          | A.TABLE _ -> mk_int 8
+          | A.TUPLE _ -> mk_int 8
+          | A.LIST  _ -> mk_int 8
+          in
+          let value = rexpr (List.hd (List.tl args)) in
+          let listt = rexpr (List.hd args) in
+
+          let elem_t = (match (List.hd args) with (A.LIST (Some t), _) -> t | _ -> raise (Failure "List builtin add called on type not a list")) in
+          let elem_ltype = ltype_of_typ elem_t in
+          
+          let casted_list =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; elem_ltype |])) "tmp_l_cast" builder in 
+          let casted_data =  L.build_bitcast (L.build_struct_gep casted_list 3 "tmp_data" builder) (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_source_data_cast" builder in 
+          
+          let source_length = L.build_load (L.build_struct_gep casted_list 1 "tmp" builder) "tmp" builder in
+          let new_length = L.build_add source_length (mk_int 1) "tmp_new_len" builder in
+          let new_size = L.build_mul new_length (lval_of_type_size elem_t) "tmp_new_size" builder in
+          
+          let ary_malloc = L.build_array_malloc i8_t new_size "tmp_new_l_ary_malloc" builder in  
+          
+          let new_list =  L.build_bitcast ary_malloc (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; elem_ltype |])) "tmp_l_cast" builder in 
+          let new_list_data =  L.build_bitcast (L.build_struct_gep new_list 3 "tmp_data" builder) (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_dest_data_cast" builder in 
+          
+          let get_index llidx llarr = L.build_load (L.build_gep llarr [| llidx |] "tmp_get_idx" builder) "tmp_load" builder in
+          let set_index llidx llarr llval = L.build_store llval (L.build_gep llarr [| llidx |] "tmp_set_idx" builder) builder 
+          in
+
+          let iterator = L.build_alloca i32_t "alloc_iter" builder in
+          let _ = L.build_store (mk_int 0) iterator builder in
+
+          (* building loop *)
+          (* let merge_bb = L.append_block context "merge" the_function in
+          let pred_bb = L.append_block context "while_cond" the_function in
+          let _ = L.build_br pred_bb builder in
+          let body_bb = L.append_block context "while_body" the_function in
+          let while_builder = L.builder_at_end context body_bb in
+           *)
+          (* let iter_val = L.build_load iterator "tmp_iter" while_builder in
+          let _ = set_index iter_val casted_data (get_index iter_val casted_data) in
+          let _ = L.build_store (L.build_add iter_val (mk_int 1) "tmp_iter_inc" while_builder) iterator while_builder in *)
+          let iter_val = L.build_load iterator "tmp_iter" builder in
+          let _ = set_index iter_val new_list_data (get_index (mk_int 0) casted_data) in
+          let _ = L.build_store (L.build_add (mk_int 0) (mk_int 1) "tmp_iter_inc" builder) iterator builder in
+
+          (* let () = add_terminal while_builder (L.build_br pred_bb) in
+          let pred_builder = L.builder_at_end context pred_bb in
+          let bool_val = L.build_icmp L.Icmp.Slt (L.build_load iterator "tmp_iter" pred_builder) source_length "tmp_iter_cond" pred_builder in
+          let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in *)
+          (* original returned builder: L.builder_at_end context merge_bb
+          in  *)
+
+          let _ = L.build_store value (L.build_gep new_list_data [| source_length |] "tmp_set_idx" builder) builder in
+          let _ = L.build_store (L.build_add (mk_int 0) (mk_int 1) "tmp_iter_inc" builder) iterator builder in
+          
+          let _ = L.build_store (L.build_load (L.build_struct_gep casted_list 0 "tmp" builder) "tmp_0_load" builder) (L.build_struct_gep new_list 0 "tmp" builder) builder 
+          in
+          let _ = L.build_store new_length (L.build_struct_gep new_list 1 "tmp" builder) builder 
+          in
+          let _ = L.build_store (L.build_load (L.build_struct_gep casted_list 0 "tmp" builder) "tmp_0_store" builder) (L.build_struct_gep new_list 2 "tmp" builder) builder 
+          in new_list
       | SCall ("tuple_get", args) ->
           let id1 = rexpr (List.nth args 1) in
           let tuple = rexpr (List.hd args) in
@@ -379,17 +468,6 @@ let translate (functions, statements) =
           let content = type_sym (A.LIST None):: len :: list_type :: col_data in
           let value = L.const_struct context (Array.of_list content) in
           mallocate value
-      (* | SCall ("list_insert_int", args) ->
-          let listt = rexpr (List.hd args) in
-          let elem = rexpr (List.nth args 1) in
-          let index = rexpr (List.nth args 2) in
-          let len = L.const_int i32_t (List.length ps) in
-          let content =
-            type_sym (A.LIST None)
-            :: len :: type_sym t :: List.map lval_of_prim ps
-          in
-          let value = L.const_struct context (Array.of_list content) in
-          mallocate value *)
       | SCall (f, args) ->
           let cast_complex (t, sx) =
             let v = rexpr (t, sx) in
@@ -426,12 +504,6 @@ let translate (functions, statements) =
           (* if is_lambda then userdef lambda_decls else *)
           if is_predef then predef f else userdef function_decls
       | SNoExp -> L.const_null void_t
-      (* Actually not quite sure? *)
-    in
-    let add_terminal builder instr =
-      match L.block_terminator (L.insertion_block builder) with
-      | Some _ -> ()
-      | None -> ignore (instr builder)
     in
     (* return a builder env tuple *)
     let rec stmt builder env iters = function
