@@ -11,12 +11,12 @@ type params = Fixed of A.typ list | Var of A.typ list
 (* non-Static types will have their types checked by how the function is called *)
 type rttype = Static of A.typ | Relative of int | ListElem of int | TupleElem of int * int | TableElem of int * int
 
-type builtin_func = string * rttype * A.typ list
+type builtin_func = string * rttype * rttype list
 let builtins = 
    [
-      ("length", Static A.INT, [A.LIST None]);
-      ("get", ListElem 0, [A.LIST None; A.INT]);
-      ("add", Static (A.LIST  (Some A.INT) ), [A.LIST None; A.INT])
+      ("length", Static A.INT, [Static (A.LIST None)]);
+      ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
+      ("add", Relative 0, [Static (A.LIST None); ListElem 0]);
    ]
 
 
