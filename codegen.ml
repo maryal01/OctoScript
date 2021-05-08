@@ -350,93 +350,67 @@ let translate (functions, statements) =
           | A.TUPLE _ -> mk_int 8
           | A.LIST  _ -> mk_int 8
           in
+          let elem_t = (match (List.hd args) with (A.LIST (Some t), _) -> t | _ -> raise (Failure "List builtin add called on type not a list")) in
+          let list_struct_type = L.struct_type context [| i32_t; i32_t; i32_t; (ltype_of_typ elem_t) |] in (* what is this list struct type? -- standardize it! *)
+          let list_struct_ptr = L.pointer_type list_struct_type in
           let value = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
-
-          let elem_t = (match (List.hd args) with (A.LIST (Some t), _) -> t | _ -> raise (Failure "List builtin add called on type not a list")) in
-          let elem_ltype = ltype_of_typ elem_t in
+          (* let list_add_function = L.define_function ("_LIST_ACCESS_") (L.function_type list_struct_ptr (Array.of_list [list_struct_ptr; (ltype_of_typ elem_t) ])) the_module in*)
+          let casted_struct =  L.build_bitcast listt list_struct_ptr "tmp_list_cast" builder in 
+          let data = (L.build_struct_gep casted_struct 3 "tmp_data" builder) in
+          let casted_data =  L.build_bitcast data (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_source_data_cast" builder in 
           
-          let casted_list =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; elem_ltype |])) "tmp_l_cast" builder in 
-          let casted_data =  L.build_bitcast (L.build_struct_gep casted_list 3 "tmp_data" builder) (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_source_data_cast" builder in 
-          
-          let source_length = L.build_load (L.build_struct_gep casted_list 1 "tmp" builder) "tmp" builder in
+          let source_length = L.build_load (L.build_struct_gep casted_struct 1 "tmp" builder) "tmp" builder in
           let new_length = L.build_add source_length (mk_int 1) "tmp_new_len" builder in
           let new_size = L.build_mul new_length (lval_of_type_size elem_t) "tmp_new_size" builder in
+          let struct_size = L.build_add (mk_int 24) new_size "tmp_struct_size" builder in 
+          let struct_malloc = L.build_array_malloc i8_t struct_size "new_struct_malloc" builder in  
           
-          let ary_malloc = L.build_array_malloc i8_t new_size "tmp_new_l_ary_malloc" builder in  
-          
-          let new_list =  L.build_bitcast ary_malloc (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; elem_ltype |])) "tmp_l_cast" builder in 
-          let new_list_data =  L.build_bitcast (L.build_struct_gep new_list 3 "tmp_data" builder) (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_dest_data_cast" builder in 
-          
-          let get_index llidx llarr = L.build_load (L.build_gep llarr [| llidx |] "tmp_get_idx" builder) "tmp_load" builder in
-          let set_index llidx llarr llval = L.build_store llval (L.build_gep llarr [| llidx |] "tmp_set_idx" builder) builder 
-          in
+          let new_casted_struct =  L.build_bitcast struct_malloc (L.pointer_type list_struct_type ) "tmp_l_cast" builder in 
+          let new_data = L.build_struct_gep new_casted_struct 3 "tmp_data" builder in
+          let new_casted_data =  L.build_bitcast new_data (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_dest_data_cast" builder in 
 
           let iterator = L.build_alloca i32_t "alloc_iter" builder in
           let _ = L.build_store (mk_int 0) iterator builder in
 
           (* building loop *)
-          (* let merge_bb = L.append_block context "merge" the_function in
+          let merge_bb = L.append_block context "merge" the_function in
           let pred_bb = L.append_block context "while_cond" the_function in
-          let _ = L.build_br pred_bb builder in
           let body_bb = L.append_block context "while_body" the_function in
+          let end_bb = L.append_block context "end_add" the_function in
+      
           let while_builder = L.builder_at_end context body_bb in
-           *)
-          (* let iter_val = L.build_load iterator "tmp_iter" while_builder in
-          let _ = set_index iter_val casted_data (get_index iter_val casted_data) in
-          let _ = L.build_store (L.build_add iter_val (mk_int 1) "tmp_iter_inc" while_builder) iterator while_builder in *)
-          let iter_val = L.build_load iterator "tmp_iter" builder in
-          let _ = set_index iter_val new_list_data (get_index (mk_int 0) casted_data) in
-          let _ = L.build_store (L.build_add (mk_int 0) (mk_int 1) "tmp_iter_inc" builder) iterator builder in
-
-          (* let () = add_terminal while_builder (L.build_br pred_bb) in
+          let merge_builder = L.builder_at_end context merge_bb in
           let pred_builder = L.builder_at_end context pred_bb in
-          let bool_val = L.build_icmp L.Icmp.Slt (L.build_load iterator "tmp_iter" pred_builder) source_length "tmp_iter_cond" pred_builder in
-          let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in *)
-          (* original returned builder: L.builder_at_end context merge_bb
-          in  *)
 
-          let _ = L.build_store value (L.build_gep new_list_data [| source_length |] "tmp_set_idx" builder) builder in
-          let _ = L.build_store (L.build_add (mk_int 0) (mk_int 1) "tmp_iter_inc" builder) iterator builder in
+          let () = add_terminal merge_builder (L.build_br end_bb) in 
+          let () = add_terminal while_builder (L.build_br pred_bb) in
+
+          let _ = L.build_br pred_bb builder in
+          let _ = L.build_br end_bb merge_builder in
+
+          (* body basic block *)
+          let iter_val = L.build_load iterator "tmp_iter" while_builder in
+          let old_data = L.build_load (L.build_gep casted_data [| iter_val |] "tmp_get_idx" while_builder) "tmp_load" while_builder in
+          let new_box =  L.build_gep new_casted_data [| iter_val |] "tmp_set_idx" while_builder in
+          let _ = L.build_store old_data new_box while_builder in 
+          let _ = L.build_store (L.build_add iter_val (mk_int 1) "tmp_iter_inc" while_builder) iterator while_builder in
+          (* end body basic block *)
           
-          let _ = L.build_store (L.build_load (L.build_struct_gep casted_list 0 "tmp" builder) "tmp_0_load" builder) (L.build_struct_gep new_list 0 "tmp" builder) builder 
-          in
-          let _ = L.build_store new_length (L.build_struct_gep new_list 1 "tmp" builder) builder 
-          in
-          let _ = L.build_store (L.build_load (L.build_struct_gep casted_list 0 "tmp" builder) "tmp_0_store" builder) (L.build_struct_gep new_list 2 "tmp" builder) builder 
-          in new_list
+          (* pred basic block *)
+          let bool_val = L.build_icmp L.Icmp.Slt (L.build_load iterator "tmp_iter" pred_builder) source_length "tmp_iter_cond" pred_builder in
+          (* end basic block *)
 
-          (* let list_type =
-            L.build_load
-              (L.build_struct_gep casted_list 0 "tmp" builder)
-              "tmp" builder
-          in *)
-          (* let elem_type =
-            L.build_load
-              (L.build_struct_gep casted_list 2 "tmp" builder)
-              "tmp" builder
-          in *)
-          (* let old_list = L.build_struct_gep casted_list 3 "tmp" builder in
-          let len =
-            match L.int64_of_const length with
-            | Some i -> Int64.to_int i
-            | None -> raise (Failure "Length should be integer element")
-          in
-          let rec content i listt =
-            if i < len then
-              let value =
-                L.build_load
-                  (L.build_gep old_list [| mk_int i |] "tmp" builder)
-                  "tmp" builder
-              in
-              content (i + 1) (value :: listt)
-            else listt *)
-          (* in
-          let new_content =
-            list_type :: mk_int (1 + len) :: elem_type :: content 0 [ value ]
-          in
-          let value = L.const_struct context (Array.of_list new_content) in
-          mallocate value *)
+          let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in 
+
+          (* merge basic block *)
+          let _ = L.build_store value (L.build_gep new_casted_data [| source_length |] "tmp_set_idx" merge_builder) merge_builder in
+          let _ = L.build_store (L.build_load (L.build_struct_gep casted_struct 0 "tmp" merge_builder) "tmp_0_load" merge_builder) (L.build_struct_gep new_casted_struct 0 "tmp" merge_builder) merge_builder in
+          let _ = L.build_store new_length (L.build_struct_gep new_casted_struct 1 "tmp" merge_builder) merge_builder in
+          let _ = L.build_store (L.build_load (L.build_struct_gep casted_struct 2 "tmp" merge_builder) "tmp_0_store" merge_builder) (L.build_struct_gep new_casted_struct 2 "tmp" merge_builder) merge_builder 
+          (* end merge basic block *)
+
+          in new_casted_struct
       | SCall (f, args) ->
           let cast_complex (t, sx) =
             let v = rexpr (t, sx) in
