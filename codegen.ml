@@ -31,7 +31,7 @@ let translate (functions, statements) =
 
 
   let program =
-    { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements; ov_orig_name = None }
+    { styp = A.NONE; sfname = "main"; sformals = []; sbody = statements }
     :: functions
   in
   let predef_decls : (L.llvalue * A.typ) StringMap.t =
@@ -128,7 +128,7 @@ let translate (functions, statements) =
     let lam_func =
       List.map
         (fun (n, bs, (t, e)) ->
-          { styp = t; sfname = n; sformals = bs; sbody = [ SReturn (t, e) ] ; ov_orig_name = None })
+          { styp = t; sfname = n; sformals = bs; sbody = [ SReturn (t, e) ] })
         extracted_lambdas
     in
     let lambda_decl m fdecl =
@@ -175,7 +175,7 @@ let translate (functions, statements) =
 
     (* Complex type memeory layout:
         List  : int length, int type_id, data...
-        Tuple : int length, int type_ids[lenght], data...
+        Tuple : int length, int type_ids[length], data...
         Table : Same as a list containing tuples
     *)
 
@@ -184,7 +184,7 @@ let translate (functions, statements) =
     let rec expr builder env ((etype, e) : sexpr) =
       let rexpr = expr builder env in
       let global_str s n = L.build_global_stringptr s n builder in
-      let mk_int i = L.const_int i32_t i in 
+      let mk_int i = L.const_int i32_t i in
       (* let ltype_of_typs ts = Array.of_list (List.map ltype_of_typ ts) in *)
       let lval_of_prim p = 
         (match p with 
@@ -201,7 +201,7 @@ let translate (functions, statements) =
           | A.LAMBDA _-> mk_int 4
           | A.LIST _  -> mk_int 10
           | A.TUPLE _ -> mk_int 11
-          | A.TABLE _ -> raise (Failure "TABLE should be represented as a LIST of TUPLES")
+          | A.TABLE _ -> mk_int 12
           | A.NONE    -> mk_int 100)
       and mallocate llval = 
           let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
@@ -325,11 +325,28 @@ let translate (functions, statements) =
           let llargs = List.map (fun x -> rexpr x) args in
           let result = match etype with A.NONE -> "" | _ -> "lambda_result" in
           L.build_call llval (Array.of_list llargs) result builder
-      | SCall ("length", args) ->
+      | SCall ("list-length", args) ->
           let listt = rexpr (List.hd args) in
           let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t |])) "tmp_l_cast" builder in 
           L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
-      | SCall ("get", args) ->
+      | SCall ("tuple_length", args) ->
+          let complex = rexpr (List.hd args) in
+          L.build_load (L.build_struct_gep complex 1 "tmp" builder) "tmp" builder
+      | SCall ("table_size", args) ->
+        let table = rexpr (List.hd args) in
+        let row_list = L.build_struct_gep table 3 "tmp_data" builder in
+        let tuple = L.build_load
+          (L.build_struct_gep row_list 0 "tmp" builder) "tmp" builder in
+        let num_rows = L.build_load (L.build_struct_gep table 1 "tmp" builder) "tmp" builder in
+        let num_cols = L.build_load (L.build_struct_gep tuple 1 "tmp" builder) "tmp" builder in
+        let len = L.const_int i32_t 2 in
+        let types = [mk_int 0; mk_int 0] in
+        let content =
+          type_sym (A.TUPLE None) :: len :: (types @ [num_rows; num_cols])
+        in
+        let value = L.const_struct context (Array.of_list content) in
+        mallocate value
+      | SCall ("list_get", args) ->
           let idx = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
           let cast =  L.build_bitcast listt (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; (ltype_of_typ etype) |])) "tmp_l_cast" builder in 
@@ -338,7 +355,7 @@ let translate (functions, statements) =
           L.build_load
             (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
             "tmp_get_load" builder
-      | SCall ("add", args) ->    
+      | SCall ("list_add", args) ->    
           let lval_of_type_size = function 
             A.INT     -> mk_int 4
           | A.BOOLEAN -> mk_int 1
@@ -405,38 +422,52 @@ let translate (functions, statements) =
           in
           let _ = L.build_store (L.build_load (L.build_struct_gep casted_list 0 "tmp" builder) "tmp_0_store" builder) (L.build_struct_gep new_list 2 "tmp" builder) builder 
           in new_list
-
-          (* let list_type =
-            L.build_load
-              (L.build_struct_gep casted_list 0 "tmp" builder)
-              "tmp" builder
-          in *)
-          (* let elem_type =
-            L.build_load
-              (L.build_struct_gep casted_list 2 "tmp" builder)
-              "tmp" builder
-          in *)
-          (* let old_list = L.build_struct_gep casted_list 3 "tmp" builder in
-          let len =
-            match L.int64_of_const length with
+      | SCall ("tuple_get", args) ->
+          let id1 = rexpr (List.nth args 1) in
+          let tuple = rexpr (List.hd args) in
+          let inner_list = L.build_struct_gep tuple 4 "tmp_data" builder in
+          L.build_load
+            (L.build_gep inner_list [| id1 |] "tmp" builder) "tmp" builder
+      | SCall ("table_get", args) ->
+          let id1 = rexpr (List.nth args 1) in
+          let id2 = rexpr (List.nth args 2) in
+          let table = rexpr (List.hd args) in
+          let table_list = L.build_struct_gep table 3 "tmp_data" builder in
+          let table_tuple = L.build_load
+            (L.build_gep table_list [| id1 |] "tmp" builder) "tmp" builder in
+          let table_tuple_data = L.build_struct_gep table_tuple 4 "tmp_data" builder in
+          L.build_load
+            (L.build_gep table_tuple_data [| id2 |] "tmp" builder) "tmp" builder
+      | SCall ("table_get_row", args) ->
+          let id1 = rexpr (List.nth args 1) in
+          let table = rexpr (List.hd args) in
+          let table_list = L.build_struct_gep table 3 "tmp_data" builder in
+          L.build_load
+            (L.build_gep table_list [| id1 |] "tmp" builder) "tmp" builder
+      | SCall ("table_get_col", args) ->
+          let id1 = rexpr (List.nth args 1) in
+          let table = rexpr (List.hd args) in
+          let len = L.build_load (L.build_struct_gep table 1 "tmp" builder) "tmp" builder in
+          let len_int =
+            match L.int64_of_const len with
             | Some i -> Int64.to_int i
             | None -> raise (Failure "Length should be integer element")
           in
-          let rec content i listt =
-            if i < len then
-              let value =
-                L.build_load
-                  (L.build_gep old_list [| mk_int i |] "tmp" builder)
-                  "tmp" builder
-              in
-              content (i + 1) (value :: listt)
-            else listt *)
-          (* in
-          let new_content =
-            list_type :: mk_int (1 + len) :: elem_type :: content 0 [ value ]
-          in
-          let value = L.const_struct context (Array.of_list new_content) in
-          mallocate value *)
+          let table_list = L.build_struct_gep table 3 "tmp_data" builder in
+          let first_row = L.build_load
+            (L.build_gep table_list [| mk_int 0 |] "tmp" builder) "tmp" builder in
+          let tuple_types = L.build_struct_gep first_row 3 "tmp_data" builder in
+          let list_type = L.build_load
+          (L.build_gep tuple_types [| id1 |] "tmp" builder) "tmp" builder in
+          let get_list_elem i =
+            (let tuple = L.build_load
+              (L.build_gep table_list [| mk_int i |] "tmp" builder) "tmp" builder in
+            let tuple_data = L.build_struct_gep tuple 4 "tmp_data" builder in
+            L.build_load (L.build_gep tuple_data [| id1 |] "tmp" builder) "tmp" builder) in
+          let col_data = List.init len_int get_list_elem in
+          let content = type_sym (A.LIST None):: len :: list_type :: col_data in
+          let value = L.const_struct context (Array.of_list content) in
+          mallocate value
       | SCall (f, args) ->
           let cast_complex (t, sx) =
             let v = rexpr (t, sx) in
@@ -451,15 +482,10 @@ let translate (functions, statements) =
           in
           let llargs = List.map cast_complex args in
           let userdef dom =
-            let argtypes = List.map (fun (t, _) -> t) args in
-            let match_args decls = 
-              List.find (fun decl -> (List.map (fun (t, _) -> t) decl.sformals) = argtypes) decls
-            in
             let fdef, fdecl =
               try StringMap.find f dom
               with Not_found ->
-              try StringMap.find (match_args (StringMap.find f overload_decls)).sfname dom
-              with Not_found -> raise (Failure (f ^ " is not a declared function"))
+                raise (Failure (f ^ " is not a declared function"))
             in
             let result =
               match fdecl.styp with A.NONE -> "" | _ -> f ^ "_result"
@@ -478,7 +504,6 @@ let translate (functions, statements) =
           (* if is_lambda then userdef lambda_decls else *)
           if is_predef then predef f else userdef function_decls
       | SNoExp -> L.const_null void_t
-      (* Actually not quite sure? *)
     in
     (* return a builder env tuple *)
     let rec stmt builder env iters = function
