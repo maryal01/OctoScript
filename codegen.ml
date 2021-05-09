@@ -222,7 +222,7 @@ let translate (functions, statements) =
             type_sym (A.LIST None)
             :: len :: type_sym t :: List.map lval_of_prim ps 
           in
-          let value = L.const_packed_struct context (Array.of_list content) in
+          let value = L.const_struct context (Array.of_list content) in
           mallocate value
       | STupleLit (ts, ps) ->
           let len = L.const_int i32_t (List.length ps) in
@@ -230,7 +230,7 @@ let translate (functions, statements) =
           let content =
             type_sym (A.TUPLE None) :: len :: (types @ List.map lval_of_prim ps)
           in
-          let value = L.const_packed_struct context (Array.of_list content) in
+          let value = L.const_struct context (Array.of_list content) in
           mallocate value
       | STableLit (ts, pss) ->
           let num_rows = L.const_int i32_t (List.length pss) in
@@ -243,7 +243,7 @@ let translate (functions, statements) =
             type_sym (A.TABLE None)
             :: num_rows :: type_sym (A.TUPLE None) :: row_data
           in
-          let value = L.const_packed_struct context (Array.of_list content) in
+          let value = L.const_struct context (Array.of_list content) in
           mallocate value
       | SBinop (e1, op, e2) ->
           let t, _ = e1
@@ -348,7 +348,7 @@ let translate (functions, statements) =
         let content =
           type_sym (A.TUPLE None) :: len :: (types @ [num_rows; num_cols])
         in
-        let value = L.const_packed_struct context (Array.of_list content) in
+        let value = L.const_struct context (Array.of_list content) in
         mallocate value
       | SCall ("list_get", args) ->
           let idx = rexpr (List.hd (List.tl args)) in
@@ -470,7 +470,7 @@ let translate (functions, statements) =
             L.build_load (L.build_gep tuple_data [| id1 |] "tmp" builder) "tmp" builder) in
           let col_data = List.init len_int get_list_elem in
           let content = type_sym (A.LIST None):: len :: list_type :: col_data in
-          let value = L.const_packed_struct context (Array.of_list content) in
+          let value = L.const_struct context (Array.of_list content) in
           mallocate value
       | SCall (f, args) ->
           let cast_complex (t, sx) =
