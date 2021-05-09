@@ -9,14 +9,21 @@ type params = Fixed of A.typ list | Var of A.typ list
 
 
 (* non-Static types will have their types checked by how the function is called *)
-type rttype = Static of A.typ | Relative of int | ListElem of int | TupleElem of int * int | TableElem of int * int
+type rttype = Static of A.typ | Relative of int | ListElem of int | ListWithElem of int | TupleElem of int * int | TableElem of int * int
 
 type builtin_func = string * rttype * rttype list
 let builtins = 
    [
+      (* return types shouldnt use ListElem type when a empty list at the position is possible *)
+      (* ("length", Static A.INT, [Static (A.LIST None)]);
+      ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
+      ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]); *)
+      ("concat", ListWithElem 1, [Static (A.LIST None); Static (A.LIST None)] );
+      ("replace", ListWithElem 1, [Static (A.LIST None); Static A.INT; ListElem 0]);
+      
       ("list_length", Static A.INT, [Static (A.LIST None)]);
       ("list_get", ListElem 0, [Static (A.LIST None); Static A.INT]);
-      ("list_add", Relative 0, [Static (A.LIST None); ListElem 0]);
+      ("list_add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
 
       ("tuple_length", Static A.INT, [Static (A.TUPLE None)]);
       (* ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
@@ -27,7 +34,6 @@ let builtins =
       ("table_get_col", Static (A.LIST None), [Static (A.TABLE None); Static A.INT]);
    ]
 
-
 (* OctoScript name, C name, return type, parameter list *)
 type predef_func = string * string * A.typ * params
 
@@ -36,7 +42,6 @@ let predefs =
    [
       ("length", "length_tuple", A.INT, Fixed [A.TUPLE None]);
       ("print", "printf", A.INT, (Var [A.STRING]));
-      
       ("test", "test", A.NONE, (Fixed [A.LAMBDA ([], A.INT)]));
       (* ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None])); *)
       
@@ -62,7 +67,6 @@ let predefs =
       
       ("append", "append", A.LIST None, (Var [A.LIST None]));
       ("insert", "insert", A.LIST None, (Var [A.LIST None]));
-      (* ("concat", "concatLists", A.LIST None, (Fixed [A.LIST None; A.LIST None])); *)
       ("set", "set", A.LIST None, (Var [A.LIST None; A.INT]));
       ("countRows", "countRows", A.INT, (Fixed [A.TABLE None]));
       ("countCols", "countCols", A.INT, (Fixed [A.TABLE None]));

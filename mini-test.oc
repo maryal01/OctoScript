@@ -1,29 +1,35 @@
-list<int> listt = [10, 15, 17, 30];
-int length = listt.length();
-int i = 0;
-while(i < length){
-    int elem = listt.get(i);
-    print("( %d, %d), ", i, elem);
-
-    i = i + 1;
+/*list<int> garr = [1, 2, 3, 4, 5, 6, 7];
+fn test_function (list<int> arr) -> list<int> {
+    list<int> arr1 = arr.replace(2, 31);
+    list<int> arr2 = arr1.replace(3, 41);
+    return arr2;
 }
 
+list<int> rvalue = test_function(garr);
+
+int i = 0;
+int length = garr.length();
+while(i < length){
+    print("%d,", garr.get(i));
+    i = i + 1;
+}*/
+
 /*
-[10,20,30,40].add(70);
- 
-[| list ; 4 ; int ; 10 ; 20 ; 30; 40 |]
-
-L.const_int i32 4
-
-[10, 20, 30, 40, 70]
-
-
-add(listt, value):
-    int i = 0;
-    new_listt<int> = []
-    while(i < listt.length()){
-        int val = listt[i] -->  
-        new_list.add(val); //statement 
-    }
-    new_list.add(value)
+list<int> garr  = [1, 2, 3, 4, 5, 6, 7];
+garr.add(31);
+garr.replace(3, 41);
+int i = 0;
+int length = garr.length();
+while(i < length){
+    print("%d,", garr.get(i));
+    i = i + 1;
+}
 */
+
+list <int> zero = zeros(10);
+int i = 0;
+int length = garr.length();
+while(i < length){
+    print("%d,", garr.get(i));
+    i = i + 1;
+}
