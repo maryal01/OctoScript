@@ -30,7 +30,7 @@ char* string_of_tuple(TupleType* tup)
 {
 
     char *list_buf = calloc(BUF_SIZE * tup->len, sizeof(char));
-    strcpy(list_buf, "[");
+    strcpy(list_buf, "(");
 
     for(int i = 0; i < tup->len; i++){
         
@@ -44,7 +44,7 @@ char* string_of_tuple(TupleType* tup)
 
         }
     }
-    strcat(list_buf, "]");
+    strcat(list_buf, ")");
     return list_buf;
 
 

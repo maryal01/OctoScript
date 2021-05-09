@@ -1,3 +1,1 @@
-float f = 42.0 + 231.31;
-
-print("%f", f);
+table<int, int> t = read("ffs", ["int", "int"], ",");

@@ -2,7 +2,7 @@
 #define HELPER_C
 
 // converts strings representation of a type into its int representation
-int stringToTyp(char* string);
+int stringToTyp(void* data);
 
 // returns the byte size given integer representation of type
 size_t sizeofType(int type);
@@ -27,7 +27,7 @@ size_t sizeofType(int type)
         case BOOL_TYPE: //boolean
             return sizeof(bool);
         case FLOAT_TYPE: //float
-            return sizeof(float);
+            return sizeof(double);
         case STRING_TYPE: //string
             return sizeof(char*);
         case LAMBDA_TYPE: //lambda
@@ -41,9 +41,10 @@ size_t sizeofType(int type)
     return 0;
 }
 
-// TODO here
-int stringToTyp(char* string)
+
+int stringToTyp(void* data)
 {
+    char* string = *(char**)data;
     if (strcmp(string, "int") == 0) {
         return INT_TYPE;
     } else if (strcmp(string, "boolean") == 0){
@@ -93,13 +94,18 @@ void* makePointerOutOfValue(int type, va_list args) // TODO
         }
         case FLOAT_TYPE: //float
         {
-            float f = va_arg(args, double);
-            float* fp = malloc(s);
+            double f = va_arg(args, double);
+            double* fp = malloc(s);
             *fp = f;
             return fp;
         }
-        // case STRING_TYPE: //string
-        //     return sizeof(char*);
+         case STRING_TYPE: 
+        {
+            char* str = va_arg(args, char*);
+            char** sp = malloc(s);
+            *sp = str;
+            return sp;
+        }
         // case LAMBDA_TYPE: //lambda
         //     errorExit("cannot have a lambda here");
         // case LIST_TYPE: //list
@@ -107,6 +113,7 @@ void* makePointerOutOfValue(int type, va_list args) // TODO
         // case TUPLE_TYPE: //tuple
         //     return sizeof(void*);    
     }
+    errorExit("error in make pointer of of val");
     void* v = NULL;
     return v;
 }

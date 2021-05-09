@@ -6,7 +6,7 @@
 #include "tableHelper.c"
 
 // Reads a csv file and creates a table based on it
-void* read(char* filename, void* typeNames, bool header, char* delimeter)
+void* read(char* filename, void* typeNames, char* delimeter)
 {
 
     FILE *file;
@@ -22,7 +22,6 @@ void* read(char* filename, void* typeNames, bool header, char* delimeter)
 
 
     if(tyname->len != 1 && tyname->len != s.col) {
-        fprintf(stderr, "error");
         errorExit("Error in reading table. Csv file has unequal columns to type list given");
     }
 
@@ -37,12 +36,13 @@ void* read(char* filename, void* typeNames, bool header, char* delimeter)
 
 
     ListType* table = createTable(data, s.row, s.col, typeNames);
+
     return table;
     
 }
 
 // Writes the given table to a csv file
-void write(void* table, char* filename, bool header, char* delimeter)
+void write(void* table, char* filename, char* delimeter)
 {
 
     FILE *file;
@@ -61,13 +61,6 @@ int countCols(ListType* table)
     TupleType** t = getListElement(table, 0);
     return (*t)->len;
 }
-
-// TupleType* size(ListType* table)
-// {
-//     int row = countRows(table);
-//     int col = countCols(table);
-    
-// }
 
 bool empty(ListType* table){
     return countRows(table) == 0;

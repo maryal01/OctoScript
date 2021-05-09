@@ -1,0 +1,53 @@
+fn overload fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
+    int i = 0;
+    int res = acc;
+    while(i < li.list_length()){
+        res = f(res, li.list_get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<float, float => float> f, float acc, list<float> li) -> float {
+    int i = 0;
+    float res = acc;
+    while(i < li.list_length()){
+        res = f(res, li.list_get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload sum(list<int> l) -> int {
+    return fold_left(fn (int a, int e) => {a + e}, 0, l);
+}
+
+fn overload sum(list<float> l) -> float {
+    return fold_left(fn (float a, float e) => {a + e}, 0.0, l);
+}
+
+fn overload max (list<int> li) -> int {
+    int max = li.list_get(0);
+    int i = 1;
+    while (i < li.list_length()) {
+        int v = li.list_get(i);
+        if (v > max){
+            max = v; 
+        }
+        i = i + 1;
+    }
+    return max;
+}
+
+fn overload max (list<float> lf) -> float {
+    float max = lf.list_get(0);
+    int i = 1;
+    while (i < lf.list_length()) {
+        float v = lf.list_get(i);
+        if (v > max){
+            max = v; 
+        }
+        i = i + 1;
+    }
+    return max;
+}
