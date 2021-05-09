@@ -1,9 +1,0 @@
-fn test-toString() -> int {
-    list<int> l = [1, 2];
-    print(toString(l));
-    return 5;
-
-
-}
-
-test-toString();
