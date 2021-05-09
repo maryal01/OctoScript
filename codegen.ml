@@ -542,10 +542,9 @@ let translate (functions, statements) =
             (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
             "tmp_get_load" builder
       | SCall ("add", args) ->
-          let elem_t =
-            match List.hd args with
-            | A.LIST (Some t), _ -> t
-            | _ -> raise (Failure "List builtin add called on type not a list")
+          let elem_t = 
+            let t, _ = (List.hd (List.tl args))
+            in A.LIST (Some t)
           in
 
           let value = rexpr (List.hd (List.tl args)) in
