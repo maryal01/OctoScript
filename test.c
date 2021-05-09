@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUF_SIZE 10
+#define BUF_SIZE 15
 
 typedef struct ListType{
     int self_type;
@@ -61,26 +61,26 @@ void toString(int type, void *data, char *buf){
     }
 }
 
-char *string_of_list(void *data){
-    ListType *lp = data;
+// char *string_of_list(void *data){
+//     ListType *lp = data;
 
-    char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
-    strcpy(list_buf, "[");
+//     char *list_buf = calloc(BUF_SIZE * lp->len, sizeof(char));
+//     strcpy(list_buf, "[");
 
-    for(int i = 0; i < lp->len; i++){
-        size_t offset = size_of_type(lp->type) * i;
+//     for(int i = 0; i < lp->len; i++){
+//         size_t offset = size_of_type(lp->type) * i;
         
-        char int_buf[BUF_SIZE];
-        toString(lp->type, lp->data + offset, int_buf);
-        strcat(list_buf, int_buf);
-        if(i + 1 != lp->len){
-            strcat(list_buf, ", ");
+//         char int_buf[BUF_SIZE];
+//         toString(lp->type, lp->data + offset, int_buf);
+//         strcat(list_buf, int_buf);
+//         if(i + 1 != lp->len){
+//             strcat(list_buf, ", ");
 
-        }
-    }
-    strcat(list_buf, "]");
-    return list_buf;
-}
+//         }
+//     }
+//     strcat(list_buf, "]");
+//     return list_buf;
+// }
 
 void test(void *data){
     ListType *lp = data;

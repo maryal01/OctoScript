@@ -62,4 +62,24 @@ char* toUpper(char* string) {
     
 }
 
+char* toString(void* val, int type) {
+    
+    char *buf = malloc(BUF_SIZE);
+    valToString(val, type, buf);
+    return buf;
+}
+
+char* intToString(void* val) {
+    return toString(val, INT_TYPE);
+}
+
+char* floatToString(void* val) {
+    return toString(val, FLOAT_TYPE);
+}
+
+char* boolToString(void* val) {
+    return toString(val, BOOL_TYPE);
+}
+
+
 #endif

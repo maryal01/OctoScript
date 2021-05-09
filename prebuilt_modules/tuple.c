@@ -6,6 +6,7 @@
 TupleType* copyTuple(TupleType* lt);
 TupleType* tupleSet(TupleType* tup, int index, ...);
 
+
 TupleType* tupleSet(TupleType* tup, int index, ...) {
 
     if (index >= tup->len) errorExit("index too large in set");  

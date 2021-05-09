@@ -45,8 +45,13 @@ let predefs =
       ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST (Some A.STRING); A.STRING]));
       ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.STRING]));
       
+
+      (* to string functions *)
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
       ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE None]));
+      ("intToString", "intToString", A.STRING, (Fixed [A.INT]));
+      ("floatToString", "floatToString", A.STRING, (Fixed [A.FLOAT]));
+      ("boolToString", "boolToString", A.STRING, (Fixed [A.BOOLEAN]));
 
       (* Standard C String library functions *)
       ("toLower", "toLower", A.STRING, (Fixed [A.STRING]));

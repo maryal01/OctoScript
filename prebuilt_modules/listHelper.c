@@ -296,7 +296,7 @@ void valToString(void* val, int type, char* buf)
         case FLOAT_TYPE: //float
          {
             double f = *(double*) val;
-            sprintf(buf, "%.2f", f);
+            sprintf(buf, "%f", f);
             break;
         }
         case STRING_TYPE: //string
