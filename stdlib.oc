@@ -51,6 +51,31 @@ fn overload max (list<float> lf) -> float {
     }
     return max;
 }
+fn overload min (list<int> li) -> int {
+    int min = li.get(0);
+    int i = 1;
+    while (i < li.length()) {
+        int v = li.get(i);
+        if (v < min){
+            min = v; 
+        }
+        i = i + 1;
+    }
+    return min;
+}
+
+fn overload min (list<float> lf) -> float {
+    float min = lf.get(0);
+    int i = 1;
+    while (i < lf.length()) {
+        float v = lf.get(i);
+        if (v < min){
+            min = v; 
+        }
+        i = i + 1;
+    }
+    return min;
+}
 
 fn partition( list<int> arr, int l, int h, lambda<int, int => bool> cmp ) -> int {
     int i =  l - 1;
