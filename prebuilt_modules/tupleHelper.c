@@ -8,6 +8,7 @@
 
 TupleType* createTuple(int types[], int len);
 void printTuple(TupleType* tt);
+bool hasPadding(int* types, int len, int index);
 
 
 // returns the tuple element at index
@@ -46,7 +47,18 @@ void* getTupleElement(TupleType* tt, int index)
 
         data = offsetPointer(data, type);
 
+        //fprintf(stderr, "type = %d, next type = %d    \n", type, getTypeofTupleIndex(tt, i + 1));
+            
+        if ((i + 1 != tt->len) && getTypeofTupleIndex(tt, i + 1) == STRING_TYPE) {
+            
+            //fprintf(stderr, "has padding %d    \n", hasPadding(tt, index));
+            if (hasPadding((int*)(void*)tt->data, tt->len,i + 1)) {
+                data = offsetPointer(data, INT_TYPE);
+            }
+            
 
+
+        }
         
 
     }
@@ -54,6 +66,24 @@ void* getTupleElement(TupleType* tt, int index)
     
 }
 
+bool hasPadding(int* types, int len, int index) 
+{
+    size_t s = getTupleDataOffsetSize(len);
+    //fprintf(stderr, "offset  %d=  \n", s);
+        
+    for (int i = 0; i < index; i++) {
+        int type = types[i];
+        s += sizeofType(type);
+        if (type == STRING_TYPE) {
+            if (hasPadding(types, len, i)) {
+                s += sizeofType(INT_TYPE);
+            }
+        }
+    }
+    //fprintf(stderr, "total  %d=  \n", s);
+    if (s % sizeofType(STRING_TYPE) == 0) return false;
+    return true;
+}
 
 size_t getTupleDataOffsetSize(int len)
 {
@@ -66,7 +96,9 @@ size_t getTupleDataSize(int* types, int len)
     for (int i = 0; i < len; i++) {
         total += sizeofType(types[i]);
         if (i != len - 1 && types[i + 1] == STRING_TYPE) {
-            
+            if (hasPadding(types, len, i)) {
+                total += sizeofType(INT_TYPE);
+            }
         }
     }
     return total;
@@ -135,6 +167,7 @@ TupleType* createTupleFromStrings(char*** data, int row, int col, int *types)
     }
 
     
+    printTuple(tup);
 
 
 
