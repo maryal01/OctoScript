@@ -19,8 +19,8 @@ let builtins =
       ("list_add", Relative 0, [Static (A.LIST None); ListElem 0]);
 
       ("tuple_length", Static A.INT, [Static (A.TUPLE None)]);
-      ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
-      
+      (* ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
+       *)
       ("table_get", TableElem (0, 0), [Static (A.TABLE None); Static A.INT; Static A.INT]);
       ("table_size", Static A.INT, [Static (A.LIST None)]);
       ("table_get_row", Static (A.TUPLE None), [Static (A.TABLE None); Static A.INT]);
@@ -72,6 +72,8 @@ let predefs =
       ("printTuple", "printTuple", A.NONE, (Fixed [A.TUPLE None]));
       ("print_list", "print_list", A.NONE, (Fixed [A.LIST None]));
   
+      ("tuple_get", "tuple_get", A.LIST None, (Fixed [A.TUPLE None; A.INT]));
+
    ]
 
 

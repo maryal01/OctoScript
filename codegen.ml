@@ -426,12 +426,12 @@ let translate (functions, statements) =
           in
           let _ = L.build_store (L.build_load (L.build_struct_gep casted_list 0 "tmp" builder) "tmp_0_store" builder) (L.build_struct_gep new_list 2 "tmp" builder) builder 
           in new_list
-      | SCall ("tuple_get", args) ->
+      (* | SCall ("tuple_get", args) ->
           let id1 = rexpr (List.nth args 1) in
           let tuple = rexpr (List.hd args) in
           let inner_list = L.build_struct_gep tuple 4 "tmp_data" builder in
           L.build_load
-            (L.build_gep inner_list [| id1 |] "tmp" builder) "tmp" builder
+            (L.build_gep inner_list [| id1 |] "tmp" builder) "tmp" builder *)
       | SCall ("table_get", args) ->
           let id1 = rexpr (List.nth args 1) in
           let id2 = rexpr (List.nth args 2) in

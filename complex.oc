@@ -1,1 +1,1 @@
-write(read("h.csv", ["int", "float", "float","int" ,"string"], ","),"hout.csv",  ",");
+table<int, int> t = read("ffs", ["int", "int"], ",");
