@@ -1,20 +1,26 @@
-list<int> l = [1,2,3,4,5];
-list<int> new_list = l.add(146);
-print("The length of the list is %d\n", new_list.get(5));
-
-/* 
-last_idx = last_idx + 1;
-print("The length of the list is %d\n", l.length());
-print("The last element of the list it %d\n", l.get(last_idx));
-fn print_length(list<string> l) -> int {
-    int d = l.length();
-    print("The first element is %s \n", l.get(0) );
-    return d;
+list<string> l = ["manish", "danielle"];
+list<string> new_list = l.add("conor");
+int i = 0;
+while(i < new_list.length()){
+    print(new_list.get(i));
+    print("\n");
+    i = i + 1;
 }
 
-list<string> names = ["manish", "lan", "gourley", "unan"];
-int l = print_length(names);
-int new_l = l - 1;
-print("The length is: %d\n", l);
-print("The last element is: %s\n", names.get(new_l));
-*/
+new_list = l.add("sinan");
+i = 0;
+while(i < new_list.length()){
+    print(new_list.get(i));
+    print("\n");
+    i = i + 1;
+}
+
+new_list = new_list.add("conor");
+i = 0;
+while(i < new_list.length()){
+    print(new_list.get(i));
+    print("\n");
+    i = i + 1;
+}
+
+
