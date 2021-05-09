@@ -350,7 +350,9 @@ let translate (functions, statements) =
           merge_builder
         (* end merge basic block *)
       in
-      new_casted_struct
+      let t = L.build_ret new_casted_struct in
+      let () = add_terminal (L.builder_at_end context end_bb) t in
+      list_add_function
     in
     let list_add ty =
       match
