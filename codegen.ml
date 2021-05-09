@@ -195,7 +195,7 @@ let translate (functions, statements) =
     let build_list_concat_function ty =
       let mk_int i = L.const_int i32_t i in
       let list_struct_type =
-        L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
+        L.packed_struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
       in
       let list_struct_ptr = L.pointer_type list_struct_type in
       let list_concat_function =
@@ -391,7 +391,7 @@ let translate (functions, statements) =
     let build_list_add_function ty =
       let mk_int i = L.const_int i32_t i in
       let list_struct_type =
-        L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
+        L.packed_struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
       in
       let list_struct_ptr = L.pointer_type list_struct_type in
       let list_add_function =
@@ -717,7 +717,7 @@ let translate (functions, statements) =
       | SCall ("list_add", args) ->
           let elem_t, _ = List.hd (List.tl args) in
           let list_struct_type =
-            L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
+            L.packed_struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
           in
           let list_struct_ptr = L.pointer_type list_struct_type in
           let value = rexpr (List.hd (List.tl args)) in
@@ -739,7 +739,7 @@ let translate (functions, statements) =
             | _ -> raise (Failure "List builtin add called on type not a list")
           in
           let list_struct_type =
-            L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
+            L.packed_struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
           in
           let list_struct_ptr = L.pointer_type list_struct_type in
           let listt2 = rexpr (List.hd (List.tl args)) in
@@ -764,7 +764,7 @@ let translate (functions, statements) =
             | _ -> raise (Failure "List builtin add called on type not a list")
           in
           let list_struct_type =
-            L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
+            L.packed_struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
           in
           let list_struct_ptr = L.pointer_type list_struct_type in
           let index = rexpr (List.hd (List.tl args)) in
