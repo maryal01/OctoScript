@@ -1,8 +1,8 @@
 fn overload fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
     int i = 0;
     int res = acc;
-    while(i < li.list_length()){
-        res = f(res, li.list_get(i));
+    while(i < li.length()){
+        res = f(res, li.get(i));
         i = i + 1;
     }
     return res;
@@ -11,8 +11,8 @@ fn overload fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
 fn overload fold_left(lambda<float, float => float> f, float acc, list<float> li) -> float {
     int i = 0;
     float res = acc;
-    while(i < li.list_length()){
-        res = f(res, li.list_get(i));
+    while(i < li.length()){
+        res = f(res, li.get(i));
         i = i + 1;
     }
     return res;
@@ -27,10 +27,10 @@ fn overload sum(list<float> l) -> float {
 }
 
 fn overload max (list<int> li) -> int {
-    int max = li.list_get(0);
+    int max = li.get(0);
     int i = 1;
-    while (i < li.list_length()) {
-        int v = li.list_get(i);
+    while (i < li.length()) {
+        int v = li.get(i);
         if (v > max){
             max = v; 
         }
@@ -40,10 +40,10 @@ fn overload max (list<int> li) -> int {
 }
 
 fn overload max (list<float> lf) -> float {
-    float max = lf.list_get(0);
+    float max = lf.get(0);
     int i = 1;
-    while (i < lf.list_length()) {
-        float v = lf.list_get(i);
+    while (i < lf.length()) {
+        float v = lf.get(i);
         if (v > max){
             max = v; 
         }

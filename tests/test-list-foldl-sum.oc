@@ -1,8 +1,8 @@
 fn int_fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
     int i = 0;
     int res = acc;
-    while(i < li.list_length()){
-        res = f(res, li.list_get(i));
+    while(i < li.length()){
+        res = f(res, li.get(i));
         i = i + 1;
     }
     return res;

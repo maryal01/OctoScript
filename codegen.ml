@@ -680,14 +680,14 @@ let translate (functions, statements) =
           let llargs = List.map (fun x -> rexpr x) args in
           let result = match etype with A.NONE -> "" | _ -> "lambda_result" in
           L.build_call llval (Array.of_list llargs) result builder
-      | SCall ("list_length", args) ->
+      | SCall ("length", args) ->
           let listt = rexpr (List.hd args) in
           let cast =  L.build_bitcast listt (L.pointer_type (L.packed_struct_type context [| i32_t; i32_t; i32_t |])) "tmp_l_cast" builder in 
           L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
-      | SCall ("tuple_length", args) ->
+      | SCall ("distance", args) ->
           let complex = rexpr (List.hd args) in
           L.build_load (L.build_struct_gep complex 1 "tmp" builder) "tmp" builder
-      | SCall ("table_size", args) ->
+      | SCall ("size", args) ->
         let table = rexpr (List.hd args) in
         let row_list = L.build_struct_gep table 3 "tmp_data" builder in
         let tuple = L.build_load
@@ -701,7 +701,7 @@ let translate (functions, statements) =
         in
         let value = L.const_packed_struct context (Array.of_list content) in
         mallocate value
-      | SCall ("list_get", args) ->
+      | SCall ("get", args) ->
           let idx = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
           let cast =  L.build_bitcast listt (L.pointer_type (L.packed_struct_type context [| i32_t; i32_t; i32_t; (ltype_of_typ etype) |])) "tmp_l_cast" builder in 
@@ -714,7 +714,7 @@ let translate (functions, statements) =
           L.build_load
             (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
             "tmp_get_load" builder
-      | SCall ("list_add", args) ->
+      | SCall ("add", args) ->
           let elem_t, _ = List.hd (List.tl args) in
           let list_struct_type =
             L.packed_struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
@@ -798,13 +798,13 @@ let translate (functions, statements) =
           let table_tuple_data = L.build_struct_gep table_tuple 4 "tmp_data" builder in
           L.build_load
             (L.build_gep table_tuple_data [| id2 |] "tmp" builder) "tmp" builder
-      | SCall ("table_get_row", args) ->
+      | SCall ("get_row", args) ->
           let id1 = rexpr (List.nth args 1) in
           let table = rexpr (List.hd args) in
           let table_list = L.build_struct_gep table 3 "tmp_data" builder in
           L.build_load
             (L.build_gep table_list [| id1 |] "tmp" builder) "tmp" builder
-      | SCall ("table_get_col", args) ->
+      | SCall ("get_col", args) ->
           let id1 = rexpr (List.nth args 1) in
           let table = rexpr (List.hd args) in
           let len = L.build_load (L.build_struct_gep table 1 "tmp" builder) "tmp" builder in
