@@ -1,26 +1,10 @@
-list<string> l = ["manish", "danielle"];
-list<string> new_list = l.add("conor");
+list<int> l1 = [202,306,407];
+list<int> l2 = [121,22,33,44,55];
+list<int> l3 = l1.concat(l2);
 int i = 0;
-while(i < new_list.length()){
-    print(new_list.get(i));
-    print("\n");
+int length = l3.length();
+while(i < length){
+    print("The element at index %d is %d\n", i, l3.get(i));
     i = i + 1;
 }
-
-new_list = l.add("sinan");
-i = 0;
-while(i < new_list.length()){
-    print(new_list.get(i));
-    print("\n");
-    i = i + 1;
-}
-
-new_list = new_list.add("conor");
-i = 0;
-while(i < new_list.length()){
-    print(new_list.get(i));
-    print("\n");
-    i = i + 1;
-}
-
-
+print("The length of list is%d\n", length);

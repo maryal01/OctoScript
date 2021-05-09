@@ -18,6 +18,7 @@ let builtins =
       ("length", Static A.INT, [Static (A.LIST None)]);
       ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
       ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
+      ("concat", Static (A.LIST None), [Static (A.LIST None); Static (A.LIST None)] )
    ]
 
 

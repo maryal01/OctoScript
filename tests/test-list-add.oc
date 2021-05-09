@@ -1,0 +1,24 @@
+list<string> l = ["manish", "danielle"];
+list<string> new_list = l.add("conor");
+int i = 0;
+while(i < new_list.length()){
+    print(new_list.get(i));
+    print("\n");
+    i = i + 1;
+}
+
+new_list = l.add("sinan");
+i = 0;
+while(i < new_list.length()){
+    print(new_list.get(i));
+    print("\n");
+    i = i + 1;
+}
+
+new_list = new_list.add("conor");
+i = 0;
+while(i < new_list.length()){
+    print(new_list.get(i));
+    print("\n");
+    i = i + 1;
+}

@@ -196,11 +196,206 @@ let translate (functions, statements) =
       in
       v
     in
+
+    (* LIST CONCAT FUNCTION *)
+    let build_list_concat_function ty =
+      let mk_int i = L.const_int i32_t i in
+      let list_struct_type =
+        L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
+      in
+      let list_struct_ptr = L.pointer_type list_struct_type in
+      let list_concat_function =
+        L.define_function
+          ("_LIST_CONCAT_" ^ A.typ_to_string ty)
+          (L.function_type list_struct_ptr
+             (Array.of_list [ list_struct_ptr; list_struct_ptr ]))
+          the_module
+      in
+      let list_concat_function_builder =
+        L.builder_at_end context (L.entry_block list_concat_function)
+      in
+      let listt1 = L.param list_concat_function 0 in
+      let listt2 = L.param list_concat_function 1 in
+      let data1 =
+        L.build_struct_gep listt1 3 "tmp_data" list_concat_function_builder
+      in
+      let casted_data1 =
+        L.build_bitcast data1
+          (L.pointer_type (ltype_of_typ ty))
+          "tmp_l_source_data_cast1" list_concat_function_builder
+      in
+      let data2 =
+        L.build_struct_gep listt2 3 "tmp_data" list_concat_function_builder
+      in
+      let casted_data2 =
+        L.build_bitcast data2
+          (L.pointer_type (ltype_of_typ ty))
+          "tmp_l_source_data_cast2" list_concat_function_builder
+      in
+      let length1 =
+        L.build_load
+          (L.build_struct_gep listt1 1 "tmp" list_concat_function_builder)
+          "tmp" list_concat_function_builder
+      in
+      let length2 =
+        L.build_load
+          (L.build_struct_gep listt2 1 "tmp" list_concat_function_builder)
+          "tmp" list_concat_function_builder
+      in
+      let new_length =
+        L.build_add length1 length2 "tmp_new_len" list_concat_function_builder
+      in
+      let struct_size =
+        L.build_add (mk_int 12)
+          (L.build_mul new_length (lval_of_type_size ty) "tmp_new_size"
+             list_concat_function_builder)
+          "tmp_struct_size" list_concat_function_builder
+      in
+      let struct_malloc =
+        L.build_array_malloc i8_t struct_size "new_struct_malloc"
+          list_concat_function_builder
+      in
+      let new_casted_struct =
+        L.build_bitcast struct_malloc
+          (L.pointer_type list_struct_type)
+          "tmp_l_cast" list_concat_function_builder
+      in
+      let new_data =
+        L.build_struct_gep new_casted_struct 3 "tmp_data"
+          list_concat_function_builder
+      in
+      let new_casted_data =
+        L.build_bitcast new_data
+          (L.pointer_type (ltype_of_typ ty))
+          "tmp_l_dest_data_cast" list_concat_function_builder
+      in
+      let _ =
+        L.build_store
+          (L.build_load
+             (L.build_struct_gep listt1 0 "tmp" list_concat_function_builder)
+             "tmp_0_load" list_concat_function_builder)
+          (L.build_struct_gep new_casted_struct 0 "tmp" list_concat_function_builder)
+          list_concat_function_builder
+      in
+      let _ =
+        L.build_store new_length
+          (L.build_struct_gep new_casted_struct 1 "tmp" list_concat_function_builder)
+          list_concat_function_builder
+      in
+      let _ =
+        L.build_store
+          (L.build_load
+             (L.build_struct_gep listt1 2 "tmp" list_concat_function_builder)
+             "tmp_0_store" list_concat_function_builder)
+          (L.build_struct_gep new_casted_struct 2 "tmp" list_concat_function_builder)
+          list_concat_function_builder
+      in
+      (* building loop1 *)
+      let iterator =
+        L.build_alloca i32_t "alloc_iter" list_concat_function_builder
+      in
+      let _ = L.build_store (mk_int 0) iterator list_concat_function_builder in
+
+      let pred_bb = L.append_block context "while_cond" list_concat_function in
+      let body_bb = L.append_block context "while_body" list_concat_function in
+      let merge_bb = L.append_block context "merge" list_concat_function in
+      let while_builder = L.builder_at_end context body_bb in
+      let merge_builder = L.builder_at_end context merge_bb in
+      let pred_builder = L.builder_at_end context pred_bb in
+      let _ = L.build_br pred_bb list_concat_function_builder in
+
+      (* body basic block  1 *)
+      let idx1 = L.build_load iterator "idx1" while_builder in
+      let old_data1 =
+        L.build_load
+          (L.build_gep casted_data1 [| idx1 |] "data1" while_builder)
+          "tmp_load" while_builder
+      in
+      let new_box1 =
+        L.build_gep new_casted_data [| idx1 |] "tmp_set_idx" while_builder
+      in
+      let _ = L.build_store old_data1 new_box1 while_builder in
+      let _ =
+        L.build_store
+          (L.build_add idx1 (mk_int 1) "tmp_iter_inc" while_builder)
+          iterator while_builder
+      in
+      let () = add_terminal while_builder (L.build_br pred_bb) in
+      let bool_val =
+        L.build_icmp L.Icmp.Slt
+          (L.build_load iterator "tmp_iter" pred_builder)
+          length1 "tmp_iter_cond" pred_builder
+      in
+      let _ = L.build_cond_br bool_val body_bb merge_bb pred_builder in
+
+      (* merge basic block *)
+      (* building loop2 *)
+      let iterator2 = L.build_alloca i32_t "alloc_iter2" merge_builder in
+      let _ = L.build_store (mk_int 0) iterator2 merge_builder in
+
+      let pred_bb2 =
+        L.append_block context "while_cond2" list_concat_function
+      in
+      let body_bb2 =
+        L.append_block context "while_body2" list_concat_function
+      in
+      let merge_bb2 = L.append_block context "merge2" list_concat_function in
+
+      let while_builder2 = L.builder_at_end context body_bb2 in
+      let merge_builder2 = L.builder_at_end context merge_bb2 in
+      let pred_builder2 = L.builder_at_end context pred_bb2 in
+      let _ = L.build_br pred_bb2 merge_builder in
+
+      (* body basic block 2 *)
+      let idx2 = L.build_load iterator2 "idx2" while_builder2 in
+      let old_data2 =
+        L.build_load
+          (L.build_gep casted_data2 [| idx2 |] "data2" while_builder2)
+          "tmp_load" while_builder2
+      in
+      let curr_idx =
+        L.build_add idx2 length1 "new_struct_idx_data2" while_builder2
+      in
+      let new_box2 =
+        L.build_gep new_casted_data [| curr_idx |] "tmp_set_idx" while_builder2
+      in
+      let _ = L.build_store old_data2 new_box2 while_builder2 in
+      let _ =
+        L.build_store
+          (L.build_add idx2 (mk_int 1) "tmp_iter_inc" while_builder2)
+          iterator2 while_builder2
+      in
+      let () = add_terminal while_builder2 (L.build_br pred_bb2) in
+      let bool_val2 =
+        L.build_icmp L.Icmp.Slt
+          (L.build_load iterator2 "tmp_iter" pred_builder2)
+          length2 "tmp_iter_cond" pred_builder2
+      in
+      let _ =
+        L.build_cond_br bool_val2 body_bb2 merge_bb2 pred_builder2
+        (* end merge basic block *)
+      in
+
+      let end_bb = L.append_block context "end_add" list_concat_function in
+      let _ = L.build_br end_bb merge_builder2 in
+      let t = L.build_ret new_casted_struct in
+      let () = add_terminal (L.builder_at_end context end_bb) t in
+      list_concat_function
+    in
+    let list_concat ty =
+      match
+        L.lookup_function ("_LIST_CONCAT_" ^ A.typ_to_string ty) the_module
+      with
+      | Some f -> f
+      | None -> build_list_concat_function ty
+    in
+
+    (* LIST ADD FUNCTION BEGIN *)
     let build_list_add_function ty =
       let mk_int i = L.const_int i32_t i in
       let list_struct_type =
         L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
-      in 
+      in
       let list_struct_ptr = L.pointer_type list_struct_type in
       let list_add_function =
         L.define_function
@@ -212,10 +407,8 @@ let translate (functions, statements) =
       let list_add_function_builder =
         L.builder_at_end context (L.entry_block list_add_function)
       in
-      let listt = (L.param list_add_function 0)
-      in
-      let value = (L.param list_add_function 1)
-      in
+      let listt = L.param list_add_function 0 in
+      let value = L.param list_add_function 1 in
       let data =
         L.build_struct_gep listt 3 "tmp_data" list_add_function_builder
       in
@@ -238,7 +431,7 @@ let translate (functions, statements) =
           list_add_function_builder
       in
       let struct_size =
-        L.build_add (mk_int 24) new_size "tmp_struct_size"
+        L.build_add (mk_int 12) new_size "tmp_struct_size"
           list_add_function_builder
       in
       let struct_malloc =
@@ -268,14 +461,12 @@ let translate (functions, statements) =
       let merge_bb = L.append_block context "merge" list_add_function in
       let pred_bb = L.append_block context "while_cond" list_add_function in
       let body_bb = L.append_block context "while_body" list_add_function in
-      
 
       let while_builder = L.builder_at_end context body_bb in
       let merge_builder = L.builder_at_end context merge_bb in
       let pred_builder = L.builder_at_end context pred_bb in
       let _ = L.build_br pred_bb list_add_function_builder in
-      
-     
+
       (* body basic block *)
       let iter_val = L.build_load iterator "tmp_iter" while_builder in
       let old_data =
@@ -292,7 +483,7 @@ let translate (functions, statements) =
           (L.build_add iter_val (mk_int 1) "tmp_iter_inc" while_builder)
           iterator while_builder
       in
-      (* end body basic block *) 
+      (* end body basic block *)
       let () = add_terminal while_builder (L.build_br pred_bb) in
       (* pred basic block *)
       let bool_val =
@@ -334,7 +525,7 @@ let translate (functions, statements) =
         (* end merge basic block *)
       in
       let end_bb = L.append_block context "end_add" list_add_function in
-      let _ = L.build_br end_bb merge_builder in 
+      let _ = L.build_br end_bb merge_builder in
       let t = L.build_ret new_casted_struct in
       let () = add_terminal (L.builder_at_end context end_bb) t in
       list_add_function
@@ -498,7 +689,7 @@ let translate (functions, statements) =
           let listt = rexpr (List.hd args) in
           let cast =
             L.build_bitcast listt
-              (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; |]))
+              (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t |]))
               "tmp_l_cast" builder
           in
           L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
@@ -522,17 +713,45 @@ let translate (functions, statements) =
             (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
             "tmp_get_load" builder
       | SCall ("add", args) ->
-          let elem_t, _  = (List.hd (List.tl args)) 
+          let elem_t, _ = List.hd (List.tl args) in
+          let list_struct_type =
+            L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
           in
-          let list_struct_type = L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |] in
           let list_struct_ptr = L.pointer_type list_struct_type in
           let value = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
-          let cast =  L.build_bitcast listt list_struct_ptr "tmp_l_cast" builder in
+          let cast =
+            L.build_bitcast listt list_struct_ptr "tmp_l_cast" builder
+          in
           let _ = build_list_add_function elem_t in
           let new_list =
             L.build_call (list_add elem_t)
-              (Array.of_list [ cast; value])
+              (Array.of_list [ cast; value ])
+              "_FUNC_VAL" builder
+          in
+          new_list
+      | SCall ("concat", args) ->
+          let elem_t =
+            match List.hd args with
+            | A.LIST (Some t), _ -> t
+            | _ -> raise (Failure "List builtin add called on type not a list")
+          in
+          let list_struct_type =
+            L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
+          in
+          let list_struct_ptr = L.pointer_type list_struct_type in
+          let listt2 = rexpr (List.hd (List.tl args)) in
+          let listt1 = rexpr (List.hd args) in
+          let cast1 =
+            L.build_bitcast listt1 list_struct_ptr "tmp_l_cast1" builder
+          in
+          let cast2 =
+            L.build_bitcast listt2 list_struct_ptr "tmp_l_cast2" builder
+          in
+          let _ = build_list_concat_function elem_t in
+          let new_list =
+            L.build_call (list_concat elem_t)
+              (Array.of_list [ cast1; cast2 ])
               "_FUNC_VAL" builder
           in
           new_list
