@@ -1,3 +1,9 @@
-float f = 42.0 + 231.31;
+fn list-out () -> list<int> {
+    return [1, 2];
+}
 
-print("%f", f);
+fn list-in (list<int> l) -> none {
+    print(string_of_list(l));
+}
+list<int> l = list-out();
+list-in(l);

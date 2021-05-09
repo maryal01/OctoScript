@@ -42,8 +42,8 @@ let predefs =
       
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
       
-      ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST None; A.BOOLEAN; A.STRING]));
-      ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.BOOLEAN; A.STRING]));
+      ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST (Some A.STRING); A.STRING]));
+      ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.STRING]));
       
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
       ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE None]));
@@ -64,6 +64,9 @@ let predefs =
       ("copyTuple", "copyTuple", A.TUPLE None, (Fixed [A.TUPLE None]));
 
       ("tupleSet", "tupleSet", A.TUPLE None, (Var [A.TUPLE None; A.INT]));
+      ("printTuple", "printTuple", A.NONE, (Fixed [A.TUPLE None]));
+      ("print_list", "print_list", A.NONE, (Fixed [A.LIST None]));
+  
    ]
 
 
