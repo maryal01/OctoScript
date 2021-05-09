@@ -24,6 +24,7 @@ let builtins =
       ("length", Static A.INT, [Static (A.LIST None)]);
       ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
       ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
+      ("zeros", ListWithElem 1, [Static (A.LIST None); Static A.INT]);
 
       ("distance", Static A.INT, [Static (A.TUPLE None)]);
       ("table_get", TableElem (0, 0), [Static (A.TABLE None); Static A.INT; Static A.INT]);
