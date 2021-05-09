@@ -1,0 +1,10 @@
+list<string> l1 = ["hari", "krishna", "ramayan"];
+list<string> l2 = ["rooney", "tevez", "beckham", "adebayor"];
+list<string> l3 = l1.concat(l2);
+int i = 0;
+int length = l3.length();
+while(i < length){
+    print(l3.get(i));
+    print("\n");
+    i = i + 1;
+}

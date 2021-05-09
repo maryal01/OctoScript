@@ -18,20 +18,19 @@ let builtins =
       (* ("length", Static A.INT, [Static (A.LIST None)]);
       ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
       ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]); *)
-      ("concat", ListWithElem 1, [Static (A.LIST None); Static (A.LIST None)] );
-      ("replace", ListWithElem 1, [Static (A.LIST None); Static A.INT; ListElem 0]);
+      ("concat", Static (A.LIST None), [Static (A.LIST None); Static (A.LIST None)] );
+      ("replace", ListWithElem 2, [Static (A.LIST None); Static A.INT; ListElem 0]);
       
-      ("list_length", Static A.INT, [Static (A.LIST None)]);
-      ("list_get", ListElem 0, [Static (A.LIST None); Static A.INT]);
-      ("list_add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
+      ("length", Static A.INT, [Static (A.LIST None)]);
+      ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
+      ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
+      ("zeros", ListWithElem 1, [Static (A.LIST None); Static A.INT]);
 
-      ("tuple_length", Static A.INT, [Static (A.TUPLE None)]);
-      (* ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
-       *)
+      ("distance", Static A.INT, [Static (A.TUPLE None)]);
       ("table_get", TableElem (0, 0), [Static (A.TABLE None); Static A.INT; Static A.INT]);
-      ("table_size", Static A.INT, [Static (A.LIST None)]);
-      ("table_get_row", Static (A.TUPLE None), [Static (A.TABLE None); Static A.INT]);
-      ("table_get_col", Static (A.LIST None), [Static (A.TABLE None); Static A.INT]);
+      ("size", Static A.INT, [Static (A.LIST None)]);
+      ("get_row", Static (A.TUPLE None), [Static (A.TABLE None); Static A.INT]);
+      ("get_col", Static (A.LIST None), [Static (A.TABLE None); Static A.INT]);
    ]
 
 (* OctoScript name, C name, return type, parameter list *)

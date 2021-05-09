@@ -6,5 +6,3 @@ while(i < l){
     print("%d\n", arr.get(i));
     i = i + 1;
 }
-
-print("%d\n", min(arr));
