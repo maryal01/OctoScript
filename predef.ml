@@ -14,7 +14,6 @@ type rttype = Static of A.typ | Relative of int | ListElem of int | ListWithElem
 type builtin_func = string * rttype * rttype list
 let builtins = 
    [
-
       (* return types shouldnt use ListElem type when a empty list at the position is possible *)
       (* ("length", Static A.INT, [Static (A.LIST None)]);
       ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
