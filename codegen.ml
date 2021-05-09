@@ -200,7 +200,7 @@ let translate (functions, statements) =
       let mk_int i = L.const_int i32_t i in
       let list_struct_type =
         L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ ty |]
-      in
+      in 
       let list_struct_ptr = L.pointer_type list_struct_type in
       let list_add_function =
         L.define_function
@@ -212,32 +212,21 @@ let translate (functions, statements) =
       let list_add_function_builder =
         L.builder_at_end context (L.entry_block list_add_function)
       in
-      let listt =
-        L.build_load
-          (L.param list_add_function 0)
-          "TEMP" list_add_function_builder
+      let listt = (L.param list_add_function 0)
       in
-      let value =
-        L.build_load
-          (L.param list_add_function 0)
-          "TEMP" list_add_function_builder
-      in
-      let casted_struct =
-        L.build_bitcast listt list_struct_ptr "tmp_list_cast"
-          list_add_function_builder
+      let value = (L.param list_add_function 1)
       in
       let data =
-        L.build_struct_gep casted_struct 3 "tmp_data" list_add_function_builder
+        L.build_struct_gep listt 3 "tmp_data" list_add_function_builder
       in
       let casted_data =
         L.build_bitcast data
           (L.pointer_type (ltype_of_typ ty))
           "tmp_l_source_data_cast" list_add_function_builder
       in
-
       let source_length =
         L.build_load
-          (L.build_struct_gep casted_struct 1 "tmp" list_add_function_builder)
+          (L.build_struct_gep listt 1 "tmp" list_add_function_builder)
           "tmp" list_add_function_builder
       in
       let new_length =
@@ -256,7 +245,6 @@ let translate (functions, statements) =
         L.build_array_malloc i8_t struct_size "new_struct_malloc"
           list_add_function_builder
       in
-
       let new_casted_struct =
         L.build_bitcast struct_malloc
           (L.pointer_type list_struct_type)
@@ -271,7 +259,6 @@ let translate (functions, statements) =
           (L.pointer_type (ltype_of_typ ty))
           "tmp_l_dest_data_cast" list_add_function_builder
       in
-
       let iterator =
         L.build_alloca i32_t "alloc_iter" list_add_function_builder
       in
@@ -288,7 +275,7 @@ let translate (functions, statements) =
       let pred_builder = L.builder_at_end context pred_bb in
       let _ = L.build_br pred_bb list_add_function_builder in
       
-
+     
       (* body basic block *)
       let iter_val = L.build_load iterator "tmp_iter" while_builder in
       let old_data =
@@ -305,8 +292,8 @@ let translate (functions, statements) =
           (L.build_add iter_val (mk_int 1) "tmp_iter_inc" while_builder)
           iterator while_builder
       in
-      (* end body basic block *)
-
+      (* end body basic block *) 
+      let () = add_terminal while_builder (L.build_br pred_bb) in
       (* pred basic block *)
       let bool_val =
         L.build_icmp L.Icmp.Slt
@@ -327,7 +314,7 @@ let translate (functions, statements) =
       let _ =
         L.build_store
           (L.build_load
-             (L.build_struct_gep casted_struct 0 "tmp" merge_builder)
+             (L.build_struct_gep listt 0 "tmp" merge_builder)
              "tmp_0_load" merge_builder)
           (L.build_struct_gep new_casted_struct 0 "tmp" merge_builder)
           merge_builder
@@ -340,14 +327,14 @@ let translate (functions, statements) =
       let _ =
         L.build_store
           (L.build_load
-             (L.build_struct_gep casted_struct 2 "tmp" merge_builder)
+             (L.build_struct_gep listt 2 "tmp" merge_builder)
              "tmp_0_store" merge_builder)
           (L.build_struct_gep new_casted_struct 2 "tmp" merge_builder)
           merge_builder
         (* end merge basic block *)
       in
       let end_bb = L.append_block context "end_add" list_add_function in
-      let _ = L.build_br end_bb merge_builder in
+      let _ = L.build_br end_bb merge_builder in 
       let t = L.build_ret new_casted_struct in
       let () = add_terminal (L.builder_at_end context end_bb) t in
       list_add_function
@@ -359,13 +346,6 @@ let translate (functions, statements) =
       | Some f -> f
       | None -> build_list_add_function ty
     in
-
-    (* Complex type memeory layout:
-        List  : int length, int type_id, data...
-        Tuple : int length, int type_ids[lenght], data...
-        Table : Same as a list containing tuples
-    *)
-
     (* Construct code for an expression; return its value *)
     (* NOTE: expr is guaranteed to not modify the env *)
     let rec expr builder env ((etype, e) : sexpr) =
@@ -518,7 +498,7 @@ let translate (functions, statements) =
           let listt = rexpr (List.hd args) in
           let cast =
             L.build_bitcast listt
-              (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t |]))
+              (L.pointer_type (L.struct_type context [| i32_t; i32_t; i32_t; |]))
               "tmp_l_cast" builder
           in
           L.build_load (L.build_struct_gep cast 1 "tmp" builder) "tmp" builder
@@ -542,19 +522,20 @@ let translate (functions, statements) =
             (L.build_gep cast_inner [| idx |] "tmp_idx" builder)
             "tmp_get_load" builder
       | SCall ("add", args) ->
-          let elem_t = 
-            let t, _ = (List.hd (List.tl args))
-            in A.LIST (Some t)
+          let elem_t, _  = (List.hd (List.tl args)) 
           in
-
+          let list_struct_type = L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |] in
+          let list_struct_ptr = L.pointer_type list_struct_type in
           let value = rexpr (List.hd (List.tl args)) in
           let listt = rexpr (List.hd args) in
+          let cast =  L.build_bitcast listt list_struct_ptr "tmp_l_cast" builder in
+          let _ = build_list_add_function elem_t in
           let new_list =
             L.build_call (list_add elem_t)
-              (Array.of_list [ listt; value ])
+              (Array.of_list [ cast; value])
               "_FUNC_VAL" builder
           in
-          L.build_load new_list "TEMP" builder
+          new_list
       | SCall (f, args) ->
           let cast_complex (t, sx) =
             let v = rexpr (t, sx) in
