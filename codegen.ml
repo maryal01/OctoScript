@@ -775,9 +775,13 @@ let translate (functions, statements) =
             L.build_bitcast listt list_struct_ptr "tmp_l_cast1" builder
           in
           let inner_list = L.build_struct_gep cast 3 "tmp_data" builder in
-          let cast_inner = L.build_bitcast inner_list (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_data_cast" builder in
+          let cast_inner =
+            L.build_bitcast inner_list
+              (L.pointer_type (ltype_of_typ elem_t))
+              "tmp_l_data_cast" builder
+          in
           let box = L.build_gep cast_inner [| index |] "tmp_set_idx" builder in
-          let _  = L.build_store value box builder  in
+          let _ = L.build_store value box builder in
           cast
       | SCall (f, args) ->
           let cast_complex (t, sx) =

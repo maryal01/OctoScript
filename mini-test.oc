@@ -1,15 +1,35 @@
-list<int> l = [1,2,3];
-list<int> l2 = [1,2,3,4];
-print("The index 2 has %d\n", l.get(2));
-list<int> new_list = l.replace(2, 31);
-print("The index 2 has %d\n", new_list.get(2));
-/*list<int> l1 = [202,306,407];
-list<int> l2 = [121,22,33,44,55];
-list<int> l3 = l1.concat(l2);
+/*list<int> garr = [1, 2, 3, 4, 5, 6, 7];
+fn test_function (list<int> arr) -> list<int> {
+    list<int> arr1 = arr.replace(2, 31);
+    list<int> arr2 = arr1.replace(3, 41);
+    return arr2;
+}
+
+list<int> rvalue = test_function(garr);
+
 int i = 0;
-int length = l3.length();
+int length = garr.length();
 while(i < length){
-    print("The element at index %d is %d\n", i, l3.get(i));
+    print("%d,", garr.get(i));
+    i = i + 1;
+}*/
+
+/*
+list<int> garr  = [1, 2, 3, 4, 5, 6, 7];
+garr.add(31);
+garr.replace(3, 41);
+int i = 0;
+int length = garr.length();
+while(i < length){
+    print("%d,", garr.get(i));
     i = i + 1;
 }
-print("The length of list is%d\n", length);*/
+*/
+
+list <int> zero = zeros(10);
+int i = 0;
+int length = garr.length();
+while(i < length){
+    print("%d,", garr.get(i));
+    i = i + 1;
+}

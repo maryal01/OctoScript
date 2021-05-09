@@ -18,8 +18,9 @@ let builtins =
       ("length", Static A.INT, [Static (A.LIST None)]);
       ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
       ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
-      ("concat", Static (A.LIST None), [Static (A.LIST None); Static (A.LIST None)] );
-      ("replace", Static (A.LIST None), [Static (A.LIST None); Static A.INT; ListElem 0])
+      ("concat", ListWithElem 1, [Static (A.LIST None); Static (A.LIST None)] );
+      ("replace", ListWithElem 1, [Static (A.LIST None); Static A.INT; ListElem 0]);
+      
       ]
 
 
@@ -30,7 +31,6 @@ type predef_func = string * string * A.typ * params
 let predefs = 
    [
       ("print", "printf", A.INT, (Var [A.STRING]));
-      
       ("test", "test", A.NONE, (Fixed [A.LAMBDA ([], A.INT)]));
       (* ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None])); *)
       
@@ -51,7 +51,6 @@ let predefs =
       
       ("append", "append", A.LIST None, (Var [A.LIST None]));
       ("insert", "insert", A.LIST None, (Var [A.LIST None]));
-      (* ("concat", "concatLists", A.LIST None, (Fixed [A.LIST None; A.LIST None])); *)
       ("set", "set", A.LIST None, (Var [A.LIST None; A.INT]));
       ("countRows", "countRows", A.INT, (Fixed [A.TABLE None]));
       ("countCols", "countCols", A.INT, (Fixed [A.TABLE None]));
