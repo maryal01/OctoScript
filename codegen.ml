@@ -274,12 +274,14 @@ let translate (functions, statements) =
           (L.build_load
              (L.build_struct_gep listt1 0 "tmp" list_concat_function_builder)
              "tmp_0_load" list_concat_function_builder)
-          (L.build_struct_gep new_casted_struct 0 "tmp" list_concat_function_builder)
+          (L.build_struct_gep new_casted_struct 0 "tmp"
+             list_concat_function_builder)
           list_concat_function_builder
       in
       let _ =
         L.build_store new_length
-          (L.build_struct_gep new_casted_struct 1 "tmp" list_concat_function_builder)
+          (L.build_struct_gep new_casted_struct 1 "tmp"
+             list_concat_function_builder)
           list_concat_function_builder
       in
       let _ =
@@ -287,7 +289,8 @@ let translate (functions, statements) =
           (L.build_load
              (L.build_struct_gep listt1 2 "tmp" list_concat_function_builder)
              "tmp_0_store" list_concat_function_builder)
-          (L.build_struct_gep new_casted_struct 2 "tmp" list_concat_function_builder)
+          (L.build_struct_gep new_casted_struct 2 "tmp"
+             list_concat_function_builder)
           list_concat_function_builder
       in
       (* building loop1 *)
@@ -755,6 +758,27 @@ let translate (functions, statements) =
               "_FUNC_VAL" builder
           in
           new_list
+      | SCall ("replace", args) ->
+          let elem_t =
+            match List.hd args with
+            | A.LIST (Some t), _ -> t
+            | _ -> raise (Failure "List builtin add called on type not a list")
+          in
+          let list_struct_type =
+            L.struct_type context [| i32_t; i32_t; i32_t; ltype_of_typ elem_t |]
+          in
+          let list_struct_ptr = L.pointer_type list_struct_type in
+          let index = rexpr (List.hd (List.tl args)) in
+          let value = rexpr (List.hd (List.tl (List.tl args))) in
+          let listt = rexpr (List.hd args) in
+          let cast =
+            L.build_bitcast listt list_struct_ptr "tmp_l_cast1" builder
+          in
+          let inner_list = L.build_struct_gep cast 3 "tmp_data" builder in
+          let cast_inner = L.build_bitcast inner_list (L.pointer_type (ltype_of_typ elem_t)) "tmp_l_data_cast" builder in
+          let box = L.build_gep cast_inner [| index |] "tmp_set_idx" builder in
+          let _  = L.build_store value box builder  in
+          cast
       | SCall (f, args) ->
           let cast_complex (t, sx) =
             let v = rexpr (t, sx) in

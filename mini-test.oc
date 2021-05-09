@@ -1,4 +1,9 @@
-list<int> l1 = [202,306,407];
+list<int> l = [1,2,3];
+list<int> l2 = [1,2,3,4];
+print("The index 2 has %d\n", l.get(2));
+list<int> new_list = l.replace(2, 31);
+print("The index 2 has %d\n", new_list.get(2));
+/*list<int> l1 = [202,306,407];
 list<int> l2 = [121,22,33,44,55];
 list<int> l3 = l1.concat(l2);
 int i = 0;
@@ -7,4 +12,4 @@ while(i < length){
     print("The element at index %d is %d\n", i, l3.get(i));
     i = i + 1;
 }
-print("The length of list is%d\n", length);
+print("The length of list is%d\n", length);*/
