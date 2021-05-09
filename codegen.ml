@@ -281,17 +281,13 @@ let translate (functions, statements) =
       let merge_bb = L.append_block context "merge" list_add_function in
       let pred_bb = L.append_block context "while_cond" list_add_function in
       let body_bb = L.append_block context "while_body" list_add_function in
-      let end_bb = L.append_block context "end_add" list_add_function in
+      
 
       let while_builder = L.builder_at_end context body_bb in
       let merge_builder = L.builder_at_end context merge_bb in
       let pred_builder = L.builder_at_end context pred_bb in
-
-      let () = add_terminal merge_builder (L.build_br end_bb) in
-      let () = add_terminal while_builder (L.build_br pred_bb) in
-
-      let _ = L.build_br pred_bb builder in
-      let _ = L.build_br end_bb merge_builder in
+      let _ = L.build_br pred_bb list_add_function_builder in
+      
 
       (* body basic block *)
       let iter_val = L.build_load iterator "tmp_iter" while_builder in
@@ -350,6 +346,8 @@ let translate (functions, statements) =
           merge_builder
         (* end merge basic block *)
       in
+      let end_bb = L.append_block context "end_add" list_add_function in
+      let _ = L.build_br end_bb merge_builder in
       let t = L.build_ret new_casted_struct in
       let () = add_terminal (L.builder_at_end context end_bb) t in
       list_add_function
