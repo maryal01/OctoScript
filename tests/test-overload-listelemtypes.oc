@@ -1,4 +1,4 @@
-fn overload max (list<int> li) -> int {
+fn overload max_f (list<int> li) -> int {
     int max = li.list_get(0);
     int i = 1;
     while (i < li.list_length()) {
@@ -11,7 +11,7 @@ fn overload max (list<int> li) -> int {
     return max;
 }
 
-fn overload max (list<float> lf) -> float {
+fn overload max_f (list<float> lf) -> float {
     float max = lf.list_get(0);
     int i = 1;
     while (i < lf.list_length()) {
@@ -27,5 +27,5 @@ fn overload max (list<float> lf) -> float {
 list<int> ilist = [13, 79, 94, 20, 39, 82, 23];
 list<float> flist = [83.82, 58.33, 78.19, 4.48, 56.59, 79.70, 18.88];
 
-print("max of int list: %d; max of float list %.2f\n", max(ilist), max(flist));
+print("max of int list: %d; max of float list %.2f\n", max_f(ilist), max_f(flist));
 /* prints: max of int list: 94; max of float list 83.82 */
