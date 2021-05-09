@@ -199,34 +199,29 @@ let check (functions, statements) =
         let lambda_scope = ref variable_table in
         let t1, e1 = check_expr body lambda_scope
         in (LAMBDA (arg_types, t1), SLambda (lambda_name (), binds, (t1, e1)))
-    | ListLit elements as list -> 
+    | ListLit elements -> 
         (match elements with
-        | [] -> (LIST None, SListLit (NONE, elements))
-        | elem :: elems -> (
-            let ex = PrimLit elem in
-            let t1, _ = check_expr ex scope in
-            (* check why e' not needed?*)
-            let all_func elem' =
-              let t', _ = check_expr (PrimLit elem') scope in
-              (* check why e' not needed?*)
-              t1 = t'
-            in
-            if List.for_all all_func elems then (LIST (Some t1), SListLit (t1, elements))
+        | [] -> (LIST None, SListLit (NONE, []))
+        | (e :: es) -> 
+            let first_t, first_sx = check_expr e scope in
+            let sexp_rem = List.map (fun x -> check_expr x scope) es in
+            let prim_fail t = raise (Failure ("Non primitive type " ^ (typ_to_string t) ^ " cannot appear in a list literal")) in
+            let prim_check (t, _) = (match t with LIST _ -> prim_fail t | TUPLE _ -> prim_fail t | TABLE _ -> prim_fail t | _ -> true ) in
+            let _ = List.for_all prim_check ((first_t, first_sx) :: sexp_rem) in
+            if (List.for_all (fun (t, _) -> t = first_t ) sexp_rem) then (LIST (Some first_t), SListLit (first_t, ((first_t, first_sx) :: sexp_rem)))
             else
               raise
                 (Failure
-                   ("illegal List literal " ^ typ_to_string t1 ^ " expected "
-                  ^ " in " ^ expr_to_string list))))
+                   ("Illegal literal list with non-uniform types. First element has type " ^ typ_to_string first_t)))
     | TupleLit elements ->
-        let fold_func elem =
-          let t1, _ = check_expr (PrimLit elem) scope in
-          (* check why e' not needed?*)
-          t1
-        in
-        let typ_list = List.map fold_func elements in
-        (TUPLE (Some typ_list), STupleLit (typ_list, elements))
+        let sexp_list = List.map (fun x -> check_expr x scope) elements in
+        let prim_fail t = raise (Failure ("Non primitive type " ^ (typ_to_string t) ^ " cannot appear in a tuple literal")) in
+        let prim_check (t, _) = (match t with LIST _ -> prim_fail t | TUPLE _ -> prim_fail t | TABLE _ -> prim_fail t | _ -> true ) in
+        let _ = List.for_all prim_check sexp_list in
+        let elem_types, _ = List.split sexp_list in
+        (TUPLE (Some elem_types), STupleLit (elem_types, sexp_list))
     (* | TableLit _ -> (TUPLE, STupleLit ([], []))  *)
-    | TableLit _ -> raise (Failure "table literals not currently implemented") (* TODO: This seems unfinished*)
+    (* | TableLit _ -> raise (Failure "table literals not currently implemented") TODO: This seems unfinished *)
     | Apply (obj, fname, args) -> 
         (* Resolves a rttype to ast typ in the context of the current calling argument types *)
         (* fallback_opt is needed esp when the ListElem'd list is an empty list (none type) *)

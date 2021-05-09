@@ -7,9 +7,9 @@ and sx =
   | SFloatLit of float
   | SStringLit of string
   | SBoolLit of bool
-  | SListLit of typ * prim list
-  | STupleLit of typ list * prim list
-  | STableLit of typ list * prim list list
+  | SListLit of typ * sexpr list
+  | STupleLit of typ list * sexpr list
+  (* | STableLit of typ list * prim list list *)
   | SBinop of sexpr * binaryOp * sexpr
   | SUnop of unaryOp * sexpr
   | SIfExpr of sexpr * sexpr * sexpr
@@ -73,18 +73,18 @@ let rec sexpr_to_string (ty, sx) =
     | SBoolLit b -> string_of_bool b
     | SListLit (ty, pl) ->
         "SListLit: \n Type: " ^ typ_to_string ty ^ "\n List: "
-        ^ plist_to_string pl
+        ^ sexprlist_to_string pl
     | STupleLit (tyl, pl) ->
         "STupleLit: \n Types: " ^ tylist_to_string tyl ^ "\n List: "
-        ^ plist_to_string pl
-    | STableLit (tyl, pll) ->
+        ^ sexprlist_to_string pl
+    (* | STableLit (tyl, pll) ->
         let rec table_to_string ps =
           match ps with
           | [] -> ""
           | [ p ] -> "[" ^ plist_to_string p ^ "]\n"
           | p :: ps -> "[" ^ plist_to_string p ^ "]\n" ^ table_to_string ps
         in
-        "STableLit: \n Types: " ^ tylist_to_string tyl ^ table_to_string pll
+        "STableLit: \n Types: " ^ tylist_to_string tyl ^ table_to_string pll *)
     | SBinop (sx1, binop, sx2) ->
         sexpr_to_string sx1 ^ biop_to_string binop ^ sexpr_to_string sx2
     | SUnop (uop, sx) -> unop_to_string uop ^ sexpr_to_string sx

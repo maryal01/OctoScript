@@ -96,16 +96,10 @@ typ:
   | TYP_TUPLE OP_LT typ_list OP_GT { TUPLE(Some $3)   }
   | TYP_LIST OP_LT typ OP_GT { LIST(Some $3)    }
 
-primitives:
-    ILIT                    { Int($1)      }
-  | FLIT	                  { Float($1)    }
-  | BLIT                    { Boolean($1)  }
-  | SLIT                    { String($1)   }
-
 array:
     /* nothing */ { [] } 
-  |   primitives  { [$1] }
-  |   array COMMA primitives { $3 :: $1 }
+  |   expr  { [$1] }
+  |   array COMMA expr { $3 :: $1 }
  
 
 statement:

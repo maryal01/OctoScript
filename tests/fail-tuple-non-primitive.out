@@ -1,0 +1,1 @@
+Fatal error: exception Failure("Non primitive type tuple<,int,int> cannot appear in a tuple literal")

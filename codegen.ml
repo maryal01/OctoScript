@@ -106,9 +106,11 @@ let translate (functions, statements) =
       | SFloatLit _ -> ls
       | SStringLit _ -> ls
       | SBoolLit _ -> ls
+      (* Although list and tuple literals contain expressions, it is impossible to create a lambda (prim types only) *)
+      (* or create and evoke one (requires assignment, which is a statement) *)
       | SListLit _ -> ls
       | STupleLit _ -> ls
-      | STableLit _ -> ls
+      (* | STableLit _ -> ls *)
       | SBinop (e1, _, e2) ->
           let ls' = ext_sx e1 ls in
           ext_sx e2 ls'
@@ -567,23 +569,23 @@ let translate (functions, statements) =
       | SFloatLit f   -> lval_of_prim (A.Float f)
       | SStringLit s  -> lval_of_prim (A.String s)
       | SBoolLit b    -> lval_of_prim (A.Boolean b)
-      | SListLit (t, ps) -> 
-          let len = L.const_int i32_t (List.length ps) in
+      | SListLit (t, es) -> 
+          let len = L.const_int i32_t (List.length es) in
           let content =
             type_sym (A.LIST None)
-            :: len :: type_sym t :: List.map lval_of_prim ps 
+            :: len :: type_sym t :: List.map rexpr es 
           in
           let value = L.const_packed_struct context (Array.of_list content) in
           mallocate value
-      | STupleLit (ts, ps) ->
-          let len = L.const_int i32_t (List.length ps) in
+      | STupleLit (ts, es) ->
+          let len = L.const_int i32_t (List.length es) in
           let types = List.map type_sym ts in
           let content =
-            type_sym (A.TUPLE None) :: len :: (types @ List.map lval_of_prim ps)
+            type_sym (A.TUPLE None) :: len :: (types @ List.map rexpr es)
           in
           let value = L.const_packed_struct context (Array.of_list content) in
           mallocate value
-      | STableLit (ts, pss) ->
+      (* | STableLit (ts, pss) ->
           let num_rows = L.const_int i32_t (List.length pss) in
           let row_data =
             List.map
@@ -595,7 +597,7 @@ let translate (functions, statements) =
             :: num_rows :: type_sym (A.TUPLE None) :: row_data
           in
           let value = L.const_packed_struct context (Array.of_list content) in
-          mallocate value
+          mallocate value *)
       | SBinop (e1, op, e2) ->
           let t, _ = e1
           and e1' = rexpr e1

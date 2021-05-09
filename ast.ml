@@ -35,9 +35,9 @@ type expr =
   | Binop of expr * binaryOp * expr
   | Unop of unaryOp * expr
   | PrimLit of prim
-  | ListLit of prim list
-  | TupleLit of prim list
-  | TableLit of prim list list
+  | ListLit of expr list
+  | TupleLit of expr list
+  (* | TableLit of expr list list *)
   | IfExpr of expr * expr * expr
   | Lambda of bind list * expr
   | Var of string
@@ -119,12 +119,12 @@ let rec typ_to_string t =
 let bind_to_string (r, s) = typ_to_string r ^ " " ^ s
 
 let rec expr_to_string e =
-  let rec plist_to_string pl =
+  (* let rec plist_to_string pl =
     match pl with
     | [] -> ""
     | [ p ] -> prim_to_string p
     | p :: ps -> prim_to_string p ^ ", " ^ plist_to_string ps
-  in
+  in *)
   let rec elist_to_string el =
     match el with
     | [] -> ""
@@ -136,16 +136,16 @@ let rec expr_to_string e =
       expr_to_string e1 ^ " " ^ biop_to_string bop ^ " " ^ expr_to_string e2
   | Unop (uop, e) -> unop_to_string uop ^ expr_to_string e
   | PrimLit p -> prim_to_string p
-  | ListLit ps -> "[" ^ plist_to_string ps ^ "]"
-  | TupleLit ps -> "(" ^ plist_to_string ps ^ ")"
-  | TableLit ps ->
+  | ListLit ps -> "[" ^ elist_to_string ps ^ "]"
+  | TupleLit ps -> "(" ^ elist_to_string ps ^ ")"
+  (* | TableLit ps ->
       let rec table_to_string ps =
         match ps with
         | [] -> ""
         | p :: [] -> "[" ^ plist_to_string p ^ "]\n"
         | p :: ps -> "[" ^ plist_to_string p ^ "]\n" ^ table_to_string ps
       in
-      table_to_string ps
+      table_to_string ps *)
   | Var s -> s
   | Apply (e, s, es) ->
       expr_to_string e ^ "." ^ s ^ "(" ^ elist_to_string es ^ ")"
