@@ -361,6 +361,8 @@ let check (functions, statements) =
             Prefer to have this out at the last version, or an overhaul to predef *)
         (match et' with 
           LIST None -> (match t with LIST _ -> true | _ -> false) 
+          | TUPLE None -> (match t with TUPLE _ -> true | _ -> false)
+          | TABLE None -> (match t with TABLE _ -> true | _ -> false)
           | _ -> false) in
         let empty_declaration = et' = NONE in
         if (same_type || flex_typing) then
