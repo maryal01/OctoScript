@@ -6,6 +6,7 @@
 TupleType* copyTuple(TupleType* lt);
 TupleType* tupleSet(TupleType* tup, int index, ...);
 
+
 TupleType* tupleSet(TupleType* tup, int index, ...) {
 
     if (index >= tup->len) errorExit("index too large in set");  
@@ -38,5 +39,21 @@ TupleType* copyTuple(TupleType* tup)
 
     
 } 
+
+
+ListType* tuple_get(TupleType* tup, int index) {
+
+    int type = getTypeofTupleIndex(tup, index);
+    void* val = getTupleElement(tup, index);
+    size_t s = getListSize(type, 1);
+    ListType* lt = (ListType*)malloc(s);
+    lt->self_type = LIST_TYPE;
+    lt->len = 1;
+    lt->type = type;
+    void*data = getListElement(lt, 0);
+    setValue(data, val, type);
+    print_list(lt);
+    return lt;
+}
 
 #endif

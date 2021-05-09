@@ -62,13 +62,6 @@ int countCols(ListType* table)
     return (*t)->len;
 }
 
-// TupleType* size(ListType* table)
-// {
-//     int row = countRows(table);
-//     int col = countCols(table);
-    
-// }
-
 bool empty(ListType* table){
     return countRows(table) == 0;
 }

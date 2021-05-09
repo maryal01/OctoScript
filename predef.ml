@@ -19,8 +19,8 @@ let builtins =
       ("list_add", Relative 0, [Static (A.LIST None); ListElem 0]);
 
       ("tuple_length", Static A.INT, [Static (A.TUPLE None)]);
-      ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
-      
+      (* ("tuple_get", TupleElem (0, 0), [Static (A.TUPLE None); Static A.INT]);
+       *)
       ("table_get", TableElem (0, 0), [Static (A.TABLE None); Static A.INT; Static A.INT]);
       ("table_size", Static A.INT, [Static (A.LIST None)]);
       ("table_get_row", Static (A.TUPLE None), [Static (A.TABLE None); Static A.INT]);
@@ -45,8 +45,13 @@ let predefs =
       ("read", "read", A.TABLE None, (Fixed [A.STRING; A.LIST (Some A.STRING); A.STRING]));
       ("write", "write", A.NONE, (Fixed [A.TABLE None; A.STRING; A.STRING]));
       
+
+      (* to string functions *)
       ("string_of_list", "string_of_list", A.STRING, (Fixed [A.LIST None]));
       ("string_of_tuple", "string_of_tuple", A.STRING, (Fixed [A.TUPLE None]));
+      ("intToString", "intToString", A.STRING, (Fixed [A.INT]));
+      ("floatToString", "floatToString", A.STRING, (Fixed [A.FLOAT]));
+      ("boolToString", "boolToString", A.STRING, (Fixed [A.BOOLEAN]));
 
       (* Standard C String library functions *)
       ("toLower", "toLower", A.STRING, (Fixed [A.STRING]));
@@ -67,6 +72,8 @@ let predefs =
       ("printTuple", "printTuple", A.NONE, (Fixed [A.TUPLE None]));
       ("print_list", "print_list", A.NONE, (Fixed [A.LIST None]));
   
+      ("tuple_get", "tuple_get", A.LIST None, (Fixed [A.TUPLE None; A.INT]));
+
    ]
 
 
