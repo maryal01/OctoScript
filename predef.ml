@@ -20,7 +20,6 @@ let builtins =
       ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]);
       ("concat", ListWithElem 1, [Static (A.LIST None); Static (A.LIST None)] );
       ("replace", ListWithElem 1, [Static (A.LIST None); Static A.INT; ListElem 0]);
-      
       ]
 
 
