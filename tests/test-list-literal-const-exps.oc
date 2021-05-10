@@ -1,0 +1,10 @@
+list<int> li = [1, 2, -3, 1 * 3, 5 * 1, 8 / 9, 2 % 1];
+list<float> lf = [-1.4, 3.6*72.624, 9.8 / 2.8, 852.95 + 95.82];
+list<bool> lb = [true, false, true & false, false | true];
+
+tuple<int, int, int, bool, bool, float> t = (1, -62, 27*543, false & true, !false, 48.2 * -38.8);
+
+print(string_of_list(li));
+print(string_of_list(lf));
+print(string_of_list(lb));
+print(string_of_tuple(t));

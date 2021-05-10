@@ -140,6 +140,21 @@ let check (functions, statements) =
     fun () -> "__lambda_" ^ string_of_int (next_id ()) ^ "__"
   in
   let rec check_expr expression scope =
+    (* Returns true if the expression is a constant expression (value known at compile time) *)
+    let rec check_const exp = 
+      (match exp with 
+      | Binop (e1, _, e2) -> (check_const e1) && (check_const e2)
+      | Unop (_, e) -> check_const e
+      | PrimLit _ -> true
+      | ListLit _ -> false
+      | TupleLit _ -> false
+      | IfExpr (e1, e2, e3) -> (check_const e1) && (check_const e2) && (check_const e3)
+      | Lambda _ -> true
+      | Var _ -> false
+      | Apply _ -> false
+      | Call _ -> false
+      | Noexpr -> false)
+    in
     match expression with
     | PrimLit l -> (
         match l with
@@ -205,9 +220,7 @@ let check (functions, statements) =
         | (e :: es) -> 
             let first_t, first_sx = check_expr e scope in
             let sexp_rem = List.map (fun x -> check_expr x scope) es in
-            let prim_fail t = raise (Failure ("Non primitive type " ^ (typ_to_string t) ^ " cannot appear in a list literal")) in
-            let prim_check (t, _) = (match t with LIST _ -> prim_fail t | TUPLE _ -> prim_fail t | TABLE _ -> prim_fail t | _ -> true ) in
-            let _ = List.for_all prim_check ((first_t, first_sx) :: sexp_rem) in
+            let _ = if (List.for_all check_const elements) then () else raise (Failure "Non-constant expression or nested complex type literal found in a list literal") in
             if (List.for_all (fun (t, _) -> t = first_t ) sexp_rem) then (LIST (Some first_t), SListLit (first_t, ((first_t, first_sx) :: sexp_rem)))
             else
               raise
@@ -215,9 +228,7 @@ let check (functions, statements) =
                    ("Illegal literal list with non-uniform types. First element has type " ^ typ_to_string first_t)))
     | TupleLit elements ->
         let sexp_list = List.map (fun x -> check_expr x scope) elements in
-        let prim_fail t = raise (Failure ("Non primitive type " ^ (typ_to_string t) ^ " cannot appear in a tuple literal")) in
-        let prim_check (t, _) = (match t with LIST _ -> prim_fail t | TUPLE _ -> prim_fail t | TABLE _ -> prim_fail t | _ -> true ) in
-        let _ = List.for_all prim_check sexp_list in
+        let _ = if (List.for_all check_const elements) then () else raise (Failure "Non-constant expression or nested complex type literal found in a tuple literal") in
         let elem_types, _ = List.split sexp_list in
         (TUPLE (Some elem_types), STupleLit (elem_types, sexp_list))
     (* | TableLit _ -> (TUPLE, STupleLit ([], []))  *)

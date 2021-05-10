@@ -60,8 +60,8 @@ let predefs =
       (* Standard C String library functions *)
       ("toLower", "toLower", A.STRING, (Fixed [A.STRING]));
       ("toUpper", "toUpper", A.STRING, (Fixed [A.STRING]));
-      ("concat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
-      ("substring", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
+      ("strcat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
+      ("substr", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
       ("strlen", "length", A.INT, (Fixed [A.STRING]));
       
       ("append", "append", A.LIST None, (Var [A.LIST None]));
