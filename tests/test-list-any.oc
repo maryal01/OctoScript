@@ -1,0 +1,20 @@
+list<int> l1 = [1,2,3,4,5,6];
+list<int> l2 = [1,2,3,4,5];
+lambda<int => bool> f1 = fn (int x) => {x > 5};
+print("%d, %d\n", l1.any(f1), l2.any(f1));
+
+list<float> l3 = [1.1, 2.2, 3.3, 4.4, 5.5, 6.6];
+list<float> l4 = [1.1, 2.2, 3.3, 4.4, 5.5];
+lambda<float => bool> f2 = fn (float x) => {x > 5.8};
+print("%d, %d\n", l3.any(f2), l4.any(f2));
+
+list<bool> l5 = [true, true, false];
+list<bool> l6 = [true, true, true];
+lambda<bool => bool> f3 = fn (bool x) => {!x};
+print("%d, %d\n", l5.any(f3), l6.any(f3));
+
+list<string> l7 = ["a", "bb", "ccc", "dddd", "eeeee"];
+list<string> l8 = ["a", "bb", "ccc", "dddd"];
+lambda<string => bool> f4 = fn (string x) => {strlen(x) > 4};
+print("%d, %d\n", l7.any(f4), l8.any(f4));
+

@@ -1,0 +1,19 @@
+list<int> l1 = [1,2,3,4,5];
+list<int> l2 = [1,2,3,4,5,6];
+lambda<int => bool> f1 = fn (int x) => {x <6};
+print("%d, %d\n", l1.all(f1), l2.all(f1));
+
+list<float> l3 = [1.1, 2.2, 3.3, 4.4, 5.5];
+list<float> l4 = [1.1, 2.2, 3.3, 4.4, 5.5, 6.6];
+lambda<float => bool> f2 = fn (float x) => {x < 5.8};
+print("%d, %d\n", l3.all(f2), l4.all(f2));
+
+list<bool> l5 = [false, false, false];
+list<bool> l6 = [true, false, true];
+lambda<bool => bool> f3 = fn (bool x) => {!x};
+print("%d, %d\n", l5.all(f3), l6.all(f3));
+
+list<string> l7 = ["a", "bb", "ccc", "dddd"];
+list<string> l8 = ["a", "bb", "ccc", "dddd", "eeeee"];
+lambda<string => bool> f4 = fn (string x) => {strlen(x) < 5};
+print("%d, %d\n", l7.all(f4), l8.all(f4));
