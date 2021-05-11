@@ -1,0 +1,15 @@
+list<int> l1 = [1, 2, 3, 4, 5, 6];
+list<int> l2 = l1.filter(fn (int x) => {x % 2 == 0});
+print(string_of_list(l2));
+
+list<float> l3 = [1.1, 2.2, 3.3, 4.4, 5.5, 6.6];
+list<float> l4 = l3.filter(fn (float x) => {x + 2.5 < 5.0});
+print(string_of_list(l4));
+
+list<bool> l5 = [true, false, true, false, false];
+list<bool> l6 = l5.filter(fn (bool x) => {!x});
+print(string_of_list(l6));
+
+list<string> l7 = ["a", "bb", "ccc", "dddd", "eeeee"];
+list<string> l8 = l7.filter(fn (string x) => {strlen(x) > 3});
+print(string_of_list(l8));

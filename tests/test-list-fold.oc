@@ -1,0 +1,13 @@
+list<int> nums = [10, 11, 12, 13, 14, 15];
+
+lambda<int, int => int> add = fn (int acc, int elem) => {acc + elem};
+int sum = fold_left(add, 0, nums);
+
+lambda<int, int => int> add_even = fn (int acc, int elem) => {if (elem % 2 == 0) ? elem + acc : acc};
+int sum_even = fold_left(add_even, 0, nums);
+
+print("list sum: %d, even sum: %d\n", sum, sum_even);
+
+list<string> words = ["one", "two", "three", "four", "five"];
+int total_chars = fold_left(fn(int acc, string word) => {acc + strlen(word)}, 0, words);
+print("total characters: %d", total_chars);

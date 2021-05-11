@@ -1,0 +1,16 @@
+list<int> l1 = [1, 2, 3, 4, 5];
+list<bool> l2 = l1.map(fn (int x) => {x % 2 == 0});
+print(string_of_list(l2));
+
+list<float> l3 = [1.1, 2.2, 3.3, 4.4, 5.5];
+list<string> l4 = l3.map(fn (float x) => {if (x > 3.) ? "yes" : "no"});
+print(string_of_list(l4));
+
+list<bool> l5 = [true, true, false, true, false];
+list<float> l6 = l5.map(fn (bool x) => {if (x) ? 1. : 2.});
+print(string_of_list(l6));
+
+list<string> l7 = ["aaa", "bb", "ccccc", "dddd", "ee"];
+list<int> l8 = l7.map(fn (string x) => {strlen(x)});
+print(string_of_list(l8));
+
