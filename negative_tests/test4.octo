@@ -1,6 +1,0 @@
-higher_function(a,b,c) -> int {
-    lower_function(a,b,c) -> int { 
-        return a + b + c ;
-    }
-    return 3;
-}
