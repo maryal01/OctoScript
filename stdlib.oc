@@ -8,9 +8,149 @@ fn overload fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
     return res;
 }
 
+fn overload fold_left(lambda<int, float => int> f, int acc, list<float> li) -> int {
+    int i = 0;
+    int res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<int, bool => int> f, int acc, list<bool> li) -> int {
+    int i = 0;
+    int res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<int, string => int> f, int acc, list<string> li) -> int {
+    int i = 0;
+    int res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<float, int => float> f, float acc, list<int> li) -> float {
+    int i = 0;
+    float res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
 fn overload fold_left(lambda<float, float => float> f, float acc, list<float> li) -> float {
     int i = 0;
     float res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<float, bool => float> f, float acc, list<bool> li) -> float {
+    int i = 0;
+    float res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<float, string => float> f, float acc, list<string> li) -> float {
+    int i = 0;
+    float res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<bool, int => bool> f, bool acc, list<int> li) -> bool {
+    int i = 0;
+    bool res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<bool, float => bool> f, bool acc, list<float> li) -> bool {
+    int i = 0;
+    bool res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<bool, bool => bool> f, bool acc, list<bool> li) -> bool {
+    int i = 0;
+    bool res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<bool, string => bool> f, bool acc, list<string> li) -> bool {
+    int i = 0;
+    bool res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<string, int => string> f, string acc, list<int> li) -> string {
+    int i = 0;
+    string res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<string, float => string> f, string acc, list<float> li) -> string {
+    int i = 0;
+    string res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<string, bool => string> f, string acc, list<bool> li) -> string {
+    int i = 0;
+    string res = acc;
+    while(i < li.length()){
+        res = f(res, li.get(i));
+        i = i + 1;
+    }
+    return res;
+}
+
+fn overload fold_left(lambda<string, string => string> f, string acc, list<string> li) -> string {
+    int i = 0;
+    string res = acc;
     while(i < li.length()){
         res = f(res, li.get(i));
         i = i + 1;
@@ -54,6 +194,124 @@ fn overload contains(list<float> l, float f) -> bool {
     return false;
 }
 
+fn overload distinct(list<int> l) -> list<int> {
+    list<int> new_list = [];
+    if (l.length() == 0) return new_list;
+    new_list = new_list.add(l.get(0));
+    int i = 1;
+    while (i < l.length()) {
+        int val = l.get(i);
+        if (!new_list.contains(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload distinct(list<float> l) -> list<float> {
+    list<float> new_list = [];
+    if (l.length() == 0) return new_list;
+    new_list = new_list.add(l.get(0));
+    int i = 1;
+    while (i < l.length()) {
+        float val = l.get(i);
+        if (!new_list.contains(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload distinct(list<bool> l) -> list<bool> {
+    list<bool> new_list = [];
+    if (l.length() == 0) return new_list;
+    new_list = new_list.add(l.get(0));
+    int i = 1;
+    while (i < l.length()) {
+        bool val = l.get(i);
+        if (!new_list.contains(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
+/*
+fn overload distinct(list<string> l) -> list<string> {
+    list<string> new_list = [];
+    if (l.length() == 0) return new_list;
+    new_list = new_list.add(l.get(0));
+    int i = 1;
+    while (i < l.length()) {
+        string val = l.get(i);
+        if (!new_list.contains(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+*/
+
+fn overload filter(list<int> l, lambda<int => bool> f) -> list<int> {
+    list<int> new_list = [];
+    if (l.length() == 0) return new_list;
+    int i = 0;
+    while (i < l.length()) {
+        int val = l.get(i);
+        if (f(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload filter(list<float> l, lambda<float => bool> f) -> list<float> {
+    list<float> new_list = [];
+    if (l.length() == 0) return new_list;
+    int i = 0;
+    while (i < l.length()) {
+        float val = l.get(i);
+        if (f(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload filter(list<bool> l, lambda<bool => bool> f) -> list<bool> {
+    list<bool> new_list = [];
+    if (l.length() == 0) return new_list;
+    int i = 0;
+    while (i < l.length()) {
+        bool val = l.get(i);
+        if (f(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload filter(list<string> l, lambda<string => bool> f) -> list<string> {
+    list<string> new_list = [];
+    if (l.length() == 0) return new_list;
+    int i = 0;
+    while (i < l.length()) {
+        string val = l.get(i);
+        if (f(val)) {
+            new_list = new_list.add(val);
+        }
+        i = i + 1;
+    }
+    return new_list;
+}
+
 fn overload any(list<int> l, lambda<int => bool> f) -> bool {
     int i = 0;
     while(i < l.length()) {
@@ -64,7 +322,6 @@ fn overload any(list<int> l, lambda<int => bool> f) -> bool {
     }
     return false;
 }
-
 
 fn overload any(list<float> l, lambda<float => bool> f) -> bool {
     int i = 0;
@@ -279,3 +536,164 @@ fn overload sort(list<int> arr, lambda<int, int => bool> cmp ) -> none{
 fn overload sort(list<string> i, lambda<string, string => bool> p){
     
 }*/
+
+
+fn overload map(list<int> l, lambda<int => int> f) -> list<int> {
+    list<int> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<int> l, lambda<int => float> f) -> list<float> {
+    list<float> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<int> l, lambda<int => bool> f) -> list<bool> {
+    list<bool> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<int> l, lambda<int => string> f) -> list<string> {
+    list<string> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<float> l, lambda<float => int> f) -> list<int> {
+    list<int> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<float> l, lambda<float => float> f) -> list<float> {
+    list<float> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<float> l, lambda<float => bool> f) -> list<bool> {
+    list<bool> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<float> l, lambda<float => string> f) -> list<string> {
+    list<string> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<bool> l, lambda<bool => int> f) -> list<int> {
+    list<int> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<bool> l, lambda<bool => float> f) -> list<float> {
+    list<float> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<bool> l, lambda<bool => bool> f) -> list<bool> {
+    list<bool> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<bool> l, lambda<bool => string> f) -> list<string> {
+    list<string> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<string> l, lambda<string => int> f) -> list<int> {
+    list<int> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<string> l, lambda<string => float> f) -> list<float> {
+    list<float> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<string> l, lambda<string => bool> f) -> list<bool> {
+    list<bool> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
+
+fn overload map(list<string> l, lambda<string => string> f) -> list<string> {
+    list<string> new_list = [];
+    int i = 0;
+    while (i < l.length()) {
+        new_list = new_list.add(f(l.get(i)));
+        i = i + 1;
+    }
+    return new_list;
+}
