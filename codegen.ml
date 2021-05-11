@@ -406,7 +406,7 @@ let translate (functions, statements) =
         L.define_function
           ("_LIST_ADD_" ^ A.typ_to_string ty)
           (L.function_type list_struct_ptr
-             (Array.of_list [ list_struct_ptr; ltype_of_typ ty ]))
+             (Array.of_list [ list_struct_ptr; ltype_of_typ ty; ltype_of_typ A.INT ]))
           the_module
       in
       let list_add_function_builder =
@@ -414,6 +414,7 @@ let translate (functions, statements) =
       in
       let listt = L.param list_add_function 0 in
       let value = L.param list_add_function 1 in
+      let elem_id = L.param list_add_function 2 in
       let data =
         L.build_struct_gep listt 3 "tmp_data" list_add_function_builder
       in
@@ -522,9 +523,7 @@ let translate (functions, statements) =
       in
       let _ =
         L.build_store
-          (L.build_load
-             (L.build_struct_gep listt 2 "tmp" merge_builder)
-             "tmp_0_store" merge_builder)
+          elem_id
           (L.build_struct_gep new_casted_struct 2 "tmp" merge_builder)
           merge_builder
         (* end merge basic block *)
@@ -569,7 +568,7 @@ let translate (functions, statements) =
       and mallocate llval = 
           let v = L.build_malloc (L.type_of llval) "alc_tmp" builder in
           let _ = L.build_store llval v builder
-          in v
+          in (L.build_bitcast v (L.pointer_type i8_t) "mallocate_cast" builder)
       in match e with 
         SIntLit i     -> lval_of_prim (A.Int i)
       | SFloatLit f   -> lval_of_prim (A.Float f)
@@ -761,10 +760,10 @@ let translate (functions, statements) =
           let _ = build_list_add_function elem_t in
           let new_list =
             L.build_call (list_add elem_t)
-              (Array.of_list [ cast; value ])
+              (Array.of_list [ cast; value; type_sym elem_t ])
               "_FUNC_VAL" builder
-          in
-          new_list
+          in 
+          L.build_bitcast new_list (ltype_of_typ (A.LIST (Some elem_t))) "tmp_add_cast" builder
       | SCall ("concat", args) ->
           let elem_t =
             match List.hd args with
