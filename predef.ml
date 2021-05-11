@@ -63,6 +63,7 @@ let predefs =
       ("strcat", "concat",   A.STRING, (Fixed [A.STRING; A.STRING]));
       ("substr", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
       ("strlen", "length", A.INT, (Fixed [A.STRING]));
+      ("stringEquals", "stringEquals", A.BOOLEAN, (Fixed [A.STRING; A.STRING]));
       
       ("append", "append", A.LIST None, (Var [A.LIST None]));
       ("insert", "insert", A.LIST None, (Var [A.LIST None]));

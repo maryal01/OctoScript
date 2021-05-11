@@ -1,7 +1,7 @@
 fn overload fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
     int i = 0;
     int res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -11,7 +11,7 @@ fn overload fold_left(lambda<int, int => int> f, int acc, list<int> li) -> int {
 fn overload fold_left(lambda<int, float => int> f, int acc, list<float> li) -> int {
     int i = 0;
     int res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -21,7 +21,7 @@ fn overload fold_left(lambda<int, float => int> f, int acc, list<float> li) -> i
 fn overload fold_left(lambda<int, bool => int> f, int acc, list<bool> li) -> int {
     int i = 0;
     int res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -31,7 +31,7 @@ fn overload fold_left(lambda<int, bool => int> f, int acc, list<bool> li) -> int
 fn overload fold_left(lambda<int, string => int> f, int acc, list<string> li) -> int {
     int i = 0;
     int res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -41,7 +41,7 @@ fn overload fold_left(lambda<int, string => int> f, int acc, list<string> li) ->
 fn overload fold_left(lambda<float, int => float> f, float acc, list<int> li) -> float {
     int i = 0;
     float res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -51,7 +51,7 @@ fn overload fold_left(lambda<float, int => float> f, float acc, list<int> li) ->
 fn overload fold_left(lambda<float, float => float> f, float acc, list<float> li) -> float {
     int i = 0;
     float res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -61,7 +61,7 @@ fn overload fold_left(lambda<float, float => float> f, float acc, list<float> li
 fn overload fold_left(lambda<float, bool => float> f, float acc, list<bool> li) -> float {
     int i = 0;
     float res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -71,7 +71,7 @@ fn overload fold_left(lambda<float, bool => float> f, float acc, list<bool> li) 
 fn overload fold_left(lambda<float, string => float> f, float acc, list<string> li) -> float {
     int i = 0;
     float res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -81,7 +81,7 @@ fn overload fold_left(lambda<float, string => float> f, float acc, list<string> 
 fn overload fold_left(lambda<bool, int => bool> f, bool acc, list<int> li) -> bool {
     int i = 0;
     bool res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -91,7 +91,7 @@ fn overload fold_left(lambda<bool, int => bool> f, bool acc, list<int> li) -> bo
 fn overload fold_left(lambda<bool, float => bool> f, bool acc, list<float> li) -> bool {
     int i = 0;
     bool res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -101,7 +101,7 @@ fn overload fold_left(lambda<bool, float => bool> f, bool acc, list<float> li) -
 fn overload fold_left(lambda<bool, bool => bool> f, bool acc, list<bool> li) -> bool {
     int i = 0;
     bool res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -111,7 +111,7 @@ fn overload fold_left(lambda<bool, bool => bool> f, bool acc, list<bool> li) -> 
 fn overload fold_left(lambda<bool, string => bool> f, bool acc, list<string> li) -> bool {
     int i = 0;
     bool res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -121,7 +121,7 @@ fn overload fold_left(lambda<bool, string => bool> f, bool acc, list<string> li)
 fn overload fold_left(lambda<string, int => string> f, string acc, list<int> li) -> string {
     int i = 0;
     string res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -131,7 +131,7 @@ fn overload fold_left(lambda<string, int => string> f, string acc, list<int> li)
 fn overload fold_left(lambda<string, float => string> f, string acc, list<float> li) -> string {
     int i = 0;
     string res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -141,7 +141,7 @@ fn overload fold_left(lambda<string, float => string> f, string acc, list<float>
 fn overload fold_left(lambda<string, bool => string> f, string acc, list<bool> li) -> string {
     int i = 0;
     string res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -151,7 +151,7 @@ fn overload fold_left(lambda<string, bool => string> f, string acc, list<bool> l
 fn overload fold_left(lambda<string, string => string> f, string acc, list<string> li) -> string {
     int i = 0;
     string res = acc;
-    while(i < li.length()){
+    while(i < li.length()) {
         res = f(res, li.get(i));
         i = i + 1;
     }
@@ -162,7 +162,7 @@ fn overload contains(list<int> l, int i) -> bool {
     int n = 0;
     if (l.length() == 0) return false;
     while (n < l.length()) {
-        if (i == l.get(n)){
+        if (i == l.get(n)) {
            return true; 
         }
         n = n + 1;
@@ -174,7 +174,7 @@ fn overload contains(list<bool> l, bool b) -> bool {
     int n = 0;
     if (l.length() == 0) return false;
     while (n < l.length()) {
-        if (b == l.get(n)){
+        if (b == l.get(n)) {
            return true; 
         }
         n = n + 1;
@@ -186,7 +186,19 @@ fn overload contains(list<float> l, float f) -> bool {
     int n = 0;
     if (l.length() == 0) return false;
     while (n < l.length()) {
-        if (f == l.get(n)){
+        if (f == l.get(n)) {
+           return true; 
+        }
+        n = n + 1;
+    }
+    return false;
+}
+
+fn overload contains(list<string> l, string s) -> bool {
+    int n = 0;
+    if (l.length() == 0) return false;
+    while (n < l.length()) {
+        if (s.stringEquals(l.get(n))) {
            return true; 
         }
         n = n + 1;
@@ -239,7 +251,6 @@ fn overload distinct(list<bool> l) -> list<bool> {
     return new_list;
 }
 
-/*
 fn overload distinct(list<string> l) -> list<string> {
     list<string> new_list = [];
     if (l.length() == 0) return new_list;
@@ -254,7 +265,6 @@ fn overload distinct(list<string> l) -> list<string> {
     }
     return new_list;
 }
-*/
 
 fn overload filter(list<int> l, lambda<int => bool> f) -> list<int> {
     list<int> new_list = [];
