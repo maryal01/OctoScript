@@ -1,3 +1,0 @@
-string s1 = "cat";
-string s2 = "dog";
-print("%d", s1.stringEquals(s2));
