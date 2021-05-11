@@ -1,3 +1,0 @@
-print(string_of_list([1, 2, 3, 4, -5, -6]));
-print(string_of_list([1 + 2, 2 * 4, 3, 4,1 + -5, -6]));
-print(string_of_list([false & true, false | true]));
