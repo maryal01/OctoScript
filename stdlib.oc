@@ -470,7 +470,7 @@ fn overload min (list<float> lf) -> float {
     return min;
 }
 
-fn partition( list<int> arr, int l, int h, lambda<int, int => bool> cmp ) -> int {
+fn integer_partition( list<int> arr, int l, int h, lambda<int, int => bool> cmp ) -> int {
     int i =  l - 1;
     int x = arr.get(h);
     int j = l;
@@ -520,7 +520,7 @@ fn overload sort(list<int> arr, lambda<int, int => bool> cmp ) -> none{
         top = top - 1;
 
         /* Set pivot element at its correct position in sorted array */
-        int p = partition( arr, l, h, cmp );
+        int p = integer_partition( arr, l, h, cmp );
 
         int new_val = p - 1;
         /* If there are elements on left side of pivot, then push left side to stack */
@@ -542,10 +542,80 @@ fn overload sort(list<int> arr, lambda<int, int => bool> cmp ) -> none{
     }
 }
 
-/*
-fn overload sort(list<string> i, lambda<string, string => bool> p){
+fn string_partition( list<string> arr, int l, int h, lambda<string, string => bool> cmp ) -> int {
+    int i =  l - 1;
+    string x = arr.get(h);
+    int j = l;
+    while ( j < h ){
+        string temp = arr.get(j);
+        if (cmp(temp, x)) {
+            i = i + 1;
+            string arr_i = arr.get(i);
+            string arr_j = arr.get(j);
+            arr.replace(j, arr_i);
+            arr.replace(i, arr_j);
+        }
+        j = j + 1;
+    }
+    int idx = i + 1;
+    string arr_i1 = arr.get(idx);
     
-}*/
+    string arr_h = arr.get(h);
+    arr.replace(idx, arr_h);
+    arr.replace(h, arr_i1);
+
+    return idx;
+}
+
+
+fn overload sort(list<string> arr, lambda<string, string => bool> cmp ) -> none{
+    list<int> stack = [0, 0, 0, 0, 0, 0, 0, 0];
+
+    int n = arr.length();
+    int l = 0;
+    int h = n - 1;
+
+    /* initialize top of stack */
+    int top = -1;
+
+    /* push initial values of l and h to stack */
+    top = top + 1;
+    stack.replace(top, l);
+    top = top + 1;
+    stack.replace(top, h);
+
+    /* Keep popping from stack while is not empty */
+    while (top >= 0){
+        /* Pop h and l */
+        h = stack.get(top);
+        top = top - 1;
+        l = stack.get(top);
+        top = top - 1;
+
+        /* Set pivot element at its correct position in sorted array */
+        int p = string_partition( arr, l, h, cmp );
+
+        int new_val = p - 1;
+        /* If there are elements on left side of pivot, then push left side to stack */
+        if (new_val > l){
+            top = top + 1;
+            stack.replace(top, l);
+            top = top + 1;
+            stack.replace(top, new_val);
+        }
+
+        new_val = p + 1;
+        /* If there are elements on right side of pivot, then push right side to stack */
+        if ( new_val < h ) {
+            top = top + 1;
+            stack.replace(top, new_val);
+            top = top + 1;
+            stack.replace(top, h);
+        }
+    }
+}
+
+
 
 
 fn overload map(list<int> l, lambda<int => int> f) -> list<int> {
