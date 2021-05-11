@@ -11,8 +11,8 @@ Cleaning:
 Running Test Script:
     `./testall.sh`
     
-Validation of the Test :
-   The program compiles and runs appropriately if every test name followed by "OK" is printed to the stdout.
+Validation of Tests:
+   The program compiles and runs appropriately if every test name, followed by "OK," is printed to stdout.
 
 
 Description of tests:
