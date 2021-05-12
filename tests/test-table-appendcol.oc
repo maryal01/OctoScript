@@ -1,0 +1,7 @@
+table<int, string, float> t = read("tests/sampleTable.csv", ["int", "string", "float"], ",");
+
+list<bool> b = (true, true, false);
+
+t.append_col(b);
+
+write("test-table.appendcol.out", t, ",");
