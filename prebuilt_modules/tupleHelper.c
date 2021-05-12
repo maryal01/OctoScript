@@ -33,6 +33,12 @@ int getTypeofTupleIndex(TupleType* tt, int index);
 // sets the type of tuple at index
 void setTypeofTupleIndex(TupleType* tt, int index, int val);
 
+
+void setTupleElement(TupleType* tt, int index, void *val) {
+    setValue(getTupleElement(tt, index), val, getTypeofTupleIndex(tt, index));
+    
+}
+
 void* getTupleElement(TupleType* tt, int index)
 {
     
@@ -52,9 +58,9 @@ void* getTupleElement(TupleType* tt, int index)
         if ((i + 1 != tt->len) && getTypeofTupleIndex(tt, i + 1) == STRING_TYPE) {
             
             //fprintf(stderr, "has padding %d    \n", hasPadding(tt, index));
-            if (hasPadding((int*)(void*)tt->data, tt->len,i + 1)) {
-                data = offsetPointer(data, INT_TYPE);
-            }
+            // if (hasPadding((int*)(void*)tt->data, tt->len,i + 1)) {
+            //     data = offsetPointer(data, INT_TYPE);
+            // }
             
 
 
@@ -96,9 +102,9 @@ size_t getTupleDataSize(int* types, int len)
     for (int i = 0; i < len; i++) {
         total += sizeofType(types[i]);
         if (i != len - 1 && types[i + 1] == STRING_TYPE) {
-            if (hasPadding(types, len, i)) {
-                total += sizeofType(INT_TYPE);
-            }
+            // if (hasPadding(types, len, i)) {
+            //     total += sizeofType(INT_TYPE);
+            // }
         }
     }
     return total;

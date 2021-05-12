@@ -26,28 +26,5 @@
 
 
 
-char* string_of_tuple(TupleType* tup)
-{
-
-    char *list_buf = calloc(BUF_SIZE * tup->len, sizeof(char));
-    strcpy(list_buf, "(");
-
-    for(int i = 0; i < tup->len; i++){
-        
-        char int_buf[BUF_SIZE];
-        void *data = getTupleElement(tup, i);
-        valToString(data, getTypeofTupleIndex(tup, i), int_buf);
-    
-        strcat(list_buf, int_buf);
-        if(i + 1 != tup->len){
-            strcat(list_buf, ", ");
-
-        }
-    }
-    strcat(list_buf, ")");
-    return list_buf;
-
-
-}
 
 #endif

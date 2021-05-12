@@ -129,8 +129,11 @@ ListType* copyList(ListType* lt)
     return newList;
 }
 
+
 ListType* insertToList(ListType* lt, int index, void* val) 
 {
+    if (index < 0 ) errorExit("index smaller than 0");
+    
     int type = lt->type;
     int len = lt->len;
     ListType* new = realloc(lt, getListSize(type, len + 1));
@@ -140,6 +143,22 @@ ListType* insertToList(ListType* lt, int index, void* val)
         setValue(getListElement(new, i + 1), getListElement(new, i), type);
     }
     setValue(getListElement(new, index), val, type);
+    return new;
+}
+
+ListType* removeFromList(ListType* lt, int index) 
+{
+    if (index >= lt->len) errorExit("index too large when removing from list");
+    if (index < 0) errorExit("index cannot be smaller than 0");
+    
+    int type = lt->type;
+    int len = lt->len;
+    ListType* new = lt;
+
+    new->len = len - 1;
+    for (int i = index; i < new->len; i++) {
+        setValue(getListElement(new, i), getListElement(new, i + 1), type);
+    }
     return new;
 }
 
