@@ -3,7 +3,7 @@
 
 
 
-#include "table.h"
+#include "tableHelper.c"
 
 // Reads a csv file and creates a table based on it
 void* read(char* filename, void* typeNames, char* delimeter)
@@ -64,36 +64,6 @@ int countCols(ListType* table)
 
 bool empty(ListType* table){
     return countRows(table) == 0;
-}
-
-TupleType* insertRow(ListType* table, int index, TupleType* tup) {
-    ListType* new = copyList(table);
-    if (countRows(table) != 0) {
-
-        TupleType* t2 = getListElement(table, 0);
-        for (int i = 0; i < t2->len; i+ +) {
-            if (getTypeofTupleIndex(t2, i) != getTypeofTupleIndex(tup, i)) {
-                errorExit("types of inserted tuple do not match types of the table")
-            }
-        }
-    }
-    return insertToList(new, index, tup);
-}
-
-
-TupleType* appendRow(ListType* table, TupleType* tup) {
-    return insertRow(table, table->len, tup);
-}
-
-TupleType* dropRow(ListType* table, int index) {
-     
-    ListType* new = copyList(table);
-    return removeFromList(lt, index);
-}
-
-TupleType* setRow(ListType* table, int index, TupleType* tup) {
-     
-    return insertRow(dropRow(table, index), index, tup);
 }
 
 

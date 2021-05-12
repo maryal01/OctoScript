@@ -1,7 +1,15 @@
+#ifndef LIST_C
+#define LIST_C
 
+#include <stdarg.h>
+#include "listHelper.c"
+#include "tupleHelper.c"
+#include "tuple.c"
 
+ListType* set(ListType* lt, int index, ...);
+void printList(ListType* lt);
 
-#include "list.h"
+ListType* insertToList(ListType* lt, int index, void* val) ;
 
 char *string_of_list(void *data){
     ListType *lp = data;
@@ -30,9 +38,71 @@ char *string_of_list(void *data){
     strcat(list_buf, "]");
     return list_buf;
 }
+ListType* copyList(ListType* lt);
 
 
 
+ListType* set(ListType* lt, int index, ...)
+{   
+   
+    if (index >= lt->len) errorExit("index too large in set");
+    
+    va_list args;
+    va_start(args, index);
+
+    int type = lt->type;
+    
+                
+
+    ListType* new = copyList(lt);
+
+                
+    void* data = makePointerOutOfValue(type, args);
+
+    void* listData = getListElement(new, index);
+
+               
+    setValue(listData, data, type);  
+
+                
+    return new;
+}
+
+ListType* append(ListType* lt, ...)
+{
+    ListType* n = copyList(lt);
+    
+    va_list args;
+    va_start(args, lt);
+
+    void* data = makePointerOutOfValue(n->type, args);
+
+    return insertToList(n, n->len, data);
+}
+
+ListType* insert(ListType* lt, int index, ...)
+{
+    ListType* n = copyList(lt);
+    
+    va_list args;
+    va_start(args, index);
+
+    void* data = makePointerOutOfValue(n->type, args);
+
+    return insertToList(n, index, data);
+}
+
+ListType* concatLists(ListType* lt, ListType* lt2)
+{
+    if (lt->type != lt2->type) errorExit("list types do not match");
+
+    ListType* n = copyList(lt);
+    for (int i = 0; i < lt2->len; i++) {
+        n = insertToList(n, i + lt->len, getListElement(lt2, i));
+    }
+    return n;
+
+}
 
 ListType* copyList(ListType* lt)
 {
@@ -61,8 +131,6 @@ ListType* copyList(ListType* lt)
 
 ListType* insertToList(ListType* lt, int index, void* val) 
 {
-    if (index < 0 ) errorExit("index smaller than 0");
-    
     int type = lt->type;
     int len = lt->len;
     ListType* new = realloc(lt, getListSize(type, len + 1));
@@ -75,22 +143,18 @@ ListType* insertToList(ListType* lt, int index, void* val)
     return new;
 }
 
-ListType* removeFromList(ListType* lt, int index) 
+void printList(ListType* lt)
 {
-    if (index >= lt->len) errorExit("index too large when removing from list");
-    if (index < 0) errorExit("index cannot be smaller than 0");
-    
-    int type = lt->type;
-    int len = lt->len;
-    ListType* new = lt;
+    fprintf(stderr, "len = %d\n", lt->len);
+    fprintf(stderr, "self_type = %d\n", lt->self_type);
+    fprintf(stderr, "type = %d\n", lt->type);
+    for (int i = 0; i < lt->len; i++) {
 
-    new->len = len - 1;
-    for (int i = index; i < new->len; i++) {
-        setValue(getListElement(new, i), getListElement(new, i + 1), type);
+        fprintf(stderr, "val = %d\n", *(int*)getListElement(lt, i));
     }
-    return new;
 }
 
 
 
 
+#endif

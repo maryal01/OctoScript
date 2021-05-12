@@ -1,30 +1,11 @@
+#ifndef TUPLE_C
+#define TUPLE_C
 
-#include "tuple.h"
+#include "tuple.c"
 
-TupleType* tupleInsert(TupleType* tup, int index, void* val, int valType)
-{
-    int len = tup->len;
-    TupleType* new = malloc(tup, getTupleSize((int*) (void*)tup->data), tup->len) + sizeofType(INT_TYPE) + sizeofType(valType));
-    new->len = len + 1;
-    new->self_type = TUPLE_TYPE;
-    for (int i = 0; i < index; i++) {
-        setTypeofTupleIndex(new, i, getTypeofTupleIndex(tup, i));
-    } 
-    setTypeofTupleIndex(new, index, valType);
-    for (int i = index + 1; i < new->len; i++) {
-        setTypeofTupleIndex(new, i, getTypeofTupleIndex(tup, i - 1 ));
-    }
+TupleType* copyTuple(TupleType* lt);
+TupleType* tupleSet(TupleType* tup, int index, ...);
 
-    for (int i = 0; i < index; i++) {
-        setTupleElement(new, i, getTupleElement(tup, i));
-    } 
-    setTupleElement(new, index, val);
-    for (int i = index + 1; i < new->len; i++) {
-        setTupleElement(new, i, getTupleElement(tup, i - 1));
-    }
-
-    
-}
 
 TupleType* tupleSet(TupleType* tup, int index, ...) {
 
@@ -74,26 +55,4 @@ ListType* tuple_get(TupleType* tup, int index) {
     return lt;
 }
 
-char* string_of_tuple(TupleType* tup)
-{
-
-    char *list_buf = calloc(BUF_SIZE * tup->len, sizeof(char));
-    strcpy(list_buf, "(");
-
-    for(int i = 0; i < tup->len; i++){
-        
-        char int_buf[BUF_SIZE];
-        void *data = getTupleElement(tup, i);
-        valToString(data, getTypeofTupleIndex(tup, i), int_buf);
-    
-        strcat(list_buf, int_buf);
-        if(i + 1 != tup->len){
-            strcat(list_buf, ", ");
-
-        }
-    }
-    strcat(list_buf, ")");
-    return list_buf;
-
-
-}
+#endif

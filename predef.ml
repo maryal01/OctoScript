@@ -71,14 +71,7 @@ let predefs =
       ("printTuple", "printTuple", A.NONE, (Fixed [A.TUPLE None]));
       ("print_list", "print_list", A.NONE, (Fixed [A.LIST None]));
   
-      ("tuple_get", "at", A.LIST None, (Fixed [A.TUPLE None; A.INT]));
-
-      ("appendRow", "appendRow", A.TABLE None, (Fixed [A.TABLE None; A.TUPLE None]));
-
-      ("setRow", "setRow", A.TABLE None, (Fixed [A.TABLE None; A.INT;A.TUPLE None]));
-      ("insertRow", "insertRow", A.TABLE None, (Fixed [A.TABLE None; A.INT;A.TUPLE None]));
-      ("dropRow", "dropRow", A.TABLE None, (Fixed [A.TABLE None; A.INT]));
-
+      ("tuple_get", "tuple_get", A.LIST None, (Fixed [A.TUPLE None; A.INT]));
 
    ]
 

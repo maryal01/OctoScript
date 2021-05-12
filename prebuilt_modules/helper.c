@@ -1,4 +1,5 @@
-
+#ifndef HELPER_C
+#define HELPER_C
 
 // converts strings representation of a type into its int representation
 int stringToTyp(void* data);
@@ -117,3 +118,4 @@ void* makePointerOutOfValue(int type, va_list args) // TODO
     return v;
 }
 
+#endif
