@@ -173,7 +173,6 @@ TupleType* createTupleFromStrings(char*** data, int row, int col, int *types)
     }
 
     
-    printTuple(tup);
 
 
 

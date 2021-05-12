@@ -96,10 +96,12 @@ ListType* setRow(ListType* table, int index, TupleType* tup) {
     return insertRow(dropRow(table, index), index, tup);
 }
 
-ListType* insertCol(ListType* table, int index, ListType* row)
-{
-    tupleInsert(getListElement(table, 0), 0, getListElement(row, 0), row->type);
-}
+// ListType* insertCol(ListType* table, int index, ListType* row)
+// {
+//     TupleType* t = getListElement(table, 0);
+//     fprintf(stderr, "%d\n\n", t->len);
+//     tupleInsert(getListElement(table, 0), 0, getListElement(row, 0), row->type);
+// }
 
 
 

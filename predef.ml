@@ -77,6 +77,11 @@ let predefs =
       ("insertRow", "insertRow", A.TABLE None, (Fixed [A.TABLE None; A.INT;A.TUPLE None]));
       ("dropRow", "dropRow", A.TABLE None, (Fixed [A.TABLE None; A.INT]));
    
+      ("appendCol", "appendCol", A.TABLE None, (Fixed [A.TABLE None; A.LIST None]));
+      ("setCol", "setCol", A.TABLE None, (Fixed [A.TABLE None; A.INT;A.LIST None]));
+      ("insertCol", "insertCol", A.TABLE None, (Fixed [A.TABLE None; A.INT;A.LIST None]));
+      ("dropCol", "dropCol", A.TABLE None, (Fixed [A.TABLE None; A.INT]));
+   
    ]
 
 
