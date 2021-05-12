@@ -1,5 +1,0 @@
-table<int, string, float> t = read("tests/sampleTable.csv", ["int", "string", "float"], ",");
-
-list<int> l = t.get_col(0);
-
-print(string_of_list(l));

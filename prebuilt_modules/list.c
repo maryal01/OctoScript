@@ -5,6 +5,7 @@
 #include "listHelper.c"
 #include "tupleHelper.c"
 #include "tuple.c"
+#include "tableHelper.c"
 
 ListType* set(ListType* lt, int index, ...);
 void printList(ListType* lt);
@@ -118,7 +119,7 @@ ListType* copyList(ListType* lt)
     for (int i = 0; i < lt->len; i++) {
         void* tmp = getListElement(lt, i);
         if (lt->type == TUPLE_TYPE) {
-            tmp = copyTuple(tmp);
+            tmp = copyTuple(*(TupleType**)tmp);
         } else if (lt->type == LIST_TYPE) {
             tmp = copyList(tmp);
         }
@@ -136,13 +137,17 @@ ListType* insertToList(ListType* lt, int index, void* val)
     
     int type = lt->type;
     int len = lt->len;
-    ListType* new = realloc(lt, getListSize(type, len + 1));
-
+    ListType* new = malloc(getListSize(type, len + 1));
     new->len = len + 1;
-    for (int i = len - 1; i >= index; i--) {
-        setValue(getListElement(new, i + 1), getListElement(new, i), type);
+    new->type = type;
+    new->self_type = LIST_TYPE;
+    for (int i = 0; i < index; i++) {
+        setValue(getListElement(new, i), *(TupleType**)getListElement(lt, i), type);
     }
     setValue(getListElement(new, index), val, type);
+    for (int i = index + 1; i < new->len; i++) {
+        setValue(getListElement(new, i), *(TupleType**)getListElement(lt, i - 1), type);
+    }
     return new;
 }
 
@@ -151,14 +156,16 @@ ListType* removeFromList(ListType* lt, int index)
     if (index >= lt->len) errorExit("index too large when removing from list");
     if (index < 0) errorExit("index cannot be smaller than 0");
     
+
     int type = lt->type;
     int len = lt->len;
     ListType* new = lt;
 
-    new->len = len - 1;
-    for (int i = index; i < new->len; i++) {
-        setValue(getListElement(new, i), getListElement(new, i + 1), type);
+
+    for (int i = index; i < new->len - 1; i++) {
+        setValue(getListElement(new, i), *(TupleType**)getListElement(new, i + 1), type);
     }
+    new->len = len - 1;
     return new;
 }
 

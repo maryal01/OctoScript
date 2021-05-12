@@ -40,6 +40,7 @@ void setValue(void* data, void* value, int type);
 
 void setValue(void* data, void* value, int type)
 {
+
     switch(type) {
         case INT_TYPE: //int
         {
@@ -72,8 +73,7 @@ void setValue(void* data, void* value, int type)
             break;
         case TUPLE_TYPE: //tuple
         {
-            TupleType* tp = value;
-            *(TupleType**)data = tp;
+            *(TupleType**)data = (TupleType*)value;
             return;
         }
     
@@ -149,14 +149,13 @@ void* getListElement(ListType* lt, int index)
     
 }
 
-// void setListElement(ListType* lt, int index, void* val)
-// {
-//     if (index >= lt->len) errorExit("index greater than length");
+void setListElement(ListType* lt, int index, void* val)
+{
+    if (index >= lt->len) errorExit("index greater than length");
 
-//     void* data = lt->data;
-//     data = offsetPointerNtimes(data, lt->type, index);
+    setValue(getListElement(lt, index), val, lt->type);
 
-// }
+}
 
 
 

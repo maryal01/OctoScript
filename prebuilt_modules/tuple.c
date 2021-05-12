@@ -9,11 +9,7 @@ TupleType* tupleInsert(TupleType* tup, int index, void* val, int valType);
 
 char* string_of_tuple(TupleType* tup)
 {
-fprintf(stderr, "tup len = %d\n", tup->len);
-// for (int i = 0; i < tup->len; i++) {
-//     fprintf(stderr, "yype = %d\n",(getTypeofTupleIndex(tup,i)));
-// }
-  fprintf(stderr, "yfsfdype = \n");
+
     char *list_buf = calloc(BUF_SIZE * tup->len, sizeof(char));
     strcpy(list_buf, "(");
 
@@ -22,7 +18,6 @@ fprintf(stderr, "tup len = %d\n", tup->len);
         char int_buf[BUF_SIZE];
         void *data = getTupleElement(tup, i);
         valToString(data, getTypeofTupleIndex(tup, i), int_buf);
-        fprintf("val = %s\n",int_buf);
         strcat(list_buf, int_buf);
         if(i + 1 != tup->len){
             strcat(list_buf, ", ");
@@ -38,16 +33,13 @@ fprintf(stderr, "tup len = %d\n", tup->len);
 
 TupleType* tupleInsert(TupleType* tup, int index, void* val, int valType)
 {
-
-     fprintf(stderr, "jelfsdffsdlo - %d\n",tup->len);
-    printf("%s\n",string_of_tuple(tup));
+    if (index > tup->len) errorExit("index too large when removing from list");
+    if (index < 0) errorExit("index cannot be smaller than 0");
+    
     int len = tup->len;
-     fprintf(stderr, "jello - %d\n",tup->len);
-
     TupleType* new = malloc(getTupleSize((int*) (void*)tup->data, tup->len) + sizeofType(INT_TYPE) + sizeofType(valType));
     new->len = len + 1;
-     fprintf(stderr, "jello - %d\n",tup->len);
-
+     
     new->self_type = TUPLE_TYPE;
     for (int i = 0; i < index; i++) {
         setTypeofTupleIndex(new, i, getTypeofTupleIndex(tup, i));
@@ -56,8 +48,7 @@ TupleType* tupleInsert(TupleType* tup, int index, void* val, int valType)
     for (int i = index + 1; i < new->len; i++) {
         setTypeofTupleIndex(new, i, getTypeofTupleIndex(tup, i - 1 ));
     }
-     fprintf(stderr, "jello - %d\n",tup->len);
-
+     
 
     for (int i = 0; i < index; i++) {
         setTupleElement(new, i, getTupleElement(tup, i));
@@ -66,10 +57,40 @@ TupleType* tupleInsert(TupleType* tup, int index, void* val, int valType)
     for (int i = index + 1; i < new->len; i++) {
         setTupleElement(new, i, getTupleElement(tup, i - 1));
     }
-     fprintf(stderr, "jello - %d\n",tup->len);
+     
 
+    return new;
 
-    printf("%s\n",string_of_tuple(new));
+    
+}
+
+TupleType* tupleRemove(TupleType* tup, int index)
+{
+
+    if (index >= tup->len) errorExit("index too large when removing from list");
+    if (index < 0) errorExit("index cannot be smaller than 0");
+    
+    int len = tup->len;
+    TupleType* new = malloc(getTupleSize((int*) (void*)tup->data, tup->len) - sizeofType(INT_TYPE) - sizeofType(getTypeofTupleIndex(tup, index)));
+    new->len = len - 1;
+     
+    new->self_type = TUPLE_TYPE;
+    for (int i = 0; i < index; i++) {
+        setTypeofTupleIndex(new, i, getTypeofTupleIndex(tup, i));
+    } 
+    for (int i = index; i < new->len; i++) {
+        setTypeofTupleIndex(new, i, getTypeofTupleIndex(tup, i + 1 ));
+    }
+     
+
+    for (int i = 0; i < index; i++) {
+        setTupleElement(new, i, getTupleElement(tup, i));
+    } 
+    for (int i = index; i < new->len; i++) {
+        setTupleElement(new, i, getTupleElement(tup, i + 1));
+    }
+     
+
     return new;
 
     
