@@ -368,8 +368,6 @@ let check (functions, statements) =
         let et', e' = check_expr e scope in
         let same_type = t = et' in
         let flex_typing =
-         (* TODO: This should be fine with lists but might cause a problem with none list types
-            Prefer to have this out at the last version, or an overhaul to predef *)
         (match et' with 
           LIST None -> (match t with LIST _ -> true | _ -> false) 
           | TUPLE None -> (match t with TUPLE _ -> true | _ -> false)
@@ -407,7 +405,13 @@ let check (functions, statements) =
           else raise (Failure "The function return type mismatch.")
     | Assign (s, e) ->
         let lt = find_identifier s scope and rt, e' = check_expr e scope in
-        if rt = lt then SAssign (s, (rt, e'))
+        let flex_typing =
+        (match rt with 
+          LIST None -> (match lt with LIST _ -> true | _ -> false) 
+          | TUPLE None -> (match lt with TUPLE _ -> true | _ -> false)
+          | TABLE None -> (match lt with TABLE _ -> true | _ -> false)
+          | _ -> false) in
+        if (rt = lt) || flex_typing then SAssign (s, (rt, e'))
         else
           raise
             (Failure

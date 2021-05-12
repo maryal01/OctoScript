@@ -1,5 +1,0 @@
-table<int, string, float> t = read("tests/sampleTable.csv", ["int", "string", "float"], ",");
-
-float f = t.get_cell(1,2);
-
-print("%.2f", f);

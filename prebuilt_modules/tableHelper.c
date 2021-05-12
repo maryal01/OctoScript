@@ -34,6 +34,7 @@ ListType* createTable(char ***data,  int row, int col,  ListType* typeNames)
         void* tup = createTupleFromStrings(data, i, col, types);
 
         setValue(datap, tup, TUPLE_TYPE);
+
         datap = offsetPointer(datap, TUPLE_TYPE);
     }
     return table;
@@ -44,9 +45,9 @@ ListType* createTable(char ***data,  int row, int col,  ListType* typeNames)
 
 void printTable(ListType* table, FILE* file, char* delimeter)
 {
-
     for (int i = 0; i < table->len; i++) {
         TupleType* tup = *(TupleType**)getListElement(table, i);
+        
         for (int j = 0; j < tup->len; j++ ) {
             int type = getTypeofTupleIndex(tup, j);
             void* data = getTupleElement(tup, j);

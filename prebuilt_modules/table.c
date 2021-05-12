@@ -4,7 +4,9 @@
 
 
 #include "tableHelper.c"
+#include "listHelper.c"
 
+#include "tupleHelper.c"
 // Reads a csv file and creates a table based on it
 void* read(char* filename, void* typeNames, char* delimeter)
 {
@@ -65,6 +67,77 @@ int countCols(ListType* table)
 bool empty(ListType* table){
     return countRows(table) == 0;
 }
+
+
+ListType* insertRow(ListType* table, int index, TupleType* tup) {
+    ListType* new = copyList(table);
+    if (countRows(table) != 0) {
+        TupleType* t2 = *(TupleType**) getListElement(table, 0);
+        for (int i = 0; i < t2->len; i++) {
+            if (getTypeofTupleIndex(t2, i) != getTypeofTupleIndex(tup, i)) {
+                errorExit("types of inserted tuple do not match types of the table");
+            }
+        }
+    }
+    return insertToList(new, index, tup);
+}
+
+
+ListType* appendRow(ListType* table, TupleType* tup) {
+    
+    return insertRow(table, table->len, tup);
+}
+
+ListType* dropRow(ListType* table, int index) {
+     
+    ListType* new = copyList(table);
+    return removeFromList(new, index);
+}
+
+ListType* setRow(ListType* table, int index, TupleType* tup) {
+     
+    table = dropRow(table, index);
+    return insertRow(table, index, tup);
+}
+
+ListType* insertCol(ListType* table, int index, ListType* lt) {
+    ListType* new = copyList(table);
+    for (int i = 0; i < table->len; i++) {
+        TupleType* t2 = *(TupleType**) getListElement(table, i);
+        t2 = tupleInsert(t2, index, getListElement(lt, i), lt->type);
+
+        setListElement(new, i, t2);
+    }
+    return new;
+}
+
+
+
+ListType* appendCol(ListType* table, ListType* lt) {
+    
+    return insertCol(table, table->len, lt);
+}
+
+ListType* dropCol(ListType* table, int index) {
+     
+    ListType* new = copyList(table);
+    for (int i = 0; i < table->len; i++) {
+        TupleType* t2 = *(TupleType**) getListElement(table, i);
+        t2 = tupleRemove(t2, index);
+        setListElement(new, i, t2);
+    }
+    return new;
+}
+
+ListType* setCol(ListType* table, int index, ListType* lt) {
+     
+    table = dropCol(table, index);
+    return insertCol(table, index, lt);
+}
+
+
+
+
 
 
 #endif

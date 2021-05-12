@@ -1,0 +1,3 @@
+table<int, string, float> t = read("Book1.csv", ["int", "float", "float", "int"], ",");
+list<int> l = [1, 2, 3];
+insertCol(t, 0,l);

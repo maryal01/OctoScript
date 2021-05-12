@@ -1,7 +1,0 @@
-table<int, string, float> t = read("tests/sampleTable.csv", ["int", "string", "float"], ",");
-
-tuple<int, string, float> tup =  = (4, "d", 4.0);
-
-t.append_row(tup);
-
-write("test-table.appendrow.out", t, ",");
