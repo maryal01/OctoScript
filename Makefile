@@ -10,7 +10,11 @@ toplevel.native :
 	opam config exec -- \
 	ocamlbuild -use-ocamlfind toplevel.native
 
-prebuilt : prebuilt.c
-	cc -o test -DBUILD_TEST prebuilt.c
+%.o: %.c $(INCLUDES)
+	$(CC)  -c $< -o $@
+
+prebuilt : prebuilt.o 
+	cc -o test -DBUILD_TEST prebuilt.o
+
 
 

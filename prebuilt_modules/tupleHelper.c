@@ -1,37 +1,10 @@
-#ifndef TUPLE_HELPER_C
-#define TUPLE_HELPER_C
+#include "tupleHelper.h"
 
 
-
-#include "dataTypes.c"
-
-
-TupleType* createTuple(int types[], int len);
-void printTuple(TupleType* tt);
-bool hasPadding(int* types, int len, int index);
-
-
-// returns the tuple element at index
-void* getTupleElement(TupleType* tt, int index);
-
-// returns the size of fields of tuple until its data
-size_t getTupleDataOffsetSize(int len);
-
-// returns the size of data of tuple
-size_t getTupleDataSize(int* types, int len);
-
-// returns the size of tuple
-size_t getTupleSize(int* types, int len);
-
-// creates a tuple from the index row of the table
-// tuple has size col and types as given in typenames
-TupleType* createTupleFromStrings(char*** data, int row, int col, int *types);
-
-// returns the type of tuple at index 
-int getTypeofTupleIndex(TupleType* tt, int index);
-
-// sets the type of tuple at index
-void setTypeofTupleIndex(TupleType* tt, int index, int val);
+void setTupleElement(TupleType* tt, int index, void *val) {
+    setValue(getTupleElement(tt, index), val, getTypeofTupleIndex(tt, index));
+    
+}
 
 void* getTupleElement(TupleType* tt, int index)
 {
@@ -52,9 +25,9 @@ void* getTupleElement(TupleType* tt, int index)
         if ((i + 1 != tt->len) && getTypeofTupleIndex(tt, i + 1) == STRING_TYPE) {
             
             //fprintf(stderr, "has padding %d    \n", hasPadding(tt, index));
-            if (hasPadding((int*)(void*)tt->data, tt->len,i + 1)) {
-                data = offsetPointer(data, INT_TYPE);
-            }
+            // if (hasPadding((int*)(void*)tt->data, tt->len,i + 1)) {
+            //     data = offsetPointer(data, INT_TYPE);
+            // }
             
 
 
@@ -96,9 +69,9 @@ size_t getTupleDataSize(int* types, int len)
     for (int i = 0; i < len; i++) {
         total += sizeofType(types[i]);
         if (i != len - 1 && types[i + 1] == STRING_TYPE) {
-            if (hasPadding(types, len, i)) {
-                total += sizeofType(INT_TYPE);
-            }
+            // if (hasPadding(types, len, i)) {
+            //     total += sizeofType(INT_TYPE);
+            // }
         }
     }
     return total;
@@ -205,4 +178,3 @@ void printTuple(TupleType* tt)
 }
 
 
-#endif

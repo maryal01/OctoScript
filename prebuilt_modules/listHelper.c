@@ -1,42 +1,7 @@
-#ifndef LIST_HELPER_C
-#define LIST_HELPER_C
 
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-
-#include "dataTypes.c"
-#include "helper.c"
-#define BUF_SIZE 20
-
-
-
-// returns the size of fields of list until its data
-size_t getListDataOffsetSize();
-
-void print_list(void *data);
-
-
-void printVal(void* val, int type);
-
-// returns the size of data of list
-size_t getListDataSize(int type, int len);
-
-// returns the size of a list
-size_t getListSize(int type, int len);
-
-// returns list element at index
-void* getListElement(ListType* lt, int index);
-
-// sets the element at index to val
-void setListElement(ListType* lt, int index, void* val);
-
-// sets the given value to the given pointer location
-void setValue(void* data, void* value, int type);
-
+#include "listHelper.h"
 
 void setValue(void* data, void* value, int type)
 {
@@ -367,102 +332,6 @@ void* convertStringtoValue(char* string, int type)
 
 
 
-
-
-
-// void size(void* tup){
-//     TupleType* t = tup;
-//     printf("total size %d\n", getTupleSize(t));
-//     getDataSize(t);
-// }
-
-// int main()
-// {
-//     TupleType* tup = (TupleType *) malloc(sizeof(TupleType)); sizeof(int) + sizeof(char*) + (2 * sizeof(char*) + sizeof(int)
-//     tup->len = 3;
-//     tup->type = "sis";
-//     tup->data = (char*) malloc(2 * sizeof(char*) + sizeof(int));
-
-// }
-
-
-
-
-
-// void get(void *data) 
-// {
-//     return;
-//     // ListType *lp = data;
-//     // char ty = (lp->type)[0];
-//     // switch(ty) {
-//     //     case 'i': //int
-//     //     {
-//     //         int i = ((int *) lp->data)[index];
-//     //         int* ret = (int*) malloc(i);
-//     //         *ret = i;
-//     //         return ret;
-//     //         break;
-//     //     }
-           
-//     //     case 'b': //boolean
-//     //     {
-//     //         bool b = ((bool *) lp->data)[index];
-//     //         bool* ret = (bool*) malloc(b);
-//     //         *ret = b;
-//     //         return ret;
-//     //         break;
-//     //     }
-
-//     //     case 'f': //float
-//     //     {
-//     //         float f = ((float *) lp->data)[index];
-//     //         float* ret = (float*) malloc(f);
-//     //         *ret = f;
-//     //         return ret;
-//     //         break;
-//     //     }
-
-//     //     case 's': //string
-//     //         break;
-//     //     case 'l': //lambda
-//     //         break;
-//     //     case 'T': //table
-//     //         break;
-//     //     case 'U': //tuple
-//     //         break;
-//     //     case 'L': //list
-//     //         break;
-//     // }
-//     // return malloc(1);
-
-// }
-
-// // list_name.set(void *data, int index, void *val)
-// // {
-
-// // }
-
-// // list_name.insert(void *data, int index, void *val)
-// // {
-
-// // }
-
-// // list_name.length(void *data)
-// // {
-
-// // }
-
-// // list_name.append(void *data, void *val)
-// // {
-
-// // }
-// // list_name.concat(void *val)
-// // {
-
-// // }
-
-// // list_name.copy()
-
 void print_list(void *data){
     ListType *lp = data;
 
@@ -480,4 +349,16 @@ void print_list(void *data){
     }
     fprintf(stderr, "]\n");
 }
+
+// void printList(ListType* lt)
+// {
+//     fprintf(stderr, "len = %d\n", lt->len);
+//     fprintf(stderr, "self_type = %d\n", lt->self_type);
+//     fprintf(stderr, "type = %d\n", lt->type);
+//     for (int i = 0; i < lt->len; i++) {
+
+//         fprintf(stderr, "val = %d\n", *(int*)getListElement(lt, i));
+//     }
+// }
+
 #endif

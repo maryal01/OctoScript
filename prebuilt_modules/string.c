@@ -1,8 +1,4 @@
-#ifndef STRING_C
-#define STRING_C
-
-#include <ctype.h>
-#include <string.h>
+#include "string.h"
 char* substring(char* string, int start, int end) {
     
     if (start >= end) errorExit(" start and end values invalidate precondition");
@@ -89,4 +85,3 @@ int stringCmp(char* string1, char* string2){
     return strcmp(string1, string2);
 }
 
-#endif

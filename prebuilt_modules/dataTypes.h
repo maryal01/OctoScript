@@ -1,5 +1,5 @@
-#ifndef DATA_TYPES_C
-#define DATA_TYPES_C
+#ifndef DATA_TYPES_H
+#define DATA_TYPES_H
 
 
 
