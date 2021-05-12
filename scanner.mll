@@ -24,9 +24,7 @@ rule token = parse
 | '-'      { MINUS  }
 | '*'      { TIMES  }
 | '/'      { DIVIDE }
-| '^'      { POW    }
 | '%'      { MOD    }
-| "log"    { LOG    }
 | '='      { ASSIGN }
 
 | "=="     { OP_EQ  }

@@ -5,8 +5,6 @@ type binaryOp =
   | Sub
   | Mul
   | Div
-  | Pow
-  | Log
   | GT
   | GTE
   | LT
@@ -37,7 +35,6 @@ type expr =
   | PrimLit of prim
   | ListLit of expr list
   | TupleLit of expr list
-  (* | TableLit of expr list list *)
   | IfExpr of expr * expr * expr
   | Lambda of bind list * expr
   | Var of string
@@ -77,8 +74,6 @@ let biop_to_string o =
   | Sub -> "-"
   | Mul -> "*"
   | Div -> "/"
-  | Pow -> "^"
-  | Log -> "log"
   | GT -> ">"
   | GTE -> ">="
   | LT -> "<"

@@ -15,9 +15,6 @@ type builtin_func = string * rttype * rttype list
 let builtins = 
    [
       (* return types shouldnt use ListElem type when a empty list at the position is possible *)
-      (* ("length", Static A.INT, [Static (A.LIST None)]);
-      ("get", ListElem 0, [Static (A.LIST None); Static A.INT]);
-      ("add", ListWithElem 1, [Static (A.LIST None); ListElem 0]); *)
       ("concat", Static (A.LIST None), [Static (A.LIST None); Static (A.LIST None)] );
       ("replace", ListWithElem 2, [Static (A.LIST None); Static A.INT; ListElem 0]);
       
@@ -27,10 +24,9 @@ let builtins =
       ("zeros", ListWithElem 1, [Static (A.LIST None); Static A.INT]);
 
       ("distance", Static A.INT, [Static (A.TUPLE None)]);
-      ("table_get", TableElem (0, 0), [Static (A.TABLE None); Static A.INT; Static A.INT]);
-      ("size", Static A.INT, [Static (A.LIST None)]);
+
+      ("num_rows", Static A.INT, [Static (A.TABLE None)]);
       ("get_row", Static (A.TUPLE None), [Static (A.TABLE None); Static A.INT]);
-      ("get_col", Static (A.LIST None), [Static (A.TABLE None); Static A.INT]);
    ]
 
 (* OctoScript name, C name, return type, parameter list *)
@@ -42,7 +38,6 @@ let predefs =
       ("length", "length_tuple", A.INT, Fixed [A.TUPLE None]);
       ("print", "printf", A.INT, (Var [A.STRING]));
       ("test", "test", A.NONE, (Fixed [A.LAMBDA ([], A.INT)]));
-      (* ("test_return_same", "test_return_same", A.LIST None, (Fixed [A.LIST None])); *)
       
       ("size", "size", A.NONE, (Fixed [A.TUPLE None]));
       
@@ -64,7 +59,7 @@ let predefs =
       ("substr", "substring", A.STRING, (Fixed [A.STRING; A.INT; A.INT]));
       ("strlen", "length", A.INT, (Fixed [A.STRING]));
       ("stringEquals", "stringEquals", A.BOOLEAN, (Fixed [A.STRING; A.STRING]));
-      ("stringCmp", "stringCmp", A.INT, (Fixed [A.STRING; A.STRING]));
+      
       ("append", "append", A.LIST None, (Var [A.LIST None]));
       ("insert", "insert", A.LIST None, (Var [A.LIST None]));
       ("set", "set", A.LIST None, (Var [A.LIST None; A.INT]));

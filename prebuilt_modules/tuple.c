@@ -52,7 +52,6 @@ ListType* tuple_get(TupleType* tup, int index) {
     lt->type = type;
     void*data = getListElement(lt, 0);
     setValue(data, val, type);
-    print_list(lt);
     return lt;
 }
 

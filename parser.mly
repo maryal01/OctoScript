@@ -3,7 +3,7 @@
 
 %token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK 
 %token COMMA SEMI DOT COLON COND
-%token PLUS MINUS TIMES DIVIDE POW LOG MOD ASSIGN 
+%token PLUS MINUS TIMES DIVIDE MOD ASSIGN 
 %token OP_NOT OP_EQ OP_NEQ OP_LT OP_LEQ OP_GT OP_GEQ OP_AND OP_OR
 %token FARROW LARROW FUNC OVERLOAD
 %token RETURN IF ELSE WHILE BREAK
@@ -32,7 +32,6 @@
 %left OP_EQ OP_NEQ OP_LT OP_GT OP_LEQ OP_GEQ
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
-%right POW LOG
 %right OP_NOT
 %left DOT
 
@@ -125,9 +124,7 @@ expr:
   | expr MINUS  expr                          { Binop($1, Sub,   $3)   }
   | expr TIMES  expr                          { Binop($1, Mul,   $3)   }
   | expr DIVIDE expr                          { Binop($1, Div,   $3)   }
-  | expr POW    expr                          { Binop($1, Pow,   $3)   }
   | expr MOD    expr                          { Binop($1, Mod,   $3)   }
-  | expr LOG    expr                          { Binop($1, Log,   $3)   }
   | expr OP_EQ  expr                          { Binop($1, EQ,    $3)   }
   | expr OP_NEQ expr                          { Binop($1, NEQ,   $3)   }
   | expr OP_LT  expr                          { Binop($1, LT,    $3)   }

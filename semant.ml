@@ -188,8 +188,6 @@ let check (functions, statements) =
           | (LTE | LT | GT | GTE) when same && (t1 = INT || t1 = FLOAT) ->
               BOOLEAN
           | (AND | OR) when same && t1 = BOOLEAN -> BOOLEAN
-          | Pow when same && t1 = INT -> INT
-          | Log when same && t1 = INT -> FLOAT
           | Mod when same && t1 = INT -> INT
           | _ ->
               raise
